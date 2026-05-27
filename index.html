@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN" prefix="og: http://ogp.me/ns#">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- SEO -->
+    <title>技术分享</title>
+    <meta name="description" content="技术分享演示">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,700,700i%7CMaitree:200,300,400,600,700&amp;subset=latin-ext" rel="stylesheet">
+
+    <!-- CSS WebSlides -->
+    <link rel="stylesheet" type='text/css' media='all' href="static/css/webslides.css">
+
+    <!-- Optional - CSS SVG Icons (Font Awesome) -->
+    <link rel="stylesheet" type='text/css' media='all' href="static/css/svg-icons.css">
+
+    <!-- FAVICONS -->
+    <link rel="shortcut icon" sizes="16x16" href="static/images/favicons/favicon.png">
+    <link rel="shortcut icon" sizes="32x32" href="static/images/favicons/favicon-32.png">
+    <link rel="apple-touch-icon icon" sizes="76x76" href="static/images/favicons/favicon-76.png">
+    <link rel="apple-touch-icon icon" sizes="120x120" href="static/images/favicons/favicon-120.png">
+    <link rel="apple-touch-icon icon" sizes="152x152" href="static/images/favicons/favicon-152.png">
+    <link rel="apple-touch-icon icon" sizes="180x180" href="static/images/favicons/favicon-180.png">
+    <link rel="apple-touch-icon icon" sizes="192x192" href="static/images/favicons/favicon-192.png">
+
+    <!-- Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#333333">
+
+    <style>
+      /* --- TOC Styles --- */
+      .toc-container { text-align: left; margin-top: 2rem; }
+      .toc-items { list-style: none; padding: 0; counter-reset: toc-counter; }
+      .toc-item {
+        display: flex; align-items: center; gap: 1.2rem;
+        padding: 0.9rem 1.2rem; margin-bottom: 0.4rem;
+        border-radius: 8px; cursor: pointer;
+        transition: background 0.2s, transform 0.15s;
+      }
+      .toc-item:hover { background: rgba(0,0,0,0.04); transform: translateX(6px); }
+      .toc-num {
+        font-size: 0.85rem; font-weight: 600; color: #64748b;
+        min-width: 2rem; text-align: right;
+      }
+      .toc-title { font-size: 1.15rem; font-weight: 500; color: #1e293b; }
+
+      /* --- Fixed logo: always visible top-left --- */
+      .fixed-logo {
+        position: fixed; top: 2rem; left: 2.4rem; z-index: 100;
+        pointer-events: none;
+      }
+      .fixed-logo img { height: 40px; display: block; }
+    </style>
+
+  </head>
+  <body>
+    <!-- Fixed logo: always visible, independent of WebSlides auto-hide header -->
+    <div class="fixed-logo">
+      <img src="static/images/logos/vllm-ascend.webp" alt="vLLM Ascend">
+    </div>
+
+    <main role="main">
+      <article id="webslides" class="vertical">
+        <!-- Quick Guide
+          - Each parent <section> in the <article id="webslides"> element is an individual slide.
+          - Vertical sliding = <article id="webslides" class="vertical">
+          - <div class="wrap"> = container 90% / <div class="wrap size-50"> = 45%;
+        -->
+
+        <!-- ========== SLIDES START ========== -->
+
+        <section class="aligncenter">
+          <div class="wrap">
+            <h1><strong>vLLM DCP &amp; PCP 技术分享</strong></h1>
+            <p class="text-intro">
+              分享人：邱纯硕<br>
+              vLLM PCP 特性核心贡献者 @华为昇腾
+            </p>
+            <p class="text-symbols">2026.05.30</p>
+          </div>
+        </section>
+
+        <section id="toc-slide" class="aligncenter">
+          <div class="wrap size-60">
+            <h2><strong>目录</strong></h2>
+            <div id="toc-list" class="toc-container"></div>
+          </div>
+        </section>
+
+        <!-- ========== SLIDES END ========== -->
+
+      </article>
+      <!-- end article -->
+    </main>
+    <!-- end main -->
+
+    <!-- Required -->
+    <script src="static/js/webslides.js"></script>
+    <script>
+      window.ws = new WebSlides();
+
+      // --- Auto-generate Table of Contents ---
+      (function buildTOC() {
+        var tocSlide = document.getElementById('toc-slide');
+        if (!tocSlide) return;
+
+        var allSlides = document.querySelectorAll('#webslides > section');
+        var tocList = document.getElementById('toc-list');
+
+        // Build list of {title, index} from slides after the TOC slide
+        var items = [];
+        var started = false;
+        for (var i = 0; i < allSlides.length; i++) {
+          if (allSlides[i] === tocSlide) {
+            started = true;
+            continue;
+          }
+          if (!started) continue;
+
+          var heading = allSlides[i].querySelector('h2') || allSlides[i].querySelector('h1');
+          if (heading) {
+            items.push({
+              title: heading.textContent.replace(/\s+/g, ' ').trim(),
+              index: i
+            });
+          }
+        }
+
+        if (items.length === 0) {
+          tocList.innerHTML = '<p style="color:#94a3b8; font-style:italic;">添加子标题页后自动生成目录...</p>';
+          return;
+        }
+
+        var html = '<ol class="toc-items">';
+        items.forEach(function(item, n) {
+          html += '<li class="toc-item" data-slide="' + item.index + '">' +
+                    '<span class="toc-num">' + (n + 1).toString().padStart(2, '0') + '</span>' +
+                    '<span class="toc-title">' + item.title + '</span>' +
+                  '</li>';
+        });
+        html += '</ol>';
+        tocList.innerHTML = html;
+
+        // Click to navigate
+        var items_els = tocList.querySelectorAll('.toc-item');
+        for (var j = 0; j < items_els.length; j++) {
+          items_els[j].addEventListener('click', function() {
+            var idx = parseInt(this.getAttribute('data-slide'));
+            window.ws.goToSlide(idx);
+          });
+        }
+      })();
+    </script>
+
+    <!-- OPTIONAL - svg-icons.js (fontastic.me - Font Awesome as svg icons) -->
+    <script defer src="static/js/svg-icons.js"></script>
+
+  </body>
+</html>
