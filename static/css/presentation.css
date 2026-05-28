@@ -115,6 +115,47 @@ section:not(.aligncenter) {
 }
 #lightbox .lb-close:hover { background: rgba(0,0,0,0.15); }
 
+/* --- Progress table --- */
+.progress-table {
+  width: 100%; border-collapse: collapse; font-size: 1.4rem; margin-top: 2rem;
+}
+.progress-table th, .progress-table td {
+  border: 1px solid #cbd5e1; padding: 0.8rem 0.6rem; text-align: center;
+  vertical-align: middle;
+}
+.progress-table thead th {
+  background: #f1f5f9; font-weight: 700; color: #1e293b;
+  font-size: 1.2rem;
+}
+.progress-table tbody td.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600; text-align: left; color: #334155; font-size: 1.4rem;
+}
+.progress-table tbody td.status-yes,
+.progress-table tbody td.status-no,
+.progress-table tbody td.status-wip {
+  font-size: 2rem; padding: 0.6rem 0.4rem;
+}
+.progress-table tbody td.status-yes::before,
+.progress-table tbody td.status-no::before {
+  content: "";
+  display: inline-block;
+  width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  vertical-align: middle;
+}
+.progress-table tbody td.status-yes::before { background: #22c55e; }
+.progress-table tbody td.status-no::before { background: #ef4444; }
+.progress-table tr:nth-child(even) > td { background: inherit; }
+.dot {
+  display: inline-block; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  vertical-align: middle;
+}
+.dot.green { background: #22c55e; }
+.dot.red { background: #ef4444; }
+.legend-line {
+  text-align: right; font-size: 1.4rem; color: #475569; margin-top: 1rem;
+}
+
 /* --- Mermaid --- */
 .mermaid { text-align: center; width: 100%; }
 .mermaid svg { max-width: 100% !important; width: 100% !important; height: auto !important; }
