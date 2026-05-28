@@ -49,11 +49,17 @@ section:not(.aligncenter) {
 #branch-container .branch-slide.active { display: block; }
 
 .branch-page {
-  display: flex; flex-direction: column; justify-content: center;
-  min-height: 100vh; padding: 2.4rem; position: relative; word-wrap: break-word;
+  display: flex; flex-direction: column;
+  height: 100vh; padding: 2.4rem; position: relative; word-wrap: break-word;
+}
+.branch-page .wrap {
+  display: flex; flex-direction: column; flex: 1; min-height: 0;
+}
+.branch-page .wrap iframe {
+  flex: 1; min-height: 0;
 }
 @media (min-width: 1024px) {
-  .branch-page { padding-bottom: 12rem; padding-top: 12rem; }
+  .branch-page { padding-bottom: 2.4rem; padding-top: 9rem; }
 }
 
 .btn-branch {
