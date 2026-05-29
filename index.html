@@ -15,11 +15,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({startOnLoad:false, theme:'default', securityLevel:'loose', fontSize:20, flowchart:{useMaxWidth:true, htmlLabels:true}});</script>
 
-    <!-- CSS Presentation -->
-    <link rel="stylesheet" type='text/css' media='all' href="static/css/presentation.css">
-
     <!-- CSS WebSlides -->
     <link rel="stylesheet" type='text/css' media='all' href="static/css/webslides.css">
+
+    <!-- CSS Presentation -->
+    <link rel="stylesheet" type='text/css' media='all' href="static/css/presentation.css">
 
     <!-- Optional - CSS SVG Icons (Font Awesome) -->
     <link rel="stylesheet" type='text/css' media='all' href="static/css/svg-icons.css">
@@ -37,6 +37,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#333333">
 </head>
+
 <body>
     <!-- Fixed logo: always visible, independent of WebSlides auto-hide header -->
     <div class="fixed-logo">
@@ -62,7 +63,7 @@
             <p class="text-symbols">2026.05.30</p>
           </div></section>
 <section class="aligncenter">
-          <div class="wrap size-60">
+          <div class="wrap size-60 toc-wrap">
             <h2><strong>目录</strong></h2>
             <div class="toc-container">
               <ol class="toc-items">
@@ -89,6 +90,7 @@
               </ol>
             </div>
           </div></section>
+
 <!-- Ch1: CP 特性总览 -->
         <section>
           <div class="wrap">
@@ -470,7 +472,6 @@ flowchart LR
           </div>
         </div>
       </div>
-      </div>
 
 <div id="branch-pcp-layout" class="branch-slide">
         <div class="branch-page">
@@ -483,17 +484,19 @@ flowchart LR
       </div>
 
 
+    </div>
+
     <!-- Back button (shared by all branch slides, positioned fixed top-right) -->
-    <button class="btn-back" onclick="backFromBranch()" style="display:none;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <button class="btn-back" onclick="backFromBranch()" style="display:none;" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <polyline points="15 18 9 12 15 6"/>
       </svg>
       返回
     </button>
 
     <!-- Lightbox overlay -->
-    <div id="lightbox" onclick="closeLightbox()">
-      <span class="lb-close" onclick="closeLightbox()">&times;</span>
+    <div id="lightbox" onclick="closeLightbox()" aria-hidden="true">
+      <button class="lb-close" onclick="closeLightbox()" type="button" aria-label="关闭图片预览">&times;</button>
       <img id="lightbox-img" src="" alt="">
     </div>
 

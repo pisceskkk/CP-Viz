@@ -1,44 +1,105 @@
-// --- Render Mermaid diagrams BEFORE WebSlides hides slides ---
-(async function() {
-  try { await mermaid.run({ querySelector: '.mermaid' }); } catch(e) { console.error('mermaid error:', e); }
-})().then(function() {
-  // --- Initialize WebSlides after mermaid rendering ---
-  window.ws = new WebSlides();
-});
+(function() {
+  'use strict';
 
-// --- Image lightbox ---
-function openLightbox(src) {
-  document.getElementById('lightbox-img').src = src;
-  document.getElementById('lightbox').classList.add('active');
-}
-function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('active');
-}
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeLightbox();
-});
+  var branchOrigin = -1; // Mainline slide index before entering a branch.
 
-// --- Branch navigation ---
-var branchOrigin = -1;  // which mainline slide we jumped from
+  function byId(id) {
+    return document.getElementById(id);
+  }
 
-function jumpToBranch(branchId) {
-  branchOrigin = window.ws.currentSlideI_;
-  document.getElementById('webslides').style.display = 'none';
-  document.getElementById('branch-container').classList.add('active');
-  var branch = document.getElementById(branchId);
-  if (branch) branch.classList.add('active');
-  document.querySelector('.btn-back').style.display = 'inline-flex';
-}
+  function first(selector, root) {
+    return (root || document).querySelector(selector);
+  }
 
-function backFromBranch() {
-  document.getElementById('webslides').style.display = '';
-  var container = document.getElementById('branch-container');
-  container.classList.remove('active');
-  var activeBr = container.querySelector('.branch-slide.active');
-  if (activeBr) activeBr.classList.remove('active');
-  document.querySelector('.btn-back').style.display = 'none';
-  if (branchOrigin >= 0) {
-    window.ws.goToSlide(branchOrigin);
+  function setBackButtonVisible(visible) {
+    var backButton = first('.btn-back');
+    if (backButton) backButton.style.display = visible ? 'inline-flex' : 'none';
+  }
+
+  function currentSlideIndex() {
+    return window.ws && typeof window.ws.currentSlideI_ === 'number'
+      ? window.ws.currentSlideI_
+      : -1;
+  }
+
+  async function renderMermaid() {
+    if (!window.mermaid || typeof window.mermaid.run !== 'function') return;
+
+    try {
+      await window.mermaid.run({ querySelector: '.mermaid' });
+    } catch (error) {
+      console.error('mermaid error:', error);
+    }
+  }
+
+  function initWebSlides() {
+    if (window.ws || typeof window.WebSlides !== 'function') return;
+    window.ws = new window.WebSlides();
+  }
+
+  function openLightbox(src) {
+    var lightbox = byId('lightbox');
+    var image = byId('lightbox-img');
+    if (!lightbox || !image || !src) return;
+
+    image.src = src;
+    lightbox.classList.add('active');
+    lightbox.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeLightbox() {
+    var lightbox = byId('lightbox');
+    if (!lightbox) return;
+
+    lightbox.classList.remove('active');
+    lightbox.setAttribute('aria-hidden', 'true');
+  }
+
+  function jumpToBranch(branchId) {
+    var webslides = byId('webslides');
+    var container = byId('branch-container');
+    var branch = byId(branchId);
+    if (!webslides || !container || !branch) return;
+
+    var activeBranch = first('.branch-slide.active', container);
+    if (activeBranch && activeBranch !== branch) activeBranch.classList.remove('active');
+
+    branchOrigin = currentSlideIndex();
+    webslides.style.display = 'none';
+    container.classList.add('active');
+    branch.classList.add('active');
+    setBackButtonVisible(true);
+  }
+
+  function backFromBranch() {
+    var webslides = byId('webslides');
+    var container = byId('branch-container');
+    if (!webslides || !container) return;
+
+    webslides.style.display = '';
+    container.classList.remove('active');
+
+    var activeBranch = first('.branch-slide.active', container);
+    if (activeBranch) activeBranch.classList.remove('active');
+
+    setBackButtonVisible(false);
+    if (branchOrigin >= 0 && window.ws && typeof window.ws.goToSlide === 'function') {
+      window.ws.goToSlide(branchOrigin);
+    }
     branchOrigin = -1;
   }
-}
+
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      closeLightbox();
+    }
+  });
+
+  // Keep existing inline handlers working while containing implementation details.
+  window.openLightbox = openLightbox;
+  window.closeLightbox = closeLightbox;
+  window.jumpToBranch = jumpToBranch;
+  window.backFromBranch = backFromBranch;
+
+  renderMermaid().then(initWebSlides);
+})();
