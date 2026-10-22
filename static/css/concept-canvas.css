@@ -1,0 +1,351 @@
+/* ConceptCanvas styles - all rules scoped to .concept-canvas */
+
+.concept-canvas {
+  /* Presentation palette */
+  --cc-bg: #f8fafb;
+  --cc-navy: #163447;
+  --cc-teal: #087f8c;
+  --cc-amber: #b37b1c;
+  --cc-violet: #6655aa;
+  --cc-line: #b9c6cf;
+  --cc-edge: #4a5f6e;
+  --cc-surface: #ffffff;
+  --cc-font: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-family: var(--cc-font);
+  color: var(--cc-navy);
+  overflow: hidden;
+}
+
+.concept-canvas *,
+.concept-canvas *::before,
+.concept-canvas *::after {
+  box-sizing: border-box;
+}
+
+/* ----- toolbar -------------------------------------------------------- */
+
+.concept-canvas .cc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 8px;
+  max-width: 100%;
+}
+
+.concept-canvas .cc-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cc-navy);
+  margin-right: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.concept-canvas .cc-btn {
+  appearance: none;
+  border: 1px solid var(--cc-line);
+  background: var(--cc-surface);
+  color: var(--cc-navy);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.2;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.concept-canvas .cc-btn:hover {
+  border-color: var(--cc-teal);
+  color: var(--cc-teal);
+}
+
+.concept-canvas .cc-btn[aria-pressed="true"] {
+  background: var(--cc-amber);
+  border-color: var(--cc-amber);
+  color: #ffffff;
+}
+
+.concept-canvas .cc-btn:focus-visible,
+.concept-canvas .cc-btn-file:focus-within {
+  outline: 2px solid var(--cc-teal);
+  outline-offset: 1px;
+}
+
+.concept-canvas .cc-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.concept-canvas .cc-height {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--cc-navy);
+}
+
+.concept-canvas .cc-height input[type="range"] {
+  width: 110px;
+  max-width: 32vw;
+  accent-color: var(--cc-teal);
+}
+
+/* ----- viewport -------------------------------------------------------- */
+
+.concept-canvas .cc-viewport {
+  position: relative;
+  overflow: auto;
+  min-height: 200px;
+  max-height: 1000px;
+  resize: vertical;
+  border: 1px solid var(--cc-line);
+  border-radius: 8px;
+  background: var(--cc-bg);
+  max-width: 100%;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+}
+
+.concept-canvas .cc-viewport:focus-visible {
+  outline: 2px solid var(--cc-teal);
+  outline-offset: 1px;
+}
+
+.concept-canvas .cc-sizer {
+  position: relative;
+}
+
+.concept-canvas .cc-stage {
+  position: relative;
+  transform-origin: 0 0;
+}
+
+/* ----- nodes ------------------------------------------------------------ */
+
+.concept-canvas .cc-node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--cc-line);
+  background: var(--cc-surface);
+  color: var(--cc-navy);
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.concept-canvas a.cc-node:hover {
+  border-color: var(--cc-teal);
+  box-shadow: 0 1px 6px rgba(8, 127, 140, 0.18);
+}
+
+.concept-canvas .cc-node:focus-visible {
+  outline: 2px solid var(--cc-teal);
+  outline-offset: 2px;
+}
+
+.concept-canvas .cc-node-label {
+  font-size: var(--cc-label-size, 19px);
+  font-weight: 600;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.concept-canvas .cc-node-detail {
+  font-size: var(--cc-detail-size, 15px);
+  font-weight: 400;
+  line-height: 1.3;
+  opacity: 0.78;
+  word-break: break-word;
+  white-space: pre-line;
+}
+
+/* Kind accents */
+.concept-canvas .cc-node--tensor {
+  border-color: var(--cc-teal);
+  background: #eef7f8;
+}
+
+.concept-canvas .cc-node--op {
+  border-color: var(--cc-navy);
+  background: var(--cc-navy);
+  color: #f5f9fb;
+}
+
+.concept-canvas .cc-node--cache {
+  border-color: var(--cc-amber);
+  background: #faf3e6;
+}
+
+.concept-canvas .cc-node--result {
+  border-color: var(--cc-violet);
+  background: #f1eef9;
+}
+
+.concept-canvas .cc-node--note {
+  border-style: dashed;
+  border-color: var(--cc-line);
+  background: #fcfdfd;
+  cursor: default;
+}
+
+/* ----- edges ------------------------------------------------------------ */
+
+.concept-canvas .cc-edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.concept-canvas .cc-edge {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.concept-canvas .cc-edge svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.concept-canvas .cc-edge-line {
+  fill: none;
+  stroke: var(--cc-edge);
+  stroke-width: 2;
+}
+
+.concept-canvas .cc-edge-head {
+  fill: var(--cc-edge);
+}
+
+.concept-canvas .cc-edge-hit {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0);
+  stroke-width: 14;
+  pointer-events: stroke;
+}
+
+.concept-canvas a.cc-edge {
+  pointer-events: auto;
+}
+
+.concept-canvas a.cc-edge:hover .cc-edge-line {
+  stroke: var(--cc-teal);
+}
+
+.concept-canvas a.cc-edge:hover .cc-edge-head {
+  fill: var(--cc-teal);
+}
+
+.concept-canvas a.cc-edge:focus-visible {
+  outline: 2px solid var(--cc-teal);
+  outline-offset: 0;
+}
+
+.concept-canvas .cc-edge-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 1px 6px;
+  font-size: var(--cc-edge-size, 14px);
+  line-height: 1.3;
+  color: var(--cc-navy);
+  background: var(--cc-bg);
+  border: 1px solid var(--cc-line);
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.concept-canvas a.cc-edge:hover .cc-edge-label {
+  border-color: var(--cc-teal);
+  color: var(--cc-teal);
+}
+
+/* ----- edit mode ---------------------------------------------------------- */
+
+.concept-canvas .cc-resize {
+  display: none;
+}
+
+.concept-canvas.cc-editing .cc-node {
+  cursor: grab;
+  outline: 1.5px dashed var(--cc-amber);
+  outline-offset: 2px;
+  touch-action: none;
+}
+
+.concept-canvas.cc-editing .cc-node:active {
+  cursor: grabbing;
+}
+
+.concept-canvas.cc-editing .cc-resize {
+  display: block;
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 14px;
+  height: 14px;
+  background: var(--cc-amber);
+  border: 2px solid #ffffff;
+  border-radius: 3px 0 6px 0;
+  cursor: nwse-resize;
+}
+
+.concept-canvas.cc-editing .cc-edge {
+  opacity: 0.85;
+}
+
+/* Keep node text legible in edit mode even when zoomed out. */
+.concept-canvas.cc-editing .cc-node-label {
+  font-size: max(16px, 19px);
+}
+
+.concept-canvas.cc-editing .cc-node-detail {
+  font-size: max(14px, 15px);
+}
+
+/* ----- narrow screens ------------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .concept-canvas .cc-toolbar {
+    gap: 4px;
+  }
+
+  .concept-canvas .cc-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .concept-canvas .cc-height-text {
+    display: none;
+  }
+
+}
+
+.concept-canvas .cc-sizer { margin-inline: auto; }
