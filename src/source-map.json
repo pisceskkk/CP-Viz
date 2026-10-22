@@ -1,0 +1,200 @@
+{
+  "partition": {
+    "repo": "vllm",
+    "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab",
+    "path": "vllm/v1/worker/gpu/pcp_manager.py",
+    "start": 434,
+    "end": 490,
+    "title": "全局批次到本地 token 布局",
+    "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L434-L490"
+  },
+  "split": {
+    "repo": "vllm",
+    "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab",
+    "path": "vllm/v1/worker/gpu/pcp_manager.py",
+    "start": 222,
+    "end": 282,
+    "title": "请求复制政策与首尾配对切分",
+    "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L222-L282"
+  },
+  "restore": {
+    "repo": "vllm",
+    "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab",
+    "path": "vllm/v1/worker/gpu/pcp_manager.py",
+    "start": 773,
+    "end": 828,
+    "title": "汇集隐藏状态并恢复采样顺序",
+    "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L773-L828"
+  },
+  "runner": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/worker/v2/model_runner.py",
+    "start": 1034,
+    "end": 1067,
+    "title": "ModelRunnerV2 输入与 PCP 接入",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/worker/v2/model_runner.py#L1034-L1067"
+  },
+  "context": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/worker/v2/pcp_manager.py",
+    "start": 773,
+    "end": 807,
+    "title": "全局与局部 attention 视图",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/worker/v2/pcp_manager.py#L773-L807"
+  },
+  "owner": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/worker/v2/pcp_manager.py",
+    "start": 221,
+    "end": 269,
+    "title": "PCP 单独开启时的 decode owner",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/worker/v2/pcp_manager.py#L221-L269"
+  },
+  "policy": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/context_parallel/common_cp.py",
+    "start": 12,
+    "end": 53,
+    "title": "请求分片与历史/当前拆分政策",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L12-L53"
+  },
+  "gather": {
+    "repo": "vllm",
+    "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab",
+    "path": "vllm/v1/attention/ops/pcp.py",
+    "start": 11,
+    "end": 66,
+    "title": "本轮 KV 的 PCP 交换与 slot 对齐",
+    "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/attention/ops/pcp.py#L11-L66"
+  },
+  "cache": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/attention_v1.py",
+    "start": 1210,
+    "end": 1284,
+    "title": "按归属写入 KV cache",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/attention_v1.py#L1210-L1284"
+  },
+  "gqa": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/attention_v1.py",
+    "start": 1310,
+    "end": 1376,
+    "title": "GQA 的输入、缓存与 attention 调用",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/attention_v1.py#L1310-L1376"
+  },
+  "slots": {
+    "repo": "vllm",
+    "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab",
+    "path": "vllm/v1/worker/gpu/pcp_manager.py",
+    "start": 745,
+    "end": 771,
+    "title": "通信布局对应的缓存写入位置",
+    "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L745-L771"
+  },
+  "current": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/context_parallel/attention_cp.py",
+    "start": 590,
+    "end": 629,
+    "title": "当前 KV 的因果 attention",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L590-L629"
+  },
+  "history": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/context_parallel/attention_cp.py",
+    "start": 544,
+    "end": 588,
+    "title": "历史 KV 分片的局部 attention",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L544-L588"
+  },
+  "query": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/context_parallel/common_cp.py",
+    "start": 180,
+    "end": 210,
+    "title": "传输所需 query heads",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L180-L210"
+  },
+  "exchange": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/context_parallel/common_cp.py",
+    "start": 213,
+    "end": 243,
+    "title": "交换部分输出与 LSE",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L213-L243"
+  },
+  "merge": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/context_parallel/common_cp.py",
+    "start": 324,
+    "end": 335,
+    "title": "LSE 加权合并的数学定义",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L324-L335"
+  },
+  "decode": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/context_parallel/attention_cp.py",
+    "start": 471,
+    "end": 529,
+    "title": "Decode 的完整 KV 或历史/当前路径",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L471-L529"
+  },
+  "query_restore": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/context_parallel/attention_cp.py",
+    "start": 531,
+    "end": 542,
+    "title": "组合模式下恢复历史分支的 query",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L531-L542"
+  },
+  "chunked": {
+    "repo": "vllm-ascend",
+    "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f",
+    "path": "vllm_ascend/attention/context_parallel/attention_cp.py",
+    "start": 652,
+    "end": 712,
+    "title": "合并历史与当前的贡献",
+    "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L652-L712"
+  },
+  "groups": {
+    "repo": "vllm",
+    "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab",
+    "path": "vllm/distributed/parallel_state.py",
+    "start": 2216,
+    "end": 2251,
+    "title": "PCP 与 DCP 通信组布局",
+    "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/distributed/parallel_state.py#L2216-L2251"
+  },
+  "config": {
+    "repo": "vllm",
+    "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab",
+    "path": "vllm/config/parallel.py",
+    "start": 585,
+    "end": 598,
+    "title": "PCP/DCP 组合配置边界",
+    "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/config/parallel.py#L585-L598"
+  },
+  "upstream_runner": {
+    "repo": "vllm",
+    "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab",
+    "path": "vllm/v1/worker/gpu/model_runner.py",
+    "start": 2091,
+    "end": 2127,
+    "title": "模型输出衔接全局采样批次",
+    "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/model_runner.py#L2091-L2127"
+  }
+}

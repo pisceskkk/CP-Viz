@@ -1,511 +1,90 @@
 <!doctype html>
-<html lang="zh-CN" prefix="og: http://ogp.me/ns#">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- SEO -->
-    <title>vLLM PCP&DCP 技术分享</title>
-    <meta name="description" content="vLLM PCP&DCP 技术分享演示">
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,700,700i%7CMaitree:200,300,400,600,700&amp;subset=latin-ext" rel="stylesheet">
-
-    <!-- Mermaid -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({startOnLoad:false, theme:'default', securityLevel:'loose', fontSize:20, flowchart:{useMaxWidth:true, htmlLabels:true}});</script>
-
-    <!-- CSS WebSlides -->
-    <link rel="stylesheet" type='text/css' media='all' href="static/css/webslides.css">
-
-    <!-- CSS Presentation -->
-    <link rel="stylesheet" type='text/css' media='all' href="static/css/presentation.css">
-
-    <!-- Optional - CSS SVG Icons (Font Awesome) -->
-    <link rel="stylesheet" type='text/css' media='all' href="static/css/svg-icons.css">
-
-    <!-- FAVICONS -->
-    <link rel="shortcut icon" sizes="16x16" href="static/images/favicons/favicon.png">
-    <link rel="shortcut icon" sizes="32x32" href="static/images/favicons/favicon-32.png">
-    <link rel="apple-touch-icon icon" sizes="76x76" href="static/images/favicons/favicon-76.png">
-    <link rel="apple-touch-icon icon" sizes="120x120" href="static/images/favicons/favicon-120.png">
-    <link rel="apple-touch-icon icon" sizes="152x152" href="static/images/favicons/favicon-152.png">
-    <link rel="apple-touch-icon icon" sizes="180x180" href="static/images/favicons/favicon-180.png">
-    <link rel="apple-touch-icon icon" sizes="192x192" href="static/images/favicons/favicon-192.png">
-
-    <!-- Android -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#333333">
-</head>
-
-<body>
-    <!-- Fixed logo: always visible, independent of WebSlides auto-hide header -->
-    <div class="fixed-logo">
-      <img src="static/images/logos/vllm-ascend.webp" alt="vLLM Ascend">
-    </div>
-
-    <main role="main">
-      <article id="webslides" class="vertical">
-        <!-- Quick Guide
-          - Each parent <section> in the <article id="webslides"> element is an individual slide.
-          - Vertical sliding = <article id="webslides" class="vertical">
-          - <div class="wrap"> = container 90% / <div class="wrap size-50"> = 45%;
-        -->
-
-        <!-- ========== SLIDES START ========== -->
-<section class="aligncenter">
-          <div class="wrap">
-            <h1><strong>vLLM DCP &amp; PCP 技术分享</strong></h1>
-            <p class="text-intro">
-              分享人：邱纯硕<br>
-              vLLM PCP 特性核心贡献者 @华为昇腾
-            </p>
-            <p class="text-symbols">2026.05.30</p>
-          </div></section>
-<section class="aligncenter">
-          <div class="wrap size-60 toc-wrap">
-            <h2><strong>目录</strong></h2>
-            <div class="toc-container">
-              <ol class="toc-items">
-                <li class="toc-item" onclick="window.ws.goToSlide(2)">
-                  <span class="toc-num">01</span>
-                  <span class="toc-title">CP 特性总览</span>
-                </li>
-                <li class="toc-item" onclick="window.ws.goToSlide(3)">
-                  <span class="toc-num">02</span>
-                  <span class="toc-title">vLLM DCP 特性</span>
-                </li>
-                <li class="toc-item" onclick="window.ws.goToSlide(7)">
-                  <span class="toc-num">03</span>
-                  <span class="toc-title">vLLM PCP 特性</span>
-                </li>
-                <li class="toc-item" onclick="window.ws.goToSlide(13)">
-                  <span class="toc-num">04</span>
-                  <span class="toc-title">部署场景</span>
-                </li>
-                <li class="toc-item" onclick="window.ws.goToSlide(15)">
-                  <span class="toc-num">05</span>
-                  <span class="toc-title">CP 特性优化与拓展</span>
-                </li>
-              </ol>
-            </div>
-          </div></section>
-
-<!-- Ch1: CP 特性总览 -->
-        <section>
-          <div class="wrap">
-            <h2><strong>CP 特性总览</strong></h2>
-            <p class="text-intro" style="margin-bottom:2rem;">
-              <strong>tl;dr</strong> &mdash; PCP 对 prefill 的输入序列进行切分，降低 TTFT；DCP 对 KVCache 进行序列切分，消除冗余存储，提升最大长度与吞吐。
-            </p>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/overview.svg" alt="CP Overview" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-          </div></section>
-<!-- Ch2: vLLM DCP 特性 (section header) -->
-        <section class="aligncenter">
-          <div class="wrap">
-            <h2><strong>vLLM DCP 特性</strong></h2>
-            <p style="margin-top:1rem; font-size:1.5rem; color:#64748b;">
-              PR &mdash; <a href="https://github.com/vllm-project/vllm/pull/23734" target="_blank">vllm#23734</a>
-              &nbsp;&middot;&nbsp; <a href="https://github.com/youzhedian" target="_blank">@youzhedian</a> (ChaoHong @月之暗面)
-            </p>
-          </div></section>
-<!-- Ch2.1: DCP Prefill 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>DCP Prefill 方案</strong></h3>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/DCP-prefill-nochunkedprefill.svg" alt="DCP Prefill" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-            <p style="text-align:right; margin-top:1.5rem;">
-              <button class="btn-branch" onclick="jumpToBranch('branch-dcp-detail')">
-                查看 BlockTable &amp; Slot Mapping 细节 &#10132;
-              </button>
-            </p>
-          </div></section>
-<!-- Ch2.3: DCP Decode 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>DCP Decode 方案</strong></h3>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/DCP-decode.svg" alt="DCP Decode" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-          </div></section>
-<!-- Ch2.4: DCP ChunkedPrefill 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>DCP ChunkedPrefill 方案</strong></h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
-              <div>
-                <p style="text-align:center; font-weight:600; margin-bottom:0.5rem;">MLA 路径</p>
-                <div class="img-zoom-wrap">
-                  <img src="static/images/CP/DCP-prefill-MLA.svg" alt="DCP MLA" style="width:100%; max-height:46vh; object-fit:contain;">
-                  <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-                </div>
-              </div>
-              <div>
-                <p style="text-align:center; font-weight:600; margin-bottom:0.5rem;">GQA 路径</p>
-                <div class="img-zoom-wrap">
-                  <img src="static/images/CP/DCP-prefill-GQA.svg" alt="DCP GQA" style="width:100%; max-height:46vh; object-fit:contain;">
-                  <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-                </div>
-              </div>
-            </div>
-          </div></section>
-<!-- Ch3: vLLM PCP 特性 -->
-        <section class="aligncenter">
-          <div class="wrap">
-            <h2><strong>vLLM PCP 特性</strong></h2>
-            <p style="margin-top:1rem; font-size:1.5rem; color:#64748b;">
-              RFC &mdash; <a href="https://github.com/vllm-project/vllm/issues/25749" target="_blank">vllm#25749</a>
-              &nbsp;&middot;&nbsp; <a href="https://github.com/pisceskkk" target="_blank">@pisceskkk</a> (邱纯硕 @华为昇腾)
-            </p>
-          </div></section>
-<!-- Ch3.1: PCP 通信组 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>PCP 通信组</strong></h3>
-            <div style="height:75vh;">
-              <iframe src="src/dynamics/PCP_comm_group.html" style="width:100%; height:100%; border:1px solid #e2e8f0; border-radius:8px;" scrolling="no"></iframe>
-            </div>
-          </div></section>
-<!-- Ch3.2: PCP 序列切分 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>PCP 序列切分</strong></h3>
-            <p class="text-intro" style="margin-bottom:1.5rem;">
-              切分逻辑在 <code>cp_utils.py:PCPManager</code> 中处理，涵盖 <strong>query_lens</strong>、<strong>kv_lens</strong>、<strong>positions</strong> 等序列属性，以及 <strong>q_head_idx</strong> / <strong>q_tail_idx</strong> 偏移量的计算。
-            </p>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/PCP-dualchunkswap.svg" alt="PCP DualChunkSwap" style="width:100%; max-height:58vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-            <p style="text-align:right; margin-top:1rem;">
-              <button class="btn-branch" onclick="jumpToBranch('branch-pcp-layout')">
-                请求切分排布示意 &#10132;
-              </button>
-            </p>
-          </div></section>
-<!-- Ch3.3: PCP Prefill 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>PCP Prefill 方案</strong></h3>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/PCP-prefill-nochunedprefill.svg" alt="PCP Prefill" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-          </div></section>
-<!-- Ch3.4: PCP Decode 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>PCP Decode 方案</strong></h3>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/PCP-decode.svg" alt="PCP Decode" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-          </div></section>
-<!-- Ch3.5: PCP Chunked Prefill 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>PCP Chunked Prefill 方案</strong></h3>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/PCP-chunkedprefill.svg" alt="PCP Chunked Prefill" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-          </div></section>
-<!-- Ch5: 部署场景 -->
-        <section class="aligncenter">
-          <div class="wrap">
-            <h2><strong>部署场景</strong></h2>
-          </div></section>
-<!-- Ch5.1: CP 适配进度 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>DCP 适配进度</strong></h3>
-            <table class="progress-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Chunked Prefill</th>
-                  <th>APC</th>
-                  <th>MTP / Eagle</th>
-                  <th>Piecewise Graph</th>
-                  <th>Full Graph</th>
-                  <th>PD 分离</th>
-                  <th>Qwen3 (GQA)</th>
-                  <th>DeepSeek (MLA)</th>
-                  <th>Qwen3.5 (混合线性)</th>
-                  <th>DSv3.2</th>
-                  <th>DSv4</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="code">vLLM DCP</td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-no"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-no"></td>
-                  <td class="status-no"></td>
-                </tr>
-                <tr>
-                  <td class="code">vLLM Ascend DCP</td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-no"></td>
-                </tr>
-              </tbody>
-            </table>
-
-            <h3 style="margin-top:3rem;"><strong>PCP 适配进度</strong></h3>
-            <table class="progress-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Chunked Prefill</th>
-                  <th>APC</th>
-                  <th>MTP / Eagle</th>
-                  <th>Piecewise Graph</th>
-                  <th>Full Graph</th>
-                  <th>PD 分离</th>
-                  <th>Qwen3 (GQA)</th>
-                  <th>DeepSeek (MLA)</th>
-                  <th>Qwen3.5 (混合线性)</th>
-                  <th>DSv3.2</th>
-                  <th>DSv4</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="code">vLLM PCP</td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-no"></td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-no"></td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-no"></td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-no"></td>
-                </tr>
-                <tr>
-                  <td class="code">vLLM Ascend PCP</td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                </tr>
-              </tbody>
-            </table>
-            <p class="legend-line"><span class="dot green"></span> 已支持 &nbsp;&nbsp;&nbsp; <span class="dot red"></span> 未支持 &nbsp;&nbsp;&nbsp; 🚧 PR 适配中</p>
-          </div></section>
-<!-- Ch5.2: DCP & PCP 部署 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>DCP 部署</strong></h3>
-            <div class="grid" style="margin-bottom:2rem;">
-              <div class="column">
-                <h4>时延</h4>
-                <p>短序列下额外通信会带来一定劣化；长序列（通常 128K 以上）因 KVCache 切分独立计算，<strong>有效降低 TPOT</strong>。</p>
-              </div>
-              <div class="column">
-                <h4>吞吐</h4>
-                <p>资源紧张时通过 DCP 提升 KVCache 容量，可承载更多并发请求，<strong>吞吐显著提升</strong>。</p>
-              </div>
-              <div class="column">
-                <h4>超长序列</h4>
-                <p>开启 DCP 后 KVCache 可用量大幅增长，常见模型可在单机 A3 上推理<strong>超过 1M token</strong> 的超长序列。</p>
-              </div>
-            </div>
-            <hr style="border:0; border-top:1px solid #e2e8f0; margin:1rem 0 1.5rem;">
-            <h3><strong>PCP 部署</strong></h3>
-            <div class="grid">
-              <div class="column">
-                <h4>性能</h4>
-                <p>中长序列（32K～256K）场景下，时延<strong>优于 DP</strong>、略逊于 TP；吞吐<strong>优于 TP</strong>、略逊于 DP，在 DP/TP 之间取得平衡。</p>
-              </div>
-              <div class="column">
-                <h4>适用场景</h4>
-                <p>当请求并发量接近系统最优吞吐时，通过 PCP 进一步降低时延，兼顾吞吐与响应速度。</p>
-              </div>
-            </div>
-          </div></section>
-<!-- Ch4: CP 特性优化与拓展 -->
-        <section class="aligncenter">
-          <div class="wrap">
-            <h2><strong>CP 特性优化与拓展</strong></h2>
-          </div></section>
-<!-- Ch4.1: TPA 特性 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>TPA 特性</strong> <span style="font-size:0.7em;color:#64748b;font-weight:400;">tensor-parallel-size-attention</span></h3>
-            <p style="margin-bottom:0.5rem; font-size:1.5rem; color:#64748b;">
-              RFC &mdash; <a href="https://github.com/vllm-project/vllm/issues/34444" target="_blank">vllm#34444</a>
-              &nbsp;&middot;&nbsp; <a href="https://github.com/SungsooHa" target="_blank">@SungsooHa</a> (NVIDIA)
-            </p>
-            <div style="display:flex; flex-direction:column; gap:0.3rem; margin-bottom:0.8rem;">
-              <div style="flex:1;">
-                <p style="font-weight:600; margin-bottom:0.1rem; font-size:1.5rem;">标准 TP + DCP 路径</p>
-                <div class="mermaid">
-graph LR
-    HS[hidden_states] --> QP["q_proj (slice by TP)"]
-    QP --> Q["Q(1, h/tp)"]
-    Q --> AG["DCP.all_gather (dim=1)"]
-    AG --> ATT[attn]
-    ATT --> CP["cp_lse_ag_out_rs (DCP)"]
-    CP --> OUT["output(1, h/tp)"]
-    OUT --> OP["o_proj (slice by TP)"]
-    OP --> END[out]
-    style AG color:#dc2626
-                </div>
-              </div>
-              <div style="flex:1;">
-                <p style="font-weight:600; margin-bottom:0.1rem; font-size:1.5rem;">TPA 优化路径 </p>
-                <div class="mermaid">
-graph LR
-    HS[hidden_states] --> QP["q_proj (slice by TPA=tp/dcp)"]
-    QP --> Q["Q(1, h*dcp/tp)"]
-    Q --> ATT[attn]
-    ATT --> CP["cp_lse_ag_out_rs (DCP)"]
-    CP --> OUT["output(1, h/tp)"]
-    OUT --> OP["o_proj (slice by TP)"]
-    OP --> END[out]
-                </div>
-              </div>
-            </div>
-            <p style="font-size:1.5rem; color:#475569;">
-              TPA 通过将 q_proj 的切分维度从 <em>TP</em> 调整为 <em>TP/DCP</em>，减少了一次 all_gather 通信，<strong>降低 KV 计算前的同步开销</strong>。
-            </p>
-            <hr style="border:0; border-top:1px solid #e2e8f0; margin:0.8rem 0;">
-            <h3 style="margin-top:0;"><strong>动态 CP 特性</strong></h3>
-            <p style="margin-bottom:0.5rem; font-size:1.5rem; color:#64748b;">
-              RFC &mdash; <a href="https://github.com/vllm-project/vllm/issues/29295" target="_blank">vllm#29295</a>
-              &nbsp;&middot;&nbsp; <a href="https://github.com/Kurumi5210" target="_blank">@Kurumi5210</a> (陈潇 @ICT&amp;UCAS)
-            </p>
-            <div class="mermaid" style="margin-bottom:0.5rem;">
-flowchart LR
-    REQ["请求到达"]
-    REQ --> JUDGE{"CrossDPScheduler<br/>按序列长度判断"}
-
-    JUDGE -->|"短序列"| CP1["CP=1 标准 DP 通路"]
-    JUDGE -->|"长序列"| CPSEL["选择最优 CP size<br/>(预建立通信组)"]
-    JUDGE -->|"长尾请求"| MIG["从 CP=1 迁移到 CP>1"]
-
-    CP1 --> DOMAIN["Domain<br/>聚合多个 DP replica<br/>为统一调度实体"]
-    CPSEL --> DOMAIN
-    MIG --> DOMAIN
-
-    DOMAIN --> SCHED["list SchedulerOutput<br/>跨 DP domain 的异构调度决策"]
-    SCHED --> RUNNER["ModelRunner<br/>CP 请求重排到 batch 最前<br/>2D CUDA Graph"]
-
-    RUNNER --> KVCACHE["CrossDPKVCacheManager<br/>统一管理跨 DP Block Pool"]
-    KVCACHE --> ATTN["Attention Backend<br/>Prefill CP + Decode CP"]
-            </div>
-            <p style="font-size:1.5rem; color:#1e293b;">
-              实测：中短序列（4K-128K）与变长场景下，吞吐和 TTFT <strong>均优于 DP</strong>，TPOT 无明显劣化。
-            </p>
-          </div></section>
-<!-- 感谢页 -->
-        <section class="aligncenter">
-          <div class="wrap">
-            <h1><strong>谢谢</strong></h1>
-            <p class="text-intro" style="margin-top:2rem;">Q &amp; A</p>
-            <p style="margin-top:3rem; font-size:1.5rem; color:#64748b;">
-              PR &mdash; <a href="https://github.com/vllm-project/vllm/pull/23734" target="_blank">vllm#23734</a>
-              &nbsp;&middot;&nbsp;
-              RFC &mdash; <a href="https://github.com/vllm-project/vllm/issues/25749" target="_blank">vllm#25749</a>
-            </p>
-          </div></section>
-
-
-<!-- ========== SLIDES END ========== -->
-
-      </article>
-      <!-- end article -->
-    </main>
-    <!-- end main -->
-
-    <!-- ========== BRANCH SLIDES (off mainline, scrollable longform) ========== -->
-    <div id="branch-container">
-<div id="branch-dcp-detail" class="branch-slide">
-        <!-- Branch sub-slide 1: BlockTable 变化 -->
-        <div class="branch-page">
-          <div class="wrap">
-            <h3><strong>BlockTable 变化</strong></h3>
-            <p class="text-intro">引入 <strong>virtual block</strong> 概念处理跨设备 block 管理，主要影响 block 分配、prefix caching 命中。</p>
-            <iframe src="src/dynamics/BlockTable.html" style="width:100%; border:1px solid #e2e8f0; border-radius:8px;" scrolling="no"></iframe>
-          </div>
-        </div>
-        <!-- Branch sub-slide 2: Token 分布 & Slot Mapping 动态演示 -->
-        <div class="branch-page">
-          <div class="wrap">
-            <h3><strong>Token 分布 &amp; Slot Mapping</strong></h3>
-            <p class="text-intro">调整 PCP size、TP size、DCP size 和 interleave 观察 token 在 KV Cache 中的分布规律与 slot 映射变化。</p>
-            <iframe src="docs/html/token-distribution.html" style="width:100%; border:1px solid #e2e8f0; border-radius:8px;" scrolling="no"></iframe>
-          </div>
-        </div>
-      </div>
-
-<div id="branch-pcp-layout" class="branch-slide">
-        <div class="branch-page">
-          <div class="wrap">
-            <h3><strong>请求切分排布示意</strong></h3>
-            <p class="text-intro">PCP Manager 对输入序列进行切分后，各 rank 上的请求排布与 token 分配示意。</p>
-            <iframe src="src/dynamics/pcp_prefill_split.html" style="width:100%; border:1px solid #e2e8f0; border-radius:8px;" scrolling="no"></iframe>
-          </div>
-        </div>
-      </div>
-
-
-    </div>
-
-    <!-- Back button (shared by all branch slides, positioned fixed top-right) -->
-    <button class="btn-back" onclick="backFromBranch()" style="display:none;" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-      返回
-    </button>
-
-    <!-- Lightbox overlay -->
-    <div id="lightbox" onclick="closeLightbox()" aria-hidden="true">
-      <button class="lb-close" onclick="closeLightbox()" type="button" aria-label="关闭图片预览">&times;</button>
-      <img id="lightbox-img" src="" alt="">
-    </div>
-
-    <!-- Required -->
-    <script src="static/js/webslides.js"></script>
-    <script src="static/js/presentation.js"></script>
-
-    <!-- OPTIONAL - svg-icons.js (fontastic.me - Font Awesome as svg icons) -->
-    <script defer src="static/js/svg-icons.js"></script>
-
-  </body>
-</html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#163447">
+<title>vLLM PCP &amp; DCP · 从框架视图到 attention 数据流</title><meta name="description" content="基于固定版本的 Ascend ModelRunnerV2，以可交互图解理解 PCP、DCP、KV 分片与 attention 合并。">
+<link rel="stylesheet" href="static/css/concept-canvas.css"><link rel="stylesheet" href="static/css/concept-deck.css"></head>
+<body><a class="skip-link" href="#slides">跳到正文</a>
+<nav class="deck-nav" aria-label="演示导航"><a class="brand" href="#start"><span class="brand-mark">CP</span><span>vLLM <b>PCP &amp; DCP</b></span></a>
+<div class="nav-actions"><button id="previous" aria-label="上一页">←</button><label class="sr-only" for="page-select">选择页面</label><select id="page-select"><option value="0">01 · 让长上下文协同计算</option><option value="1">02 · 切分工作，保留可见范围</option><option value="2">03 · 一份逻辑批次，两种执行视图</option><option value="3">04 · 首尾配对，平衡因果工作量</option><option value="4">05 · Q 保持本地，KV 通过通信补齐</option><option value="5">06 · 通信得到的 KV，要按归属保存</option><option value="6">07 · 同一个 query，读取不同 KV 分片</option><option value="7">08 · 用 LSE 找回正确权重</option><option value="8">09 · 两段上下文，合成一次完整 attention</option><option value="9">10 · Decode 可以按请求分配 owner</option><option value="10">11 · 历史分片需要看到对应的全部 Q</option><option value="11">12 · DCP 在已有参与者之间组织分片</option><option value="12">13 · 沿着三条线，读懂上下文并行</option></select><button id="next" aria-label="下一页">→</button><button id="reading" aria-pressed="false">连续阅读</button><button id="sources-button">源码索引</button><button id="fullscreen">全屏</button></div></nav>
+<main id="slides"><section class="slide" id="start" aria-labelledby="title-0" data-index="0">
+ <header class="slide-heading"><p class="eyebrow">CONTEXT PARALLEL / 01</p><h1 id="title-0">让长上下文协同计算</h1><p class="lead">PCP 分配本轮 token 的工作，DCP 分担 KV 序列的存储与读取。</p></header>
+ <div class="diagram-mount" data-graph="opening"></div>
+ <ul class="takeaways"><li>主线：普通 GQA attention</li><li>代码快照：2026-10-22</li><li>点击任意图块或箭头，查看固定版本源码</li></ul>
+ <footer class="slide-footer"><span>Ascend · ModelRunnerV2 · GQA</span><span>01 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>今天先回答两件事：谁负责本轮 token 的计算，谁负责保存和读取 KV。我们沿 Ascend ModelRunnerV2 的普通 GQA 路径展开。图里的 rank 是通信组中的参与进程；张量形状省略 batch 与部分模型维度。PCP、DCP 的名称来自各自主要目标，但执行时也需要处理另一阶段。</p></details>
+</section><section class="slide" id="attention" aria-labelledby="title-1" data-index="1">
+ <header class="slide-heading"><p class="eyebrow">建立直觉 / 02</p><h1 id="title-1">切分工作，保留可见范围</h1><p class="lead">对位置 t 的 query，最终结果仍要覆盖该请求从开头到 t 的全部可见 KV。</p></header>
+ <div class="diagram-mount" data-graph="visibility"></div>
+ <ul class="takeaways"><li>Q 决定要算哪个位置</li><li>K/V 提供该位置能看到的上下文</li><li>并行后，完整可见范围由所有参与者共同覆盖</li></ul>
+ <footer class="slide-footer"><span>Ascend · ModelRunnerV2 · GQA</span><span>02 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>以标准因果 GQA 为例，当前位置也参与 attention。PCP 从 query 的工作分工入手；DCP 从 KV 的保存和读取分工入手。图展示的是一个 query/head 的语义，GQA 的多个 query heads 可以共享 KV heads。</p></details>
+</section><section class="slide" id="runner" aria-labelledby="title-2" data-index="2">
+ <header class="slide-heading"><p class="eyebrow">框架视角 / 03</p><h1 id="title-2">一份逻辑批次，两种执行视图</h1><p class="lead">ModelRunnerV2 维护全局请求语义，并将计算组织成各 rank 的本地布局。</p></header>
+ <div class="diagram-mount" data-graph="runner-contract"></div>
+ <ul class="takeaways"><li>全局位置：模型看到 token 的原始位置</li><li>本地布局：设备只执行分配给它的工作</li><li>出口顺序：结果重新对应正确请求</li></ul>
+ <footer class="slide-footer"><span>Ascend · ModelRunnerV2 · GQA</span><span>03 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>框架的关键职责是保存全局到局部、局部到全局的对应关系。Padding 用于满足执行形状，但不应进入有效 KV 或采样结果。图回放也必须保持当前批次的有效长度、位置与映射正确。恢复的是采样所需的隐藏状态与批次对应关系，不要求各 rank 生成一份独立且不同的采样。</p></details>
+</section><section class="slide" id="split" aria-labelledby="title-3" data-index="3">
+ <header class="slide-heading"><p class="eyebrow">PCP / 04</p><h1 id="title-3">首尾配对，平衡因果工作量</h1><p class="lead">较晚的 query 能看到更多 KV；把前段与后段搭配，能让两个 rank 的工作更接近。</p></header>
+ <div class="diagram-mount" data-graph="dual-chunk"></div>
+ <ul class="takeaways"><li>示例：PCP=2，DCP=1；单请求、无历史前缀</li><li>每段 2 token：有效因果配对数依次为 3、7、11、15</li><li>实际耗时还受长度、padding、内核与通信影响</li></ul>
+ <footer class="slide-footer"><span>示例：PCP=2 · DCP=1 · 8 tokens</span><span>04 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>token 0 至 7 分别能看到 1 至 8 个 key，因此四段的配对数是 1+2、3+4、5+6、7+8。首尾配对后两边都是 18。这里统计的是稠密因果 attention 的有效配对数，不是实测内核运行时间。当前 chunk 的分段、历史前缀、短请求以及组合 DCP 配置会影响实际布局。</p></details>
+</section><section class="slide" id="pcp-prefill" aria-labelledby="title-4" data-index="4">
+ <header class="slide-heading"><p class="eyebrow">PCP / 05</p><h1 id="title-4">Q 保持本地，KV 通过通信补齐</h1><p class="lead">每个 rank 计算自己的 query；所需 KV 通过交换、缓存位置与索引获得正确的逻辑可见性。</p></header>
+ <div class="diagram-mount" data-graph="pcp-prefill"></div>
+ <ul class="takeaways"><li>形状示例：N=8；Hq / Hkv 为本地头数，d 为头维度</li><li>通信缓冲区可按 rank 拼接，逻辑顺序由元数据表达</li><li>模型出口再恢复 token 顺序</li></ul>
+ <footer class="slide-footer"><span>示例：PCP=2 · DCP=1 · GQA</span><span>05 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>延续上一页 PCP=2、DCP=1 的例子。每个 rank 投影并处理自己负责的四个 token。KV gather 的物理排列可以是 rank 拼接顺序；缓存 slot 或后续索引负责让 query 看见正确的逻辑 token。Q 保持本地这一描述针对本页 PCP 单独开启的路径。结合 DCP 的历史 attention 路径还可能传输 Q，后面会展开。</p></details>
+</section><section class="slide" id="cache-ownership" aria-labelledby="title-5" data-index="5">
+ <header class="slide-heading"><p class="eyebrow">缓存视角 / 06</p><h1 id="title-5">通信得到的 KV，要按归属保存</h1><p class="lead">本轮计算如何交换 KV，与缓存按什么归属保存 KV，是两项需要配合的职责。</p></header>
+ <div class="diagram-mount" data-graph="cache-ownership"></div>
+ <ul class="takeaways"><li>PCP 的主要收益来自计算分工</li><li>DCP 提供 KV 序列的分片存储与并行读取</li><li>图中两个出口代表不同配置</li></ul>
+ <footer class="slide-footer"><span>Ascend · ModelRunnerV2 · GQA</span><span>06 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>在普通 GQA 路径中，单独开启 PCP 会将各 owner 生成的当前 KV 交换回来，保留同一 TP 头范围上的完整序列副本。DCP 通过缓存映射决定本 rank 负责哪些 KV token。KV 写入可以发生在 attention 读取之前；分片描述的是所有权与可见区间，不是强制的先算后存时序。</p></details>
+</section><section class="slide" id="dcp-decode" aria-labelledby="title-6" data-index="6">
+ <header class="slide-heading"><p class="eyebrow">DCP / 07</p><h1 id="title-6">同一个 query，读取不同 KV 分片</h1><p class="lead">每个 rank 计算同一 query/head 在自己 KV 子集上的贡献，再合成完整输出。</p></header>
+ <div class="diagram-mount" data-graph="dcp-flow"></div>
+ <ul class="takeaways"><li>示例：PCP=1，TP=2，DCP=2；两个 rank 复用 TP 资源</li><li>KV 子集覆盖完整可见范围，各 token 只贡献一次</li><li>图中展示普通单 token decode 的完整 KV 路径</li></ul>
+ <footer class="slide-footer"><span>示例：PCP=1 · TP=2 · DCP=2</span><span>07 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>DCP=2 在本例复用 TP 的两个 ranks。跨 rank 传递的是计算需要的 query heads，而不是必然广播所有模型 heads。各 rank 的 KV 子集通常按配置的交错粒度分布，图示不承诺连续前半段、后半段。普通单 token decode 可用一次本地 attention 读取含当前位置的本地 KV；多 query 或投机场景也可能采用历史与当前拆分路径。</p></details>
+</section><section class="slide" id="lse" aria-labelledby="title-7" data-index="7">
+ <header class="slide-heading"><p class="eyebrow">DCP / 08</p><h1 id="title-7">用 LSE 找回正确权重</h1><p class="lead">局部输出已经各自归一化；合并时还要恢复每个 KV 子集在全局分母中的份额。</p></header>
+ <div class="diagram-mount" data-graph="lse-merge"></div>
+ <p class="formula" aria-label="LSE 合并公式">L = log ∑ᵢ exp(LSEᵢ)　　O = ∑ᵢ exp(LSEᵢ − L) · Oᵢ</p><ul class="takeaways"><li>同一 query/head、相同打分尺度与可见性规则</li><li>KV 子集互不重叠，并覆盖目标可见范围</li><li>空分片：O=0，LSE=−∞；与有效分支合并时权重为 0</li></ul>
+ <footer class="slide-footer"><span>Ascend · ModelRunnerV2 · GQA</span><span>08 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>LSE 是当前 query/head 在该 KV 子集上的 softmax 分母的对数。O_i 是局部已归一化输出。数值例子使用标量输出帮助理解；真实输出是向量。实现用数值稳定的方式处理指数。全部历史分片为空时，需与有效当前分支一起处理，不能直接对全为负无穷的集合做未保护的归一化。</p></details>
+</section><section class="slide" id="chunked-prefill" aria-labelledby="title-8" data-index="8">
+ <header class="slide-heading"><p class="eyebrow">历史与当前 / 09</p><h1 id="title-8">两段上下文，合成一次完整 attention</h1><p class="lead">Chunked prefill 的 query 同时读取历史前缀和当前 chunk 的因果可见部分。</p></header>
+ <div class="diagram-mount" data-graph="history-current"></div>
+ <ul class="takeaways"><li>H：此前已处理的 token 数；C：本轮 chunk 的 token 数</li><li>参与合并的历史与当前逻辑区间互不重叠</li><li>对同一输出 query/head，当前区间贡献只计一次</li></ul>
+ <footer class="slide-footer"><span>Ascend · ModelRunnerV2 · GQA</span><span>09 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>历史 token 均早于当前 chunk 的 query，因此历史分支读取其完整历史子集；当前分支保留因果掩码。这条区间规则约束计算贡献，而不是物理 cache 是否已经存有当前 KV。当前分支可以在不同 rank 上为各自负责的 query/head 计算，关键是在同一最终输出的归约中仅计一次。</p></details>
+</section><section class="slide" id="pcp-decode" aria-labelledby="title-9" data-index="9">
+ <header class="slide-heading"><p class="eyebrow">PCP 的另一阶段 / 10</p><h1 id="title-9">Decode 可以按请求分配 owner</h1><p class="lead">在 PCP&gt;1、DCP=1 的 Ascend 路径中，每步按请求分工，再汇集 KV 并恢复结果顺序。</p></header>
+ <div class="diagram-mount" data-graph="decode-owner"></div>
+ <ul class="takeaways"><li>owner 由本步的 decode 请求顺序决定，可以随步骤改变</li><li>KV 副本与结果恢复支持下一步重新分配</li><li>叠加 DCP 时，参与者需要共同访问分片 KV</li></ul>
+ <footer class="slide-footer"><span>适用范围：PCP&gt;1 · DCP=1</span><span>10 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>此页明确限定 PCP&gt;1、DCP=1。框架按本轮有效 decode 请求的序号轮转分配 owner，无需永久绑定 rank。示例为普通单 token decode，实际策略同样覆盖投机解码的多 token 验证。一旦同时开启 DCP，同一请求的 query 需分发到各 KV 分片参与者上协同计算。</p></details>
+</section><section class="slide" id="combined" aria-labelledby="title-10" data-index="10">
+ <header class="slide-heading"><p class="eyebrow">组合模式 / 11</p><h1 id="title-10">历史分片需要看到对应的全部 Q</h1><p class="lead">PCP+DCP 的 prefill 历史路径先补齐 query，再计算各 KV 分片，最后取回本地 query 的结果。</p></header>
+ <div class="diagram-mount" data-graph="combined-path"></div>
+ <ul class="takeaways"><li>本地 Q 的工作归属与历史 KV 的保存归属需要同时对齐</li><li>query 的额外通信服务于历史分片计算</li><li>最终输出仍对应本 rank 的本地 query</li></ul>
+ <footer class="slide-footer"><span>Ascend · ModelRunnerV2 · GQA</span><span>11 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>这一页避免把 PCP 单独开启时的 Q 留本地泛化。组合模式中，历史分支先在 PCP token 维汇集 query 并恢复逻辑排列，然后按需要补齐独立的 query heads。各 KV 分片算完后交换部分结果，再选择本地 query 对应的历史贡献，并与当前因果分支合并。</p></details>
+</section><section class="slide" id="topology" aria-labelledby="title-11" data-index="11">
+ <header class="slide-heading"><p class="eyebrow">配置视角 / 12</p><h1 id="title-11">DCP 在已有参与者之间组织分片</h1><p class="lead">在这个代码版本中，PCP 启用后，DCP 可覆盖 PCP 轴，或覆盖整个 TP×PCP 域。</p></header>
+ <div class="diagram-mount" data-graph="groups"></div>
+ <ul class="takeaways"><li>PCP=1 时：DCP 复用 TP ranks，DCP 大小需整除 TP</li><li>DCP 的大小描述分片协作组，不额外乘一套独立设备</li><li>合法的组大小仍需满足具体模型、后端与运行模式约束</li></ul>
+ <footer class="slide-footer"><span>Ascend · ModelRunnerV2 · GQA</span><span>12 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>将 PCP 与 DCP 理解成两项分工，而不是两个必然正交、设备数直接相乘的维度。本页的组大小约束来自固定版本配置校验；实际拓扑构造先跨 PCP 再跨 TP。组大小满足这里的规则，只是配置条件之一，不代表所有模型、KV 格式和后端都支持相同组合。</p></details>
+</section><section class="slide" id="wrap" aria-labelledby="title-12" data-index="12">
+ <header class="slide-heading"><p class="eyebrow">回到工程 / 13</p><h1 id="title-12">沿着三条线，读懂上下文并行</h1><p class="lead">追踪 query 的工作归属、KV 的保存归属，以及输出的归一化与顺序，就能理解整条路径。</p></header>
+ <div class="diagram-mount" data-graph="recap"></div>
+ <ul class="takeaways"><li>收益：更多计算与 KV 访问可以并行进行</li><li>代价：KV / Q / 输出通信，以及负载与 padding 开销</li><li>选型依据：真实长度分布、并发、内存和端到端测量</li></ul>
+ <footer class="slide-footer"><span>Ascend · ModelRunnerV2 · GQA</span><span>13 / 13</span></footer>
+ <details class="speaker-notes"><summary>讲解备注</summary><p>性能取决于实际序列长度、前缀命中、并发、TP/PCP/DCP 组合、通信带宽和内核行为。本次产物做机制与代码一致性核对，未运行硬件性能实验。评估时可同时观察 prefill 延迟、每 token 延迟、吞吐和 KV 内存，并分析通信与计算是否有效重叠。</p></details>
+</section></main>
+<p class="deck-hint">← → 翻页 · 点击图块 / 箭头查看源码 · 编辑布局后可导出</p><div class="deck-progress" aria-hidden="true"><span id="progress"></span></div>
+<dialog id="source-dialog" aria-labelledby="source-heading"><div class="dialog-heading"><h2 id="source-heading">固定版本 · 源码索引</h2><button id="close-sources" aria-label="关闭源码索引">关闭</button></div><p>讲解范围：Ascend ModelRunnerV2 · 普通 GQA attention</p><div class="baseline"><a href="https://github.com/vllm-project/vllm/tree/a98247ab4db686ee03c66d5feb3c761e52a2f8ab" target="_blank" rel="noopener noreferrer">vLLM · a98247ab4db6</a><a href="https://github.com/vllm-project/vllm-ascend/tree/3b433e2f027ceb47897a1343ce01174c077d5e1f" target="_blank" rel="noopener noreferrer">vllm-ascend · 3b433e2f027c</a></div><p class="index-help">图块与箭头指向其语义对应的实现区间。数值例子用于解释原理，形状与通信细节按具体配置变化。</p><ul class="source-list"><li><a href="https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L434-L490" target="_blank" rel="noopener noreferrer">全局批次到本地 token 布局</a><span>vllm · a98247ab</span></li><li><a href="https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L222-L282" target="_blank" rel="noopener noreferrer">请求复制政策与首尾配对切分</a><span>vllm · a98247ab</span></li><li><a href="https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L773-L828" target="_blank" rel="noopener noreferrer">汇集隐藏状态并恢复采样顺序</a><span>vllm · a98247ab</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/worker/v2/model_runner.py#L1034-L1067" target="_blank" rel="noopener noreferrer">ModelRunnerV2 输入与 PCP 接入</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/worker/v2/pcp_manager.py#L773-L807" target="_blank" rel="noopener noreferrer">全局与局部 attention 视图</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/worker/v2/pcp_manager.py#L221-L269" target="_blank" rel="noopener noreferrer">PCP 单独开启时的 decode owner</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L12-L53" target="_blank" rel="noopener noreferrer">请求分片与历史/当前拆分政策</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/attention/ops/pcp.py#L11-L66" target="_blank" rel="noopener noreferrer">本轮 KV 的 PCP 交换与 slot 对齐</a><span>vllm · a98247ab</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/attention_v1.py#L1210-L1284" target="_blank" rel="noopener noreferrer">按归属写入 KV cache</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/attention_v1.py#L1310-L1376" target="_blank" rel="noopener noreferrer">GQA 的输入、缓存与 attention 调用</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L745-L771" target="_blank" rel="noopener noreferrer">通信布局对应的缓存写入位置</a><span>vllm · a98247ab</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L590-L629" target="_blank" rel="noopener noreferrer">当前 KV 的因果 attention</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L544-L588" target="_blank" rel="noopener noreferrer">历史 KV 分片的局部 attention</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L180-L210" target="_blank" rel="noopener noreferrer">传输所需 query heads</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L213-L243" target="_blank" rel="noopener noreferrer">交换部分输出与 LSE</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L324-L335" target="_blank" rel="noopener noreferrer">LSE 加权合并的数学定义</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L471-L529" target="_blank" rel="noopener noreferrer">Decode 的完整 KV 或历史/当前路径</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L531-L542" target="_blank" rel="noopener noreferrer">组合模式下恢复历史分支的 query</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L652-L712" target="_blank" rel="noopener noreferrer">合并历史与当前的贡献</a><span>vllm-ascend · 3b433e2f</span></li><li><a href="https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/distributed/parallel_state.py#L2216-L2251" target="_blank" rel="noopener noreferrer">PCP 与 DCP 通信组布局</a><span>vllm · a98247ab</span></li><li><a href="https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/config/parallel.py#L585-L598" target="_blank" rel="noopener noreferrer">PCP/DCP 组合配置边界</a><span>vllm · a98247ab</span></li><li><a href="https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/model_runner.py#L2091-L2127" target="_blank" rel="noopener noreferrer">模型输出衔接全局采样批次</a><span>vllm · a98247ab</span></li></ul></dialog>
+<script id="deck-data" type="application/json">{"deck": {"title": "vLLM PCP & DCP", "subtitle": "从框架视图到 attention 数据流", "baseline": {"vllm": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab", "vllm-ascend": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "cp-viz": "ee9ba66575fa78b66d14c5a0aa4b2d139d757d8c", "date": "2026-10-22"}, "slides": [{"id": "start", "kicker": "CONTEXT PARALLEL / 01", "title": "让长上下文协同计算", "lead": "PCP 分配本轮 token 的工作，DCP 分担 KV 序列的存储与读取。", "graph": {"id": "opening", "width": 1080, "height": 430, "nodes": [{"id": "work", "x": 35, "y": 55, "w": 275, "h": 105, "label": "PCP · 谁来计算", "detail": "将本轮 token 分配给不同 rank", "kind": "tensor", "source": "split"}, {"id": "memory", "x": 35, "y": 255, "w": 275, "h": 105, "label": "DCP · 谁保存 KV", "detail": "每个 rank 负责部分 KV 序列", "kind": "cache", "source": "decode"}, {"id": "attention", "x": 445, "y": 155, "w": 265, "h": 110, "label": "共同完成 attention", "detail": "保留每个 query 的完整可见范围", "kind": "op", "source": "chunked"}, {"id": "out", "x": 840, "y": 165, "w": 205, "h": 92, "label": "得到正确输出", "detail": "对应原请求、原位置", "kind": "result", "source": "restore"}], "edges": [{"id": "a", "to": "attention", "label": "切分的 Q", "source": "partition", "fromPort": "right", "toPort": "left", "from": "work"}, {"id": "b", "to": "attention", "label": "KV 分片", "source": "history", "fromPort": "right", "toPort": "left", "from": "memory"}, {"id": "c", "to": "out", "label": "组合与还原", "source": "restore", "fromPort": "right", "toPort": "left", "from": "attention"}]}, "points": ["主线：普通 GQA attention", "代码快照：2026-10-22", "点击任意图块或箭头，查看固定版本源码"], "notes": "今天先回答两件事：谁负责本轮 token 的计算，谁负责保存和读取 KV。我们沿 Ascend ModelRunnerV2 的普通 GQA 路径展开。图里的 rank 是通信组中的参与进程；张量形状省略 batch 与部分模型维度。PCP、DCP 的名称来自各自主要目标，但执行时也需要处理另一阶段。", "scope": "Ascend · ModelRunnerV2 · GQA", "formula": null}, {"id": "attention", "kicker": "建立直觉 / 02", "title": "切分工作，保留可见范围", "lead": "对位置 t 的 query，最终结果仍要覆盖该请求从开头到 t 的全部可见 KV。", "graph": {"id": "visibility", "width": 1080, "height": 430, "nodes": [{"id": "q", "x": 35, "y": 165, "w": 210, "h": 92, "label": "Q：位置 t 的提问", "detail": "一个 query，对应一个位置", "kind": "tensor", "source": "gqa"}, {"id": "kv", "x": 365, "y": 40, "w": 275, "h": 100, "label": "可见 K / V", "detail": "位置 0 … t；包含当前位置", "kind": "cache", "source": "decode"}, {"id": "attn", "x": 365, "y": 260, "w": 275, "h": 100, "label": "打分 → 归一化 → 加权", "detail": "各 query head 得到自己的输出", "kind": "op", "source": "merge"}, {"id": "o", "x": 810, "y": 165, "w": 210, "h": 92, "label": "O：位置 t 的输出", "detail": "顺序与语义保持一致", "kind": "result", "source": "restore"}], "edges": [{"id": "a", "to": "attn", "label": "Q", "source": "gqa", "fromPort": "right", "toPort": "left", "from": "q"}, {"id": "b", "to": "attn", "label": "因果可见", "source": "current", "fromPort": "bottom", "toPort": "top", "from": "kv"}, {"id": "c", "to": "o", "label": "归一化结果", "source": "merge", "fromPort": "right", "toPort": "left", "from": "attn"}]}, "points": ["Q 决定要算哪个位置", "K/V 提供该位置能看到的上下文", "并行后，完整可见范围由所有参与者共同覆盖"], "notes": "以标准因果 GQA 为例，当前位置也参与 attention。PCP 从 query 的工作分工入手；DCP 从 KV 的保存和读取分工入手。图展示的是一个 query/head 的语义，GQA 的多个 query heads 可以共享 KV heads。", "scope": "Ascend · ModelRunnerV2 · GQA", "formula": null}, {"id": "runner", "kicker": "框架视角 / 03", "title": "一份逻辑批次，两种执行视图", "lead": "ModelRunnerV2 维护全局请求语义，并将计算组织成各 rank 的本地布局。", "graph": {"id": "runner-contract", "width": 1080, "height": 430, "nodes": [{"id": "schedule", "x": 25, "y": 50, "w": 240, "h": 90, "label": "调度批次", "detail": "请求、token、全局位置", "kind": "tensor", "source": "runner"}, {"id": "map", "x": 420, "y": 50, "w": 240, "h": 90, "label": "划分本地工作", "detail": "记录有效长度与对应关系", "kind": "op", "source": "partition"}, {"id": "local", "x": 815, "y": 50, "w": 240, "h": 90, "label": "本地前向计算", "detail": "Q / K / V 与本地元数据", "kind": "tensor", "source": "context"}, {"id": "sample", "x": 25, "y": 290, "w": 240, "h": 90, "label": "采样与下一步", "detail": "仍对应原来的请求", "kind": "result", "source": "upstream_runner"}, {"id": "restore", "x": 420, "y": 290, "w": 240, "h": 90, "label": "汇集并恢复顺序", "detail": "用映射找回正确 token", "kind": "op", "source": "restore"}, {"id": "hidden", "x": 815, "y": 290, "w": 240, "h": 90, "label": "本地隐藏状态", "detail": "各 rank 持有自己的结果", "kind": "tensor", "source": "restore"}], "edges": [{"id": "a", "to": "map", "label": "分配", "source": "partition", "fromPort": "right", "toPort": "left", "from": "schedule"}, {"id": "b", "to": "local", "label": "带上位置", "source": "runner", "fromPort": "right", "toPort": "left", "from": "map"}, {"id": "c", "to": "hidden", "label": "逐层计算", "source": "gqa", "fromPort": "bottom", "toPort": "top", "from": "local"}, {"id": "d", "to": "restore", "label": "汇集", "source": "restore", "fromPort": "left", "toPort": "right", "from": "hidden"}, {"id": "f", "to": "sample", "label": "恢复对应", "source": "restore", "fromPort": "left", "toPort": "right", "from": "restore"}]}, "points": ["全局位置：模型看到 token 的原始位置", "本地布局：设备只执行分配给它的工作", "出口顺序：结果重新对应正确请求"], "notes": "框架的关键职责是保存全局到局部、局部到全局的对应关系。Padding 用于满足执行形状，但不应进入有效 KV 或采样结果。图回放也必须保持当前批次的有效长度、位置与映射正确。恢复的是采样所需的隐藏状态与批次对应关系，不要求各 rank 生成一份独立且不同的采样。", "scope": "Ascend · ModelRunnerV2 · GQA", "formula": null}, {"id": "split", "kicker": "PCP / 04", "title": "首尾配对，平衡因果工作量", "lead": "较晚的 query 能看到更多 KV；把前段与后段搭配，能让两个 rank 的工作更接近。", "graph": {"id": "dual-chunk", "width": 1080, "height": 430, "nodes": [{"id": "input", "x": 25, "y": 155, "w": 260, "h": 115, "label": "8 个 token → 4 段", "detail": "① 0–1　② 2–3\n③ 4–5　④ 6–7", "kind": "tensor", "source": "split"}, {"id": "assign", "x": 425, "y": 165, "w": 230, "h": 95, "label": "首尾配对", "detail": "保留每个 token 的全局位置", "kind": "op", "source": "owner"}, {"id": "r0", "x": 825, "y": 35, "w": 235, "h": 100, "label": "Rank 0：① + ④", "detail": "因果配对数：3 + 15 = 18", "kind": "result", "source": "owner"}, {"id": "r1", "x": 825, "y": 285, "w": 235, "h": 100, "label": "Rank 1：② + ③", "detail": "因果配对数：7 + 11 = 18", "kind": "result", "source": "owner"}], "edges": [{"id": "a", "to": "assign", "label": "分配 query", "source": "split", "fromPort": "right", "toPort": "left", "from": "input"}, {"id": "b", "to": "r0", "label": "首段 + 尾段", "source": "owner", "fromPort": "right", "toPort": "left", "from": "assign"}, {"id": "c", "to": "r1", "label": "两个中段", "source": "owner", "fromPort": "right", "toPort": "left", "from": "assign"}]}, "points": ["示例：PCP=2，DCP=1；单请求、无历史前缀", "每段 2 token：有效因果配对数依次为 3、7、11、15", "实际耗时还受长度、padding、内核与通信影响"], "notes": "token 0 至 7 分别能看到 1 至 8 个 key，因此四段的配对数是 1+2、3+4、5+6、7+8。首尾配对后两边都是 18。这里统计的是稠密因果 attention 的有效配对数，不是实测内核运行时间。当前 chunk 的分段、历史前缀、短请求以及组合 DCP 配置会影响实际布局。", "scope": "示例：PCP=2 · DCP=1 · 8 tokens", "formula": null}, {"id": "pcp-prefill", "kicker": "PCP / 05", "title": "Q 保持本地，KV 通过通信补齐", "lead": "每个 rank 计算自己的 query；所需 KV 通过交换、缓存位置与索引获得正确的逻辑可见性。", "graph": {"id": "pcp-prefill", "width": 1080, "height": 430, "nodes": [{"id": "q", "x": 25, "y": 30, "w": 210, "h": 85, "label": "本地 Q", "detail": "4 × Hq × d", "kind": "tensor", "source": "gqa"}, {"id": "kv", "x": 25, "y": 285, "w": 210, "h": 85, "label": "本地 K / V", "detail": "4 × Hkv × d", "kind": "tensor", "source": "gather"}, {"id": "gather", "x": 420, "y": 285, "w": 260, "h": 85, "label": "PCP 交换 KV", "detail": "汇集各 rank 的当前 token", "kind": "op", "source": "gather"}, {"id": "cache", "x": 815, "y": 285, "w": 260, "h": 85, "label": "映射逻辑可见 KV", "detail": "靠槽位或索引对齐逻辑位置", "kind": "cache", "source": "cache"}, {"id": "attn", "x": 420, "y": 30, "w": 260, "h": 85, "label": "本地因果 attention", "detail": "4 个 query → 4 个输出", "kind": "op", "source": "gqa"}, {"id": "result", "x": 815, "y": 30, "w": 260, "h": 85, "label": "本地输出 O", "detail": "4 × Hq × d", "kind": "result", "source": "gqa"}], "edges": [{"id": "a", "to": "gather", "label": "All-gather", "source": "gather", "fromPort": "right", "toPort": "left", "from": "kv"}, {"id": "b", "to": "cache", "label": "位置映射", "source": "slots", "fromPort": "right", "toPort": "left", "from": "gather"}, {"id": "c", "to": "attn", "label": "可见 KV", "source": "gqa", "fromPort": "top", "toPort": "bottom", "from": "cache"}, {"id": "d", "to": "attn", "label": "本地 Q", "source": "gqa", "fromPort": "right", "toPort": "left", "from": "q"}, {"id": "f", "to": "result", "label": "O", "source": "gqa", "fromPort": "right", "toPort": "left", "from": "attn"}]}, "points": ["形状示例：N=8；Hq / Hkv 为本地头数，d 为头维度", "通信缓冲区可按 rank 拼接，逻辑顺序由元数据表达", "模型出口再恢复 token 顺序"], "notes": "延续上一页 PCP=2、DCP=1 的例子。每个 rank 投影并处理自己负责的四个 token。KV gather 的物理排列可以是 rank 拼接顺序；缓存 slot 或后续索引负责让 query 看见正确的逻辑 token。Q 保持本地这一描述针对本页 PCP 单独开启的路径。结合 DCP 的历史 attention 路径还可能传输 Q，后面会展开。", "scope": "示例：PCP=2 · DCP=1 · GQA", "formula": null}, {"id": "cache-ownership", "kicker": "缓存视角 / 06", "title": "通信得到的 KV，要按归属保存", "lead": "本轮计算如何交换 KV，与缓存按什么归属保存 KV，是两项需要配合的职责。", "graph": {"id": "cache-ownership", "width": 1080, "height": 430, "nodes": [{"id": "gather", "x": 25, "y": 165, "w": 230, "h": 95, "label": "本轮 KV 集合", "detail": "通信得到可用数据", "kind": "tensor", "source": "gather"}, {"id": "slots", "x": 405, "y": 165, "w": 255, "h": 95, "label": "按 slot 与有效性写入", "detail": "逻辑位置 → 本地缓存位置", "kind": "op", "source": "slots"}, {"id": "pcp", "x": 800, "y": 35, "w": 255, "h": 120, "label": "PCP 单独开启", "detail": "普通 GQA：PCP ranks 保有\n对应 TP 头分片的 KV 副本", "kind": "cache", "source": "gather"}, {"id": "dcp", "x": 800, "y": 280, "w": 255, "h": 120, "label": "采用 DCP 分片", "detail": "每个 rank 保存属于它的\nKV 序列部分", "kind": "cache", "source": "cache"}], "edges": [{"id": "a", "to": "slots", "label": "匹配位置", "source": "cache", "fromPort": "right", "toPort": "left", "from": "gather"}, {"id": "b", "to": "pcp", "label": "DCP=1", "source": "gather", "fromPort": "right", "toPort": "left", "from": "slots"}, {"id": "c", "to": "dcp", "label": "DCP>1", "source": "slots", "fromPort": "right", "toPort": "left", "from": "slots"}]}, "points": ["PCP 的主要收益来自计算分工", "DCP 提供 KV 序列的分片存储与并行读取", "图中两个出口代表不同配置"], "notes": "在普通 GQA 路径中，单独开启 PCP 会将各 owner 生成的当前 KV 交换回来，保留同一 TP 头范围上的完整序列副本。DCP 通过缓存映射决定本 rank 负责哪些 KV token。KV 写入可以发生在 attention 读取之前；分片描述的是所有权与可见区间，不是强制的先算后存时序。", "scope": "Ascend · ModelRunnerV2 · GQA", "formula": null}, {"id": "dcp-decode", "kicker": "DCP / 07", "title": "同一个 query，读取不同 KV 分片", "lead": "每个 rank 计算同一 query/head 在自己 KV 子集上的贡献，再合成完整输出。", "graph": {"id": "dcp-flow", "width": 1080, "height": 440, "nodes": [{"id": "q", "x": 20, "y": 165, "w": 205, "h": 95, "label": "当前 Q", "detail": "传输所需 query heads", "kind": "tensor", "source": "query"}, {"id": "kv0", "x": 350, "y": 10, "w": 250, "h": 80, "label": "Rank 0 的 KV 子集", "detail": "含属于它的当前位置 KV", "kind": "cache", "source": "decode"}, {"id": "kv1", "x": 350, "y": 345, "w": 250, "h": 80, "label": "Rank 1 的 KV 子集", "detail": "按逻辑位置交错分配", "kind": "cache", "source": "decode"}, {"id": "a0", "x": 350, "y": 125, "w": 250, "h": 80, "label": "局部 attention 0", "detail": "O₀ 与 LSE₀", "kind": "op", "source": "decode"}, {"id": "a1", "x": 350, "y": 230, "w": 250, "h": 80, "label": "局部 attention 1", "detail": "O₁ 与 LSE₁", "kind": "op", "source": "decode"}, {"id": "merge", "x": 800, "y": 165, "w": 255, "h": 95, "label": "交换并加权合并", "detail": "完整 query/head 的输出 O", "kind": "result", "source": "exchange"}], "edges": [{"id": "a", "to": "a0", "label": "Q / heads", "source": "query", "fromPort": "right", "toPort": "left", "from": "q"}, {"id": "b", "to": "a1", "label": "Q / heads", "source": "query", "fromPort": "right", "toPort": "left", "from": "q"}, {"id": "c", "to": "a0", "label": "读取", "source": "decode", "fromPort": "bottom", "toPort": "top", "from": "kv0"}, {"id": "d", "to": "a1", "label": "读取", "source": "decode", "fromPort": "top", "toPort": "bottom", "from": "kv1"}, {"id": "f", "to": "merge", "label": "O₀, LSE₀", "source": "exchange", "fromPort": "right", "toPort": "left", "from": "a0"}, {"id": "g", "to": "merge", "label": "O₁, LSE₁", "source": "exchange", "fromPort": "right", "toPort": "left", "from": "a1"}]}, "points": ["示例：PCP=1，TP=2，DCP=2；两个 rank 复用 TP 资源", "KV 子集覆盖完整可见范围，各 token 只贡献一次", "图中展示普通单 token decode 的完整 KV 路径"], "notes": "DCP=2 在本例复用 TP 的两个 ranks。跨 rank 传递的是计算需要的 query heads，而不是必然广播所有模型 heads。各 rank 的 KV 子集通常按配置的交错粒度分布，图示不承诺连续前半段、后半段。普通单 token decode 可用一次本地 attention 读取含当前位置的本地 KV；多 query 或投机场景也可能采用历史与当前拆分路径。", "scope": "示例：PCP=1 · TP=2 · DCP=2", "formula": null}, {"id": "lse", "kicker": "DCP / 08", "title": "用 LSE 找回正确权重", "lead": "局部输出已经各自归一化；合并时还要恢复每个 KV 子集在全局分母中的份额。", "graph": {"id": "lse-merge", "width": 1080, "height": 370, "nodes": [{"id": "a", "x": 25, "y": 35, "w": 275, "h": 100, "label": "分片 A", "detail": "O₀ = 10；exp(LSE₀) = 2", "kind": "tensor", "source": "merge"}, {"id": "b", "x": 25, "y": 245, "w": 275, "h": 100, "label": "分片 B", "detail": "O₁ = 30；exp(LSE₁) = 6", "kind": "tensor", "source": "merge"}, {"id": "m", "x": 470, "y": 135, "w": 245, "h": 105, "label": "按分母质量加权", "detail": "A 占 1/4；B 占 3/4", "kind": "op", "source": "merge"}, {"id": "o", "x": 850, "y": 135, "w": 205, "h": 105, "label": "完整输出 = 25", "detail": "¼ × 10 + ¾ × 30", "kind": "result", "source": "merge"}], "edges": [{"id": "a", "to": "m", "label": "O₀, LSE₀", "source": "merge", "fromPort": "right", "toPort": "left", "from": "a"}, {"id": "b", "to": "m", "label": "O₁, LSE₁", "source": "merge", "fromPort": "right", "toPort": "left", "from": "b"}, {"id": "c", "to": "o", "label": "合并", "source": "merge", "fromPort": "right", "toPort": "left", "from": "m"}]}, "points": ["同一 query/head、相同打分尺度与可见性规则", "KV 子集互不重叠，并覆盖目标可见范围", "空分片：O=0，LSE=−∞；与有效分支合并时权重为 0"], "notes": "LSE 是当前 query/head 在该 KV 子集上的 softmax 分母的对数。O_i 是局部已归一化输出。数值例子使用标量输出帮助理解；真实输出是向量。实现用数值稳定的方式处理指数。全部历史分片为空时，需与有效当前分支一起处理，不能直接对全为负无穷的集合做未保护的归一化。", "scope": "Ascend · ModelRunnerV2 · GQA", "formula": "L = log ∑ᵢ exp(LSEᵢ)　　O = ∑ᵢ exp(LSEᵢ − L) · Oᵢ"}, {"id": "chunked-prefill", "kicker": "历史与当前 / 09", "title": "两段上下文，合成一次完整 attention", "lead": "Chunked prefill 的 query 同时读取历史前缀和当前 chunk 的因果可见部分。", "graph": {"id": "history-current", "width": 1080, "height": 430, "nodes": [{"id": "q", "x": 20, "y": 165, "w": 220, "h": 100, "label": "当前 chunk 的 Q", "detail": "位置 H … H+C−1", "kind": "tensor", "source": "chunked"}, {"id": "history", "x": 400, "y": 30, "w": 290, "h": 125, "label": "历史分支", "detail": "KV 逻辑位置 [0, H)\n每个 DCP rank 算自己的子集", "kind": "cache", "source": "history"}, {"id": "current", "x": 400, "y": 275, "w": 290, "h": 125, "label": "当前分支", "detail": "KV 逻辑位置 [H, H+C)\n每个 query 只看至自身位置", "kind": "tensor", "source": "current"}, {"id": "out", "x": 840, "y": 165, "w": 215, "h": 100, "label": "LSE 合并", "detail": "历史各份 + 当前一份", "kind": "result", "source": "chunked"}], "edges": [{"id": "a", "to": "history", "label": "历史 Q", "source": "query", "fromPort": "right", "toPort": "left", "from": "q"}, {"id": "b", "to": "current", "label": "当前 Q", "source": "current", "fromPort": "right", "toPort": "left", "from": "q"}, {"id": "c", "to": "out", "label": "部分 O / LSE", "source": "exchange", "fromPort": "right", "toPort": "left", "from": "history"}, {"id": "d", "to": "out", "label": "当前 O / LSE", "source": "chunked", "fromPort": "right", "toPort": "left", "from": "current"}]}, "points": ["H：此前已处理的 token 数；C：本轮 chunk 的 token 数", "参与合并的历史与当前逻辑区间互不重叠", "对同一输出 query/head，当前区间贡献只计一次"], "notes": "历史 token 均早于当前 chunk 的 query，因此历史分支读取其完整历史子集；当前分支保留因果掩码。这条区间规则约束计算贡献，而不是物理 cache 是否已经存有当前 KV。当前分支可以在不同 rank 上为各自负责的 query/head 计算，关键是在同一最终输出的归约中仅计一次。", "scope": "Ascend · ModelRunnerV2 · GQA", "formula": null}, {"id": "pcp-decode", "kicker": "PCP 的另一阶段 / 10", "title": "Decode 可以按请求分配 owner", "lead": "在 PCP>1、DCP=1 的 Ascend 路径中，每步按请求分工，再汇集 KV 并恢复结果顺序。", "graph": {"id": "decode-owner", "width": 1080, "height": 430, "nodes": [{"id": "requests", "x": 25, "y": 165, "w": 250, "h": 100, "label": "本轮请求 A · B · C · D", "detail": "普通 decode 各生成 1 token", "kind": "tensor", "source": "owner"}, {"id": "r0", "x": 415, "y": 30, "w": 245, "h": 100, "label": "Rank 0：A · C", "detail": "本步 owner，执行本地前向", "kind": "op", "source": "owner"}, {"id": "r1", "x": 415, "y": 290, "w": 245, "h": 100, "label": "Rank 1：B · D", "detail": "本步 owner，执行本地前向", "kind": "op", "source": "owner"}, {"id": "restore", "x": 815, "y": 165, "w": 245, "h": 115, "label": "恢复 A · B · C · D", "detail": "KV 交换发生在层内\n结果顺序在模型出口恢复", "kind": "result", "source": "restore"}], "edges": [{"id": "a", "to": "r0", "label": "分配请求", "source": "owner", "fromPort": "right", "toPort": "left", "from": "requests"}, {"id": "b", "to": "r1", "label": "分配请求", "source": "owner", "fromPort": "right", "toPort": "left", "from": "requests"}, {"id": "c", "to": "restore", "label": "汇集结果", "source": "restore", "fromPort": "right", "toPort": "left", "from": "r0"}, {"id": "d", "to": "restore", "label": "汇集结果", "source": "restore", "fromPort": "right", "toPort": "left", "from": "r1"}]}, "points": ["owner 由本步的 decode 请求顺序决定，可以随步骤改变", "KV 副本与结果恢复支持下一步重新分配", "叠加 DCP 时，参与者需要共同访问分片 KV"], "notes": "此页明确限定 PCP>1、DCP=1。框架按本轮有效 decode 请求的序号轮转分配 owner，无需永久绑定 rank。示例为普通单 token decode，实际策略同样覆盖投机解码的多 token 验证。一旦同时开启 DCP，同一请求的 query 需分发到各 KV 分片参与者上协同计算。", "scope": "适用范围：PCP>1 · DCP=1", "formula": null}, {"id": "combined", "kicker": "组合模式 / 11", "title": "历史分片需要看到对应的全部 Q", "lead": "PCP+DCP 的 prefill 历史路径先补齐 query，再计算各 KV 分片，最后取回本地 query 的结果。", "graph": {"id": "combined-path", "width": 1080, "height": 430, "nodes": [{"id": "local", "x": 20, "y": 165, "w": 205, "h": 100, "label": "PCP 本地 Q", "detail": "本轮分给我的 token", "kind": "tensor", "source": "context"}, {"id": "query", "x": 340, "y": 20, "w": 295, "h": 115, "label": "补齐历史分支的 Q", "detail": "PCP token 汇集与重排\n传输所需 query heads", "kind": "op", "source": "query_restore"}, {"id": "hist", "x": 815, "y": 20, "w": 245, "h": 115, "label": "各自读取历史 KV", "detail": "部分输出 + LSE", "kind": "cache", "source": "history"}, {"id": "current", "x": 340, "y": 295, "w": 295, "h": 100, "label": "当前因果分支", "detail": "本地 Q 读取当前可见 KV", "kind": "op", "source": "current"}, {"id": "merge", "x": 815, "y": 295, "w": 245, "h": 100, "label": "取回本地 Q 并合并", "detail": "历史各份 + 当前一份", "kind": "result", "source": "chunked"}], "edges": [{"id": "a", "to": "query", "label": "历史路径", "source": "query_restore", "fromPort": "right", "toPort": "left", "from": "local"}, {"id": "b", "to": "hist", "label": "对齐的 Q", "source": "query_restore", "fromPort": "right", "toPort": "left", "from": "query"}, {"id": "c", "to": "merge", "label": "交换 / 选回", "source": "chunked", "fromPort": "bottom", "toPort": "top", "from": "hist"}, {"id": "d", "to": "current", "label": "当前路径", "source": "current", "fromPort": "right", "toPort": "left", "from": "local"}, {"id": "f", "to": "merge", "label": "当前贡献", "source": "chunked", "fromPort": "right", "toPort": "left", "from": "current"}]}, "points": ["本地 Q 的工作归属与历史 KV 的保存归属需要同时对齐", "query 的额外通信服务于历史分片计算", "最终输出仍对应本 rank 的本地 query"], "notes": "这一页避免把 PCP 单独开启时的 Q 留本地泛化。组合模式中，历史分支先在 PCP token 维汇集 query 并恢复逻辑排列，然后按需要补齐独立的 query heads。各 KV 分片算完后交换部分结果，再选择本地 query 对应的历史贡献，并与当前因果分支合并。", "scope": "Ascend · ModelRunnerV2 · GQA", "formula": null}, {"id": "topology", "kicker": "配置视角 / 12", "title": "DCP 在已有参与者之间组织分片", "lead": "在这个代码版本中，PCP 启用后，DCP 可覆盖 PCP 轴，或覆盖整个 TP×PCP 域。", "graph": {"id": "groups", "width": 1080, "height": 430, "nodes": [{"id": "base", "x": 25, "y": 165, "w": 255, "h": 100, "label": "已有 TP × PCP ranks", "detail": "决定物理参与进程", "kind": "tensor", "source": "groups"}, {"id": "pcp", "x": 430, "y": 30, "w": 270, "h": 105, "label": "PCP 组", "detail": "相同 TP 位置，跨 PCP ranks", "kind": "op", "source": "groups"}, {"id": "dcp", "x": 430, "y": 290, "w": 270, "h": 105, "label": "DCP 组", "detail": "先跨 PCP，再按配置跨 TP", "kind": "op", "source": "groups"}, {"id": "bound", "x": 845, "y": 165, "w": 210, "h": 115, "label": "组合边界", "detail": "PCP>1：\nDCP ∈ {1, PCP, TP×PCP}", "kind": "result", "source": "config"}], "edges": [{"id": "a", "to": "pcp", "label": "组织工作", "source": "groups", "fromPort": "right", "toPort": "left", "from": "base"}, {"id": "b", "to": "dcp", "label": "组织 KV 分片", "source": "groups", "fromPort": "right", "toPort": "left", "from": "base"}, {"id": "c", "to": "bound", "label": "同一参与域", "source": "config", "fromPort": "right", "toPort": "left", "from": "pcp"}, {"id": "d", "to": "bound", "label": "配置检查", "source": "config", "fromPort": "right", "toPort": "left", "from": "dcp"}]}, "points": ["PCP=1 时：DCP 复用 TP ranks，DCP 大小需整除 TP", "DCP 的大小描述分片协作组，不额外乘一套独立设备", "合法的组大小仍需满足具体模型、后端与运行模式约束"], "notes": "将 PCP 与 DCP 理解成两项分工，而不是两个必然正交、设备数直接相乘的维度。本页的组大小约束来自固定版本配置校验；实际拓扑构造先跨 PCP 再跨 TP。组大小满足这里的规则，只是配置条件之一，不代表所有模型、KV 格式和后端都支持相同组合。", "scope": "Ascend · ModelRunnerV2 · GQA", "formula": null}, {"id": "wrap", "kicker": "回到工程 / 13", "title": "沿着三条线，读懂上下文并行", "lead": "追踪 query 的工作归属、KV 的保存归属，以及输出的归一化与顺序，就能理解整条路径。", "graph": {"id": "recap", "width": 1080, "height": 430, "nodes": [{"id": "q", "x": 25, "y": 35, "w": 265, "h": 105, "label": "① 谁计算 Q", "detail": "本轮 token 布局与全局位置", "kind": "tensor", "source": "partition"}, {"id": "kv", "x": 25, "y": 285, "w": 265, "h": 105, "label": "② 谁保存 KV", "detail": "slot、可见区间、有效长度", "kind": "cache", "source": "cache"}, {"id": "merge", "x": 435, "y": 165, "w": 260, "h": 110, "label": "③ 如何恢复输出", "detail": "LSE 加权与请求顺序", "kind": "op", "source": "merge"}, {"id": "correct", "x": 835, "y": 165, "w": 225, "h": 110, "label": "完整的计算语义", "detail": "同一个请求，同一个可见范围", "kind": "result", "source": "restore"}], "edges": [{"id": "a", "to": "merge", "label": "计算工作", "source": "context", "fromPort": "right", "toPort": "left", "from": "q"}, {"id": "b", "to": "merge", "label": "上下文贡献", "source": "chunked", "fromPort": "right", "toPort": "left", "from": "kv"}, {"id": "c", "to": "correct", "label": "归一化 + 还原", "source": "restore", "fromPort": "right", "toPort": "left", "from": "merge"}]}, "points": ["收益：更多计算与 KV 访问可以并行进行", "代价：KV / Q / 输出通信，以及负载与 padding 开销", "选型依据：真实长度分布、并发、内存和端到端测量"], "notes": "性能取决于实际序列长度、前缀命中、并发、TP/PCP/DCP 组合、通信带宽和内核行为。本次产物做机制与代码一致性核对，未运行硬件性能实验。评估时可同时观察 prefill 延迟、每 token 延迟、吞吐和 KV 内存，并分析通信与计算是否有效重叠。", "scope": "Ascend · ModelRunnerV2 · GQA", "formula": null}]}, "sources": {"partition": {"repo": "vllm", "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab", "path": "vllm/v1/worker/gpu/pcp_manager.py", "start": 434, "end": 490, "title": "全局批次到本地 token 布局", "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L434-L490"}, "split": {"repo": "vllm", "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab", "path": "vllm/v1/worker/gpu/pcp_manager.py", "start": 222, "end": 282, "title": "请求复制政策与首尾配对切分", "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L222-L282"}, "restore": {"repo": "vllm", "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab", "path": "vllm/v1/worker/gpu/pcp_manager.py", "start": 773, "end": 828, "title": "汇集隐藏状态并恢复采样顺序", "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L773-L828"}, "runner": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/worker/v2/model_runner.py", "start": 1034, "end": 1067, "title": "ModelRunnerV2 输入与 PCP 接入", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/worker/v2/model_runner.py#L1034-L1067"}, "context": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/worker/v2/pcp_manager.py", "start": 773, "end": 807, "title": "全局与局部 attention 视图", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/worker/v2/pcp_manager.py#L773-L807"}, "owner": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/worker/v2/pcp_manager.py", "start": 221, "end": 269, "title": "PCP 单独开启时的 decode owner", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/worker/v2/pcp_manager.py#L221-L269"}, "policy": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/context_parallel/common_cp.py", "start": 12, "end": 53, "title": "请求分片与历史/当前拆分政策", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L12-L53"}, "gather": {"repo": "vllm", "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab", "path": "vllm/v1/attention/ops/pcp.py", "start": 11, "end": 66, "title": "本轮 KV 的 PCP 交换与 slot 对齐", "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/attention/ops/pcp.py#L11-L66"}, "cache": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/attention_v1.py", "start": 1210, "end": 1284, "title": "按归属写入 KV cache", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/attention_v1.py#L1210-L1284"}, "gqa": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/attention_v1.py", "start": 1310, "end": 1376, "title": "GQA 的输入、缓存与 attention 调用", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/attention_v1.py#L1310-L1376"}, "slots": {"repo": "vllm", "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab", "path": "vllm/v1/worker/gpu/pcp_manager.py", "start": 745, "end": 771, "title": "通信布局对应的缓存写入位置", "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/pcp_manager.py#L745-L771"}, "current": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/context_parallel/attention_cp.py", "start": 590, "end": 629, "title": "当前 KV 的因果 attention", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L590-L629"}, "history": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/context_parallel/attention_cp.py", "start": 544, "end": 588, "title": "历史 KV 分片的局部 attention", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L544-L588"}, "query": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/context_parallel/common_cp.py", "start": 180, "end": 210, "title": "传输所需 query heads", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L180-L210"}, "exchange": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/context_parallel/common_cp.py", "start": 213, "end": 243, "title": "交换部分输出与 LSE", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L213-L243"}, "merge": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/context_parallel/common_cp.py", "start": 324, "end": 335, "title": "LSE 加权合并的数学定义", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/common_cp.py#L324-L335"}, "decode": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/context_parallel/attention_cp.py", "start": 471, "end": 529, "title": "Decode 的完整 KV 或历史/当前路径", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L471-L529"}, "query_restore": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/context_parallel/attention_cp.py", "start": 531, "end": 542, "title": "组合模式下恢复历史分支的 query", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L531-L542"}, "chunked": {"repo": "vllm-ascend", "commit": "3b433e2f027ceb47897a1343ce01174c077d5e1f", "path": "vllm_ascend/attention/context_parallel/attention_cp.py", "start": 652, "end": 712, "title": "合并历史与当前的贡献", "url": "https://github.com/vllm-project/vllm-ascend/blob/3b433e2f027ceb47897a1343ce01174c077d5e1f/vllm_ascend/attention/context_parallel/attention_cp.py#L652-L712"}, "groups": {"repo": "vllm", "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab", "path": "vllm/distributed/parallel_state.py", "start": 2216, "end": 2251, "title": "PCP 与 DCP 通信组布局", "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/distributed/parallel_state.py#L2216-L2251"}, "config": {"repo": "vllm", "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab", "path": "vllm/config/parallel.py", "start": 585, "end": 598, "title": "PCP/DCP 组合配置边界", "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/config/parallel.py#L585-L598"}, "upstream_runner": {"repo": "vllm", "commit": "a98247ab4db686ee03c66d5feb3c761e52a2f8ab", "path": "vllm/v1/worker/gpu/model_runner.py", "start": 2091, "end": 2127, "title": "模型输出衔接全局采样批次", "url": "https://github.com/vllm-project/vllm/blob/a98247ab4db686ee03c66d5feb3c761e52a2f8ab/vllm/v1/worker/gpu/model_runner.py#L2091-L2127"}}}</script><script src="static/js/concept-canvas.js"></script><script src="static/js/concept-deck.js"></script>
+</body></html>
