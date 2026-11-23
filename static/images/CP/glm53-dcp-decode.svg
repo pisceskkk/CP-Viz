@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 440" width="1400" height="440" font-family="'Comic Sans MS', 'Segoe Print', 'Bradley Hand', 'Chalkboard SE', 'Microsoft YaHei', sans-serif">
+<defs>
+  <filter id="paper-shadow" x="-2%" y="-2%" width="104%" height="106%">
+    <feDropShadow dx="1.5" dy="2.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.07"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="1400" height="440" fill="#ffffff" rx="12"/>
+<path d="M 35.0 25 L 375.0 25 Q 385 25 385 35.0 L 385 405.0 Q 385 415 375.0 415 L 35.0 415 Q 25 415 25 405.0 L 25 35.0 Q 25 25 35.0 25 Z" fill="#f8fafc" stroke="none"/>
+<path d="M 35.0 25 L 375.0 25 Q 385 25 385 35.0 L 385 405.0 Q 385 415 375.0 415 L 35.0 415 Q 25 415 25 405.0 L 25 35.0 Q 25 25 35.0 25 Z" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1" stroke-dasharray="9 6"/>
+<path d="M 60.0 80 L 350.0 80 Q 360 80 360 90.0 L 360 165.0 Q 360 175 350.0 175 L 60.0 175 Q 50 175 50 165.0 L 50 90.0 Q 50 80 60.0 80 Z" fill="#bae6fd" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 60.1 79.5 Q 205.0 79.0 350.1 79.5 Q 360.1 79.5 360.1 89.5 Q 359.7 127.5 360.1 164.5 Q 360.1 174.5 350.1 174.5 Q 205.0 174.1 60.1 174.5 Q 50.1 174.5 50.1 164.5 Q 50.5 127.5 50.1 89.5 Q 50.1 79.5 60.1 79.5" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 60.4 80.7 Q 205.0 79.8 350.4 80.7 Q 360.4 80.7 360.4 90.7 Q 359.7 127.5 360.4 165.7 Q 360.4 175.7 350.4 175.7 Q 205.0 175.3 60.4 175.7 Q 50.4 175.7 50.4 165.7 Q 50.4 127.5 50.4 90.7 Q 50.4 80.7 60.4 80.7" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 60.0 205 L 350.0 205 Q 360 205 360 215.0 L 360 375.0 Q 360 385 350.0 385 L 60.0 385 Q 50 385 50 375.0 L 50 215.0 Q 50 205 60.0 205 Z" fill="#fef3c7" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 59.3 205.5 Q 205.0 203.8 349.3 205.5 Q 359.3 205.5 359.3 215.5 Q 360.7 295.0 359.3 375.5 Q 359.3 385.5 349.3 385.5 Q 205.0 385.1 59.3 385.5 Q 49.3 385.5 49.3 375.5 Q 50.8 295.0 49.3 215.5 Q 49.3 205.5 59.3 205.5" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 59.5 205.1 Q 205.0 204.4 349.5 205.1 Q 359.5 205.1 359.5 215.1 Q 360.8 295.0 359.5 375.1 Q 359.5 385.1 349.5 385.1 Q 205.0 384.4 59.5 385.1 Q 49.5 385.1 49.5 375.1 Q 50.6 295.0 49.5 215.1 Q 49.5 205.1 59.5 205.1" fill="none" stroke="#d97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 435.0 25 L 895.0 25 Q 905 25 905 35.0 L 905 405.0 Q 905 415 895.0 415 L 435.0 415 Q 425 415 425 405.0 L 425 35.0 Q 425 25 435.0 25 Z" fill="#faf5ff" stroke="none"/>
+<path d="M 435.0 25 L 895.0 25 Q 905 25 905 35.0 L 905 405.0 Q 905 415 895.0 415 L 435.0 415 Q 425 415 425 405.0 L 425 35.0 Q 425 25 435.0 25 Z" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1" stroke-dasharray="9 6"/>
+<path d="M 465.0 85 L 865.0 85 Q 875 85 875 95.0 L 875 205.0 Q 875 215 865.0 215 L 465.0 215 Q 455 215 455 205.0 L 455 95.0 Q 455 85 465.0 85 Z" fill="#f3e8ff" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 465.2 84.9 Q 665.0 85.8 865.2 84.9 Q 875.2 84.9 875.2 94.9 Q 874.0 150.0 875.2 204.9 Q 875.2 214.9 865.2 214.9 Q 665.0 215.3 465.2 214.9 Q 455.2 214.9 455.2 204.9 Q 454.6 150.0 455.2 94.9 Q 455.2 84.9 465.2 84.9" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 465.1 85.1 Q 665.0 84.9 865.1 85.1 Q 875.1 85.1 875.1 95.1 Q 874.4 150.0 875.1 205.1 Q 875.1 215.1 865.1 215.1 Q 665.0 214.7 465.1 215.1 Q 455.1 215.1 455.1 205.1 Q 454.5 150.0 455.1 95.1 Q 455.1 85.1 465.1 85.1" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 465.0 250 L 865.0 250 Q 875 250 875 260.0 L 875 370.0 Q 875 380 865.0 380 L 465.0 380 Q 455 380 455 370.0 L 455 260.0 Q 455 250 465.0 250 Z" fill="#f3e8ff" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 464.9 250.4 Q 665.0 250.1 864.9 250.4 Q 874.9 250.4 874.9 260.4 Q 876.2 315.0 874.9 370.4 Q 874.9 380.4 864.9 380.4 Q 665.0 378.8 464.9 380.4 Q 454.9 380.4 454.9 370.4 Q 454.0 315.0 454.9 260.4 Q 454.9 250.4 464.9 250.4" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 465.3 250.3 Q 665.0 249.5 865.3 250.3 Q 875.3 250.3 875.3 260.3 Q 875.0 315.0 875.3 370.3 Q 875.3 380.3 865.3 380.3 Q 665.0 379.1 465.3 380.3 Q 455.3 380.3 455.3 370.3 Q 454.4 315.0 455.3 260.3 Q 455.3 250.3 465.3 250.3" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 955.0 25 L 1365.0 25 Q 1375 25 1375 35.0 L 1375 405.0 Q 1375 415 1365.0 415 L 955.0 415 Q 945 415 945 405.0 L 945 35.0 Q 945 25 955.0 25 Z" fill="#f0fdf4" stroke="none"/>
+<path d="M 955.0 25 L 1365.0 25 Q 1375 25 1375 35.0 L 1375 405.0 Q 1375 415 1365.0 415 L 955.0 415 Q 945 415 945 405.0 L 945 35.0 Q 945 25 955.0 25 Z" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1" stroke-dasharray="9 6"/>
+<path d="M 985.0 85 L 1335.0 85 Q 1345 85 1345 95.0 L 1345 210.0 Q 1345 220 1335.0 220 L 985.0 220 Q 975 220 975 210.0 L 975 95.0 Q 975 85 985.0 85 Z" fill="#dcfce7" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 985.5 85.1 Q 1160.0 84.1 1335.5 85.1 Q 1345.5 85.1 1345.5 95.1 Q 1345.0 152.5 1345.5 210.1 Q 1345.5 220.1 1335.5 220.1 Q 1160.0 220.8 985.5 220.1 Q 975.5 220.1 975.5 210.1 Q 975.7 152.5 975.5 95.1 Q 975.5 85.1 985.5 85.1" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 985.6 85.0 Q 1160.0 84.4 1335.6 85.0 Q 1345.6 85.0 1345.6 95.0 Q 1345.6 152.5 1345.6 210.0 Q 1345.6 220.0 1335.6 220.0 Q 1160.0 219.3 985.6 220.0 Q 975.6 220.0 975.6 210.0 Q 974.8 152.5 975.6 95.0 Q 975.6 85.0 985.6 85.0" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 985.0 255 L 1335.0 255 Q 1345 255 1345 265.0 L 1345 370.0 Q 1345 380 1335.0 380 L 985.0 380 Q 975 380 975 370.0 L 975 265.0 Q 975 255 985.0 255 Z" fill="#ccfbf1" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 985.2 254.9 Q 1160.0 253.7 1335.2 254.9 Q 1345.2 254.9 1345.2 264.9 Q 1344.8 317.5 1345.2 369.9 Q 1345.2 379.9 1335.2 379.9 Q 1160.0 380.3 985.2 379.9 Q 975.2 379.9 975.2 369.9 Q 976.2 317.5 975.2 264.9 Q 975.2 254.9 985.2 254.9" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 985.5 254.4 Q 1160.0 255.3 1335.5 254.4 Q 1345.5 254.4 1345.5 264.4 Q 1345.7 317.5 1345.5 369.4 Q 1345.5 379.4 1335.5 379.4 Q 1160.0 379.5 985.5 379.4 Q 975.5 379.4 975.5 369.4 Q 974.6 317.5 975.5 264.4 Q 975.5 254.4 985.5 254.4" fill="none" stroke="#0d9488" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 360.0 128.1 Q 407.0 127.7 454.9 128.4" fill="none" stroke="#0284c7" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 360.3 128.3 Q 407.1 128.4 454.9 128.1" fill="none" stroke="#0284c7" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 454.8 128.1 Q 449.6 125.5 443.8 122.0" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 455.1 127.8 Q 449.9 130.9 443.7 133.9" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 359.7 144.4 Q 407.1 218.0 455.1 290.5" fill="none" stroke="#0284c7" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 360.0 144.9 Q 408.3 218.1 455.2 290.3" fill="none" stroke="#0284c7" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 454.9 289.8 Q 454.0 283.8 453.6 277.4" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 455.2 290.1 Q 449.7 287.4 444.1 283.8" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 360.3 294.4 Q 406.9 234.4 454.5 174.7" fill="none" stroke="#d97706" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 359.9 295.3 Q 406.7 235.4 455.3 175.1" fill="none" stroke="#d97706" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 454.9 175.1 Q 448.9 177.9 443.4 180.3" fill="none" stroke="#d97706" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 454.8 174.8 Q 454.4 181.7 452.8 187.4" fill="none" stroke="#d97706" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 359.6 314.5 Q 406.4 322.0 455.4 329.9" fill="none" stroke="#d97706" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 359.7 315.2 Q 407.8 322.1 455.3 329.9" fill="none" stroke="#d97706" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 454.8 330.2 Q 449.7 326.3 445.1 322.5" fill="none" stroke="#d97706" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 454.8 330.0 Q 449.1 331.5 443.3 334.1" fill="none" stroke="#d97706" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 875.0 150.3 Q 924.3 145.7 975.2 140.2" fill="none" stroke="#16a34a" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 875.0 150.1 Q 925.7 145.3 975.0 140.2" fill="none" stroke="#16a34a" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 975.1 139.8 Q 969.8 137.8 963.6 135.6" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 974.8 140.2 Q 969.7 143.2 964.3 146.6" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 874.5 314.5 Q 924.4 242.4 975.2 170.5" fill="none" stroke="#16a34a" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 874.9 315.2 Q 925.1 243.2 975.3 170.3" fill="none" stroke="#16a34a" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 975.2 170.0 Q 969.1 173.2 964.1 176.0" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 974.9 170.1 Q 974.5 176.6 973.3 182.5" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1160.3 220.4 Q 1160.1 238.5 1160.2 254.9" fill="none" stroke="#0d9488" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 1159.8 219.8 Q 1160.1 236.7 1159.8 255.2" fill="none" stroke="#0d9488" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 1159.9 254.9 Q 1162.6 249.1 1165.7 243.7" fill="none" stroke="#0d9488" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1159.9 255.1 Q 1157.1 249.9 1154.2 244.1" fill="none" stroke="#0d9488" stroke-width="2.4" stroke-linecap="round"/>
+<text x="41.0" y="53.0" font-size="16" font-weight="700" fill="#334155" text-anchor="start">Step 1 · Query 收集与本地 Top-K 映射</text>
+<text x="205.0" y="110.1" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">1. Query Heads Gather</text>
+<text x="205.0" y="130.9" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">q_b_proj + W_UK_T 吸收 (D=512)</text>
+<text x="205.0" y="151.7" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">凑齐完整 64 个 Q Heads</text>
+<text x="205.0" y="259.1" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">2. KPool &amp; sparse_index_remap</text>
+<text x="205.0" y="278.6" font-size="15" font-weight="600" fill="#334155" text-anchor="middle"></text>
+<text x="205.0" y="298.1" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">Replicated KPool 选出全局 Top-2051</text>
+<text x="205.0" y="317.6" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">↓</text>
+<text x="205.0" y="337.1" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">Triton 过滤映射为本卡 DCP KV 页索引</text>
+<text x="441.0" y="53.0" font-size="16" font-weight="700" fill="#6d28d9" text-anchor="start">Step 2 · 各卡对本地 1/DCP KV 算局部注意力</text>
+<text x="665.0" y="132.6" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">DCP Rank 0 · 本地 1/2 历史 KV 分片</text>
+<text x="665.0" y="153.4" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">npu_sparse_flash_attn (KV 免通信!)</text>
+<text x="665.0" y="174.2" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">产出局部 (O_0, FP32 LSE_0)</text>
+<text x="665.0" y="297.6" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">DCP Rank 1 · 本地 1/2 历史 KV 分片</text>
+<text x="665.0" y="318.4" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">npu_sparse_flash_attn (KV 免通信!)</text>
+<text x="665.0" y="339.2" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">产出局部 (O_1, FP32 LSE_1)</text>
+<text x="961.0" y="53.0" font-size="16" font-weight="700" fill="#15803d" text-anchor="start">Step 3 · dcp_a2a_fused 无损打包归并</text>
+<text x="1160.0" y="116.7" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">dcp_a2a_fused (Triton + All-to-All)</text>
+<text x="1160.0" y="136.2" font-size="15" font-weight="600" fill="#334155" text-anchor="middle"></text>
+<text x="1160.0" y="155.7" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">• 打包 BF16 O_j + FP32 LSE_j (INT32/Base256)</text>
+<text x="1160.0" y="175.2" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">• 单次 all_to_all_single 按 Head 切分</text>
+<text x="1160.0" y="194.7" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">• LSE 权重归并: w_j = exp(L_j - max L)</text>
+<text x="1160.0" y="289.7" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">W_UV + ParallelOProjection</text>
+<text x="1160.0" y="310.5" font-size="16" font-weight="600" fill="#334155" text-anchor="middle"></text>
+<text x="1160.0" y="331.3" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">恢复 v_head_dim = 256</text>
+<text x="1160.0" y="352.1" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">投影回 [T_mtp, 4096] 进 MoE</text>
+</svg>

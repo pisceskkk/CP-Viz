@@ -1,14 +1,14 @@
-<!-- Slide 06: DCP 进阶机制：多 Token 因果 Decode 下的 History/Current 异步重叠 -->
+<!-- Slide 06: DCP ④ History / Current 拆流重叠 -->
 <section data-stage="02 深入 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>DCP 核心机制 ④：History / Current 拆分与通信计算重叠</strong></h3>
-        <p class="slide-subtitle">在 MTP 投机验证等多 Token 因果 Decode 场景下，将 DCP 分片的历史 KV 与本地当前步 KV 拆流并行</p>
+        <h3><strong>DCP ④：History / Current 拆流通信重叠</strong></h3>
+        <p class="slide-subtitle">MTP 多 Token 因果 Decode 下，将历史 KV 的 All2All 通信与当前步 KV 计算并行</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-dcp-a2a-fused" type="button">
-          &lt;/&gt; defer_combine &amp; fused_dcp_lse_combine
+          &lt;/&gt; fused_dcp_lse_combine
         </button>
       </div>
     </div>
@@ -16,32 +16,26 @@
     <div class="surface-card" style="margin-bottom:1.6rem; padding:1.6rem 2rem;">
       <div class="mermaid">
 flowchart LR
-    Q["Query Heads Gather"] --> H_ATTN["主流：History FIA<br/>(对本地 1/DCP 历史 KV)"]
+    Q["Query Heads Gather"] --> H_ATTN["主流：History Attention<br/>(本地 1/DCP 历史 KV)"]
     H_ATTN --> COMM["通信流：dcp_a2a_fused<br/>(defer_combine=True 异步 All2All)"]
-    H_ATTN --> C_ATTN["主流：Current FIA<br/>(对当前步新 Token 完整 KV)"]
-    COMM --> MERGE["主流：fused_dcp_lse_combine<br/>(一次性合并所有 History Ranks + Local Current)"]
+    H_ATTN --> C_ATTN["主流：Current Attention<br/>(当前步新 Token KV)"]
+    COMM --> MERGE["主流：fused_dcp_lse_combine<br/>(一次性合并 History + Current)"]
     C_ATTN --> MERGE
       </div>
     </div>
 
     <div class="template-grid-3">
       <div class="surface-card">
-        <h4>为什么必须拆分？</h4>
-        <p style="font-size:1.35rem; margin:0;">
-          MTP 验证时单请求携带 <code>K+1</code> 个因果 Query Token：历史 KV 已按 DCP 分散在各卡，而当前步新 Token KV 尚未跨卡切分。
-        </p>
+        <h4>1. 为什么要拆分？</h4>
+        <p style="font-size:1.32rem; margin:0;">MTP 验证携带 <code>K+1</code> 个因果 Token：历史 KV 已按 DCP 分片，而当前步新 KV 在本地完整持有。</p>
       </div>
       <div class="surface-card">
-        <h4>双流重叠隐藏 All2All</h4>
-        <p style="font-size:1.35rem; margin:0;">
-          在独立通信流 <code>cp_decode_comm_stream</code> 上执行历史输出的 Pack 与 All-to-All，与主流上的 Current Token FIA 完全并行。
-        </p>
+        <h4>2. 双流隐藏 All2All</h4>
+        <p style="font-size:1.32rem; margin:0;">在 <code>cp_decode_comm_stream</code> 上异步执行历史输出的 All-to-All，与主流 Current 计算重叠。</p>
       </div>
       <div class="surface-card">
-        <h4>单次归一化避免重复计数</h4>
-        <p style="font-size:1.35rem; margin:0;">
-          <code>fused_dcp_lse_combine</code> 将接收缓冲区与 <code>local_output / local_lse</code> 一并归约，保证 Current KV 精确计数一次。
-        </p>
+        <h4>3. 单次 LSE 归一化</h4>
+        <p style="font-size:1.32rem; margin:0;"><code>fused_dcp_lse_combine</code> 将所有 History 分片与 Local Current 一次性加权归约，避免重复计数。</p>
       </div>
     </div>
   </div>

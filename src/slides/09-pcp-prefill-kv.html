@@ -1,10 +1,10 @@
-<!-- Slide 09: PCP 核心机制三：GLM-5.3-Flash Prefill & Chunked Prefill 下的 KDA 与 SFA/KPool 异构同步 -->
+<!-- Slide 09: PCP ③ GLM-5.3-Flash Prefill 异构同步 -->
 <section data-stage="03 深入 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>PCP 核心机制 ③：GLM-5.3-Flash Prefill 异构层算子流与异步重叠</strong></h3>
-        <p class="slide-subtitle">34 层 <code>KDA</code> 先 AllGather 还原因果顺序再 ReduceScatter；11 层 <code>SFA+KPool</code> 用 <code>all_gather_async</code> 重叠本地 Query 投影</p>
+        <h3><strong>PCP ③：GLM-5.3-Flash Prefill 异构层同步</strong></h3>
+        <p class="slide-subtitle">34 层 KDA 还原因果顺序推进状态；11 层 SFA+KPool 异步重叠 Key Gather 与本地 Query 计算</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-glm53-kda-pcp" type="button">
@@ -16,38 +16,39 @@
       </div>
     </div>
 
-    <div class="interactive-card" style="margin-bottom:1.1rem;">
-      <div class="interactive-card-bar">
-        <span class="interactive-card-title">
-          <span class="interactive-card-dot"></span>
-          GLM-5.3-Flash 动态算子流 · PCP Prefill / Chunked Prefill 双支路对比：Branch A (34层 KDA) vs Branch B (11层 NoPE SFA + KPool)
-        </span>
-        <div style="display:flex; gap:0.6rem;">
-          <button class="btn-code" data-code="code-glm53-kda-pcp" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; KDA ReduceScatter
-          </button>
-          <button class="btn-code" data-code="code-glm53-kpool-pcp" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; KPool all_gather_async
-          </button>
-        </div>
-      </div>
-      <div class="interactive-card-body" style="height:49vh;">
-        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=pcp_prefill&amp;compact=1" scrolling="no" title="GLM-5.3-Flash PCP Prefill 异构算子数据流"></iframe>
+    <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/glm53-pcp-prefill.svg" alt="GLM-5.3-Flash PCP Prefill" style="width:100%; max-height:48vh; object-fit:contain;">
+
+        <button class="hotspot-pin" style="left: 50%; top: 28%;" data-code="code-glm53-kda-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 KDA AllGather &amp; ReduceScatter</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 30%; top: 75%;" data-code="code-glm53-kpool-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 KPool all_gather_async 重叠</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 68%; top: 75%;" data-code="code-pcp-dcp-stacked" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 SFA 主 KV 同步与稀疏注意力</span>
+        </button>
+
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
       </div>
     </div>
 
     <div class="template-grid-2">
-      <div class="surface-card" style="padding:0.95rem 1.5rem;">
-        <h4>Branch A · 34 层 KDA：因果还原 &#8594; <code>TP&times;PCP</code> 状态推进 &#8594; ReduceScatter</h4>
-        <p style="font-size:1.26rem; margin:0;">
-          入口 <code>all_gather(hidden)[hidden_restore_idx]</code> 恢复 <code>[T_global]</code> 推进 <code>64/(TP&times;PCP)</code> 个 Head 状态，出口按 <code>padded_gather_idx</code> 一步 ReduceScatter 切回 <code>[T_pcp]</code>！
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>支路 A · 34 层 KDA：因果还原 + ReduceScatter</h4>
+        <p style="font-size:1.3rem; margin:0;">入口用 <code>hidden_restore_idx</code> 恢复 <code>[T_global]</code> 推进 <code>1/(TP&times;PCP)</code> Head 状态，出口按 <code>padded_gather_idx</code> 切回 <code>[T_pcp]</code>。</p>
       </div>
-      <div class="surface-card" style="padding:0.95rem 1.5rem;">
-        <h4>Branch B · 11 层 SFA+KPool：异步 Key Gather 重叠 + 本地 <code>1/PCP</code> Query</h4>
-        <p style="font-size:1.26rem; margin:0;">
-          <code>prepare_pcp_hidden</code> 异步 Gather Key Hidden（与本地 <code>wq_b / q_b_proj</code> 重叠）更新全局 KPool；SFA 仅对本卡 <code>T_pcp</code> 个 Query 计算稀疏注意力。
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>支路 B · 11 层 SFA+KPool：异步重叠 + 本地 Query</h4>
+        <p style="font-size:1.3rem; margin:0;"><code>all_gather_async(k_hidden)</code> 与本地 <code>wq_b / q_b_proj</code> 重叠；SFA 仅算本卡 <code>T_pcp</code> 个 Query。</p>
       </div>
     </div>
   </div>

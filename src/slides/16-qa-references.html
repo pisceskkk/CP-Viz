@@ -1,10 +1,10 @@
-<!-- Slide 16: Q & A 与新人源码速查索引 -->
+<!-- Slide 16: 核心源码速查表 & Q&A -->
 <section data-stage="05 总结与规划">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>新人 Onboarding 核心源码速查表 &amp; Q&amp;A</strong></h3>
-        <p class="slide-subtitle">点击右侧按钮可直接呼出对应的源码透视抽屉</p>
+        <h3><strong>核心源码速查表 &amp; Q&amp;A</strong></h3>
+        <p class="slide-subtitle">点击右侧按钮直接唤起代码抽屉</p>
       </div>
       <div class="slide-actions">
         <button class="btn-slide-jump" data-go-slide="0" type="button">
@@ -30,9 +30,9 @@
           <td><button class="btn-code" data-code="code-parallel-state" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
-          <td class="code">MRV2 PCP Batch 切分</td>
+          <td class="code">MRV2 PCP 切分</td>
           <td class="code">vllm/v1/worker/gpu/pcp_manager.py<br>vllm_ascend/worker/v2/pcp_manager.py</td>
-          <td><code>PCPManager</code>, <code>AscendPCPManager</code>, <code>AscendPCPAttentionContext</code></td>
+          <td><code>PCPManager</code>, <code>AscendPCPManager</code></td>
           <td><button class="btn-code" data-code="code-pcp-dualchunk" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
@@ -42,19 +42,19 @@
           <td><button class="btn-code" data-code="code-slot-mapping-kernel" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
-          <td class="code">DCP 通用 Mixin &amp; A2A</td>
+          <td class="code">DCP Mixin &amp; A2A</td>
           <td class="code">vllm_ascend/attention/context_parallel/common_cp.py<br>vllm_ascend/ops/triton/dcp/dcp_a2a.py</td>
-          <td><code>DCPImplMixin</code>, <code>dcp_a2a_fused</code>, <code>fused_dcp_lse_combine</code></td>
+          <td><code>DCPImplMixin</code>, <code>dcp_a2a_fused</code></td>
           <td><button class="btn-code" data-code="code-dcp-a2a-fused" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
-          <td class="code">MLA / SFA / DSA CP 后端</td>
-          <td class="code">vllm_ascend/attention/context_parallel/{mla_cp,sfa_cp,dsa_cp,dsa_v41_cp}.py</td>
-          <td><code>AscendMlaDCPImpl</code>, <code>AscendSFADCPImpl</code>, <code>AscendDSAPCPImpl</code></td>
+          <td class="code">SFA / MLA CP 后端</td>
+          <td class="code">vllm_ascend/attention/context_parallel/{sfa_cp,mla_cp}.py</td>
+          <td><code>AscendSFADCPImpl</code>, <code>AscendSFAPCPDCPImpl</code></td>
           <td><button class="btn-code" data-code="code-sfa-dcp-impl" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
-          <td class="code">GLM-5.3-Flash KDA &amp; KPool</td>
+          <td class="code">GLM-5.3 KDA &amp; KPool</td>
           <td class="code">vllm_ascend/models/glm5next/kda.py<br>vllm_ascend/attention/indexer_kpool.py</td>
           <td><code>Glm5NextLinearAttention</code>, <code>Glm5NextKPoolIndexerBackend</code></td>
           <td><button class="btn-code" data-code="code-glm53-kda-pcp" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
@@ -64,10 +64,6 @@
 
     <div style="text-align:center; margin-top:2.2rem;">
       <h2 style="margin-bottom:0.4rem;"><strong>Thanks &amp; Q&amp;A</strong></h2>
-      <p style="font-size:1.4rem; color:#64748b; margin:0;">
-        设计文档：<code>docs/source/developer_guide/Design_Documents/context_parallel.md</code> &nbsp;&middot;&nbsp;
-        用户指南：<code>docs/source/user_guide/feature_guide/context_parallel.md</code>
-      </p>
     </div>
   </div>
 </section>

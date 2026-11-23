@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 445" width="1400" height="445" font-family="'Comic Sans MS', 'Segoe Print', 'Bradley Hand', 'Chalkboard SE', 'Microsoft YaHei', sans-serif">
+<defs>
+  <filter id="paper-shadow" x="-2%" y="-2%" width="104%" height="106%">
+    <feDropShadow dx="1.5" dy="2.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.07"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="1400" height="445" fill="#ffffff" rx="12"/>
+<path d="M 40.0 155 L 215.0 155 Q 225 155 225 165.0 L 225 270.0 Q 225 280 215.0 280 L 40.0 280 Q 30 280 30 270.0 L 30 165.0 Q 30 155 40.0 155 Z" fill="#ccfbf1" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 39.9 154.6 Q 127.5 154.4 214.9 154.6 Q 224.9 154.6 224.9 164.6 Q 224.6 217.5 224.9 269.6 Q 224.9 279.6 214.9 279.6 Q 127.5 278.6 39.9 279.6 Q 29.9 279.6 29.9 269.6 Q 28.7 217.5 29.9 164.6 Q 29.9 154.6 39.9 154.6" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 39.9 154.6 Q 127.5 154.3 214.9 154.6 Q 224.9 154.6 224.9 164.6 Q 224.4 217.5 224.9 269.6 Q 224.9 279.6 214.9 279.6 Q 127.5 279.2 39.9 279.6 Q 29.9 279.6 29.9 269.6 Q 29.8 217.5 29.9 164.6 Q 29.9 154.6 39.9 154.6" fill="none" stroke="#0d9488" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 275.0 20 L 1120.0 20 Q 1130 20 1130 30.0 L 1130 200.0 Q 1130 210 1120.0 210 L 275.0 210 Q 265 210 265 200.0 L 265 30.0 Q 265 20 275.0 20 Z" fill="#f0fdf4" stroke="none"/>
+<path d="M 275.0 20 L 1120.0 20 Q 1130 20 1130 30.0 L 1130 200.0 Q 1130 210 1120.0 210 L 275.0 210 Q 265 210 265 200.0 L 265 30.0 Q 265 20 275.0 20 Z" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1" stroke-dasharray="9 6"/>
+<path d="M 300.0 68 L 530.0 68 Q 540 68 540 78.0 L 540 173.0 Q 540 183 530.0 183 L 300.0 183 Q 290 183 290 173.0 L 290 78.0 Q 290 68 300.0 68 Z" fill="#dcfce7" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 299.5 67.8 Q 415.0 67.6 529.5 67.8 Q 539.5 67.8 539.5 77.8 Q 540.5 125.5 539.5 172.8 Q 539.5 182.8 529.5 182.8 Q 415.0 181.6 299.5 182.8 Q 289.5 182.8 289.5 172.8 Q 290.4 125.5 289.5 77.8 Q 289.5 67.8 299.5 67.8" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 300.5 68.0 Q 415.0 68.7 530.5 68.0 Q 540.5 68.0 540.5 78.0 Q 539.4 125.5 540.5 173.0 Q 540.5 183.0 530.5 183.0 Q 415.0 183.4 300.5 183.0 Q 290.5 183.0 290.5 173.0 Q 289.0 125.5 290.5 78.0 Q 290.5 68.0 300.5 68.0" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 585.0 68 L 830.0 68 Q 840 68 840 78.0 L 840 173.0 Q 840 183 830.0 183 L 585.0 183 Q 575 183 575 173.0 L 575 78.0 Q 575 68 585.0 68 Z" fill="#bbf7d0" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 584.4 67.4 Q 707.5 67.5 829.4 67.4 Q 839.4 67.4 839.4 77.4 Q 839.6 125.5 839.4 172.4 Q 839.4 182.4 829.4 182.4 Q 707.5 182.0 584.4 182.4 Q 574.4 182.4 574.4 172.4 Q 575.9 125.5 574.4 77.4 Q 574.4 67.4 584.4 67.4" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 584.9 67.6 Q 707.5 68.3 829.9 67.6 Q 839.9 67.6 839.9 77.6 Q 840.5 125.5 839.9 172.6 Q 839.9 182.6 829.9 182.6 Q 707.5 182.5 584.9 182.6 Q 574.9 182.6 574.9 172.6 Q 574.8 125.5 574.9 77.6 Q 574.9 67.6 584.9 67.6" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 885.0 68 L 1095.0 68 Q 1105 68 1105 78.0 L 1105 173.0 Q 1105 183 1095.0 183 L 885.0 183 Q 875 183 875 173.0 L 875 78.0 Q 875 68 885.0 68 Z" fill="#dcfce7" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 884.8 68.1 Q 990.0 68.2 1094.8 68.1 Q 1104.8 68.1 1104.8 78.1 Q 1105.1 125.5 1104.8 173.1 Q 1104.8 183.1 1094.8 183.1 Q 990.0 184.0 884.8 183.1 Q 874.8 183.1 874.8 173.1 Q 875.4 125.5 874.8 78.1 Q 874.8 68.1 884.8 68.1" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 885.3 68.4 Q 990.0 68.7 1095.3 68.4 Q 1105.3 68.4 1105.3 78.4 Q 1105.8 125.5 1105.3 173.4 Q 1105.3 183.4 1095.3 183.4 Q 990.0 182.5 885.3 183.4 Q 875.3 183.4 875.3 173.4 Q 874.4 125.5 875.3 78.4 Q 875.3 68.4 885.3 68.4" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 275.0 230 L 1120.0 230 Q 1130 230 1130 240.0 L 1130 415.0 Q 1130 425 1120.0 425 L 275.0 425 Q 265 425 265 415.0 L 265 240.0 Q 265 230 275.0 230 Z" fill="#faf5ff" stroke="none"/>
+<path d="M 275.0 230 L 1120.0 230 Q 1130 230 1130 240.0 L 1130 415.0 Q 1130 425 1120.0 425 L 275.0 425 Q 265 425 265 415.0 L 265 240.0 Q 265 230 275.0 230 Z" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1" stroke-dasharray="9 6"/>
+<path d="M 300.0 278 L 530.0 278 Q 540 278 540 288.0 L 540 388.0 Q 540 398 530.0 398 L 300.0 398 Q 290 398 290 388.0 L 290 288.0 Q 290 278 300.0 278 Z" fill="#fef3c7" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 300.5 277.8 Q 415.0 278.4 530.5 277.8 Q 540.5 277.8 540.5 287.8 Q 539.0 338.0 540.5 387.8 Q 540.5 397.8 530.5 397.8 Q 415.0 397.4 300.5 397.8 Q 290.5 397.8 290.5 387.8 Q 290.6 338.0 290.5 287.8 Q 290.5 277.8 300.5 277.8" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 299.9 278.1 Q 415.0 278.9 529.9 278.1 Q 539.9 278.1 539.9 288.1 Q 539.1 338.0 539.9 388.1 Q 539.9 398.1 529.9 398.1 Q 415.0 398.1 299.9 398.1 Q 289.9 398.1 289.9 388.1 Q 289.0 338.0 289.9 288.1 Q 289.9 278.1 299.9 278.1" fill="none" stroke="#d97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 585.0 278 L 830.0 278 Q 840 278 840 288.0 L 840 388.0 Q 840 398 830.0 398 L 585.0 398 Q 575 398 575 388.0 L 575 288.0 Q 575 278 585.0 278 Z" fill="#f3e8ff" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 585.3 278.3 Q 707.5 276.7 830.3 278.3 Q 840.3 278.3 840.3 288.3 Q 840.6 338.0 840.3 388.3 Q 840.3 398.3 830.3 398.3 Q 707.5 398.9 585.3 398.3 Q 575.3 398.3 575.3 388.3 Q 575.8 338.0 575.3 288.3 Q 575.3 278.3 585.3 278.3" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 585.2 277.6 Q 707.5 278.2 830.2 277.6 Q 840.2 277.6 840.2 287.6 Q 839.2 338.0 840.2 387.6 Q 840.2 397.6 830.2 397.6 Q 707.5 397.4 585.2 397.6 Q 575.2 397.6 575.2 387.6 Q 575.5 338.0 575.2 287.6 Q 575.2 277.6 585.2 277.6" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 885.0 278 L 1095.0 278 Q 1105 278 1105 288.0 L 1105 388.0 Q 1105 398 1095.0 398 L 885.0 398 Q 875 398 875 388.0 L 875 288.0 Q 875 278 885.0 278 Z" fill="#e0f2fe" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 885.6 278.3 Q 990.0 279.2 1095.6 278.3 Q 1105.6 278.3 1105.6 288.3 Q 1106.0 338.0 1105.6 388.3 Q 1105.6 398.3 1095.6 398.3 Q 990.0 397.6 885.6 398.3 Q 875.6 398.3 875.6 388.3 Q 874.6 338.0 875.6 288.3 Q 875.6 278.3 885.6 278.3" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 885.5 277.5 Q 990.0 278.0 1095.5 277.5 Q 1105.5 277.5 1105.5 287.5 Q 1105.6 338.0 1105.5 387.5 Q 1105.5 397.5 1095.5 397.5 Q 990.0 397.5 885.5 397.5 Q 875.5 397.5 875.5 387.5 Q 875.9 338.0 875.5 287.5 Q 875.5 277.5 885.5 277.5" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 1180.0 155 L 1360.0 155 Q 1370 155 1370 165.0 L 1370 270.0 Q 1370 280 1360.0 280 L 1180.0 280 Q 1170 280 1170 270.0 L 1170 165.0 Q 1170 155 1180.0 155 Z" fill="#bae6fd" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 1179.5 155.1 Q 1270.0 153.6 1359.5 155.1 Q 1369.5 155.1 1369.5 165.1 Q 1369.4 217.5 1369.5 270.1 Q 1369.5 280.1 1359.5 280.1 Q 1270.0 279.9 1179.5 280.1 Q 1169.5 280.1 1169.5 270.1 Q 1170.5 217.5 1169.5 165.1 Q 1169.5 155.1 1179.5 155.1" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 1180.3 155.1 Q 1270.0 154.3 1360.3 155.1 Q 1370.3 155.1 1370.3 165.1 Q 1369.0 217.5 1370.3 270.1 Q 1370.3 280.1 1360.3 280.1 Q 1270.0 280.2 1180.3 280.1 Q 1170.3 280.1 1170.3 270.1 Q 1169.4 217.5 1170.3 165.1 Q 1170.3 155.1 1180.3 155.1" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 540.3 125.0 Q 556.9 125.3 574.5 124.7" fill="none" stroke="#16a34a" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 540.2 124.8 Q 558.0 125.6 574.9 125.4" fill="none" stroke="#16a34a" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 574.8 125.1 Q 568.9 122.5 563.9 119.2" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 574.8 125.2 Q 569.8 127.6 563.9 130.7" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 840.3 124.9 Q 857.8 125.3 875.4 124.7" fill="none" stroke="#16a34a" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 840.2 125.0 Q 857.1 124.4 874.7 125.2" fill="none" stroke="#16a34a" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 874.9 125.0 Q 868.9 122.1 864.1 119.4" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 874.9 125.0 Q 869.1 127.7 864.0 131.0" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 539.5 338.1 Q 558.9 338.0 574.6 338.0" fill="none" stroke="#d97706" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 539.9 338.0 Q 557.6 338.4 574.7 337.6" fill="none" stroke="#d97706" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 575.0 337.8 Q 569.6 334.8 563.7 332.1" fill="none" stroke="#d97706" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 574.8 337.8 Q 569.4 340.3 564.1 343.8" fill="none" stroke="#d97706" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 839.7 337.5 Q 858.3 338.8 875.3 338.4" fill="none" stroke="#7c3aed" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 839.8 337.7 Q 857.9 337.7 875.2 337.8" fill="none" stroke="#7c3aed" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 874.9 338.1 Q 870.0 335.3 864.0 332.4" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 875.2 338.1 Q 869.0 341.0 863.9 343.7" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 225.3 194.7 Q 257.2 160.0 289.9 124.7" fill="none" stroke="#16a34a" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 225.1 195.1 Q 257.2 159.5 289.7 125.0" fill="none" stroke="#16a34a" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 289.8 125.0 Q 284.6 127.0 278.2 129.2" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 290.2 125.0 Q 288.5 131.5 286.7 137.2" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 224.8 239.7 Q 258.5 289.2 289.9 338.4" fill="none" stroke="#7c3aed" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 224.7 240.2 Q 258.1 288.7 290.3 337.8" fill="none" stroke="#7c3aed" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 290.2 337.9 Q 289.0 331.5 288.9 325.5" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 289.9 338.1 Q 284.8 334.5 278.9 331.8" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1105.6 125.1 Q 1137.2 161.3 1169.9 195.2" fill="none" stroke="#16a34a" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 1104.8 125.0 Q 1137.0 159.6 1170.3 195.2" fill="none" stroke="#16a34a" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 1169.9 195.0 Q 1168.6 189.3 1166.5 183.1" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1170.1 194.8 Q 1164.1 192.7 1158.2 190.7" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1105.2 338.6 Q 1136.1 289.4 1169.9 240.1" fill="none" stroke="#0284c7" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 1105.2 338.0 Q 1138.4 289.0 1169.9 240.2" fill="none" stroke="#0284c7" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 1169.8 240.0 Q 1164.5 242.8 1159.2 246.2" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1170.1 239.9 Q 1169.9 246.7 1168.9 252.3" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<text x="127.5" y="179.3" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">PCP 本地输入</text>
+<text x="127.5" y="200.1" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">[T_pcp, 4096]</text>
+<text x="127.5" y="220.9" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">(仅 1/PCP Tokens)</text>
+<text x="127.5" y="241.7" font-size="16" font-weight="600" fill="#334155" text-anchor="middle"></text>
+<text x="127.5" y="262.5" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">HC_pre 归一化</text>
+<text x="281.0" y="48.0" font-size="16" font-weight="700" fill="#15803d" text-anchor="start">支路 A · 34 层 KDA 线性注意力 (kda.py) — 必须还原因果顺序推进 SSM 状态</text>
+<text x="415.0" y="109.2" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">1. PCP AllGather + 还原</text>
+<text x="415.0" y="128.7" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">all_gather()[restore_idx]</text>
+<text x="415.0" y="148.2" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">恢复 [T_global, 4096]</text>
+<text x="707.5" y="109.2" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">2. TP×PCP Head 分片推进</text>
+<text x="707.5" y="128.7" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">in_proj + Conv1d + chunk_kda</text>
+<text x="707.5" y="148.2" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">仅算 n = 64/(TP×PCP) Heads</text>
+<text x="990.0" y="109.2" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">3. ReduceScatter 切回</text>
+<text x="990.0" y="128.7" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">out[padded_gather_idx]</text>
+<text x="990.0" y="148.2" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">一步归约回 [T_pcp, 4096]</text>
+<text x="281.0" y="258.0" font-size="16" font-weight="700" fill="#6d28d9" text-anchor="start">支路 B · 11 层 NoPE SFA + KPool (indexer_kpool.py &amp; sfa_cp.py) — 异步重叠 + 本地 Query</text>
+<text x="415.0" y="311.9" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">1. 异步 Gather Key 重叠</text>
+<text x="415.0" y="331.4" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">all_gather_async(k_hidden)</text>
+<text x="415.0" y="350.9" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">与本地 wq_b / q_b_proj 并行!</text>
+<text x="415.0" y="370.4" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">还原顺序更新 4:1 KPool</text>
+<text x="707.5" y="311.9" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">2. 本地 TopK &amp; 主 KV 同步</text>
+<text x="707.5" y="331.4" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">• KPool 选本地 [T_pcp, 2051]</text>
+<text x="707.5" y="350.9" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">• Latent KV (512) 跨 PCP Gather</text>
+<text x="707.5" y="370.4" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">  写入缓存 (含 Prefix Cache)</text>
+<text x="990.0" y="311.9" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">3. 本地 1/PCP 稀疏注意力</text>
+<text x="990.0" y="331.4" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">npu_sparse_flash_attn</text>
+<text x="990.0" y="350.9" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">仅算 T_pcp 个 Query</text>
+<text x="990.0" y="370.4" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">→ W_UV + ParallelOProj</text>
+<text x="1270.0" y="181.7" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">HC_post + EP MoE</text>
+<text x="1270.0" y="201.2" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">保持 [T_pcp, 4096]</text>
+<text x="1270.0" y="220.7" font-size="15" font-weight="600" fill="#334155" text-anchor="middle"></text>
+<text x="1270.0" y="240.2" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">末层 L44 出口调</text>
+<text x="1270.0" y="259.6" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">restore_for_sampling</text>
+</svg>

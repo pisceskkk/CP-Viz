@@ -313,22 +313,17 @@
 </head>
 <body>
   <div class="shell" id="app-shell">
-    <nav class="toolbar" aria-label="GLM-5.3-Flash CP 场景与算子流切换栏">
+    <nav class="toolbar" aria-label="GLM-5.3-Flash 算子流切换栏">
       <div class="btn-group">
-        <span class="group-label">CP 核心流程图 (GLM-5.3-Flash)：</span>
-        <button type="button" data-scene="dcp_prefill">DCP ① Prefill &amp; SlotMapping</button>
-        <button type="button" data-scene="dcp_decode">DCP ② Decode &amp; a2a_fused</button>
-        <button type="button" data-scene="dcp_chunked">DCP ③ Chunked &amp; SFA 双模式</button>
-        <button type="button" data-scene="pcp_dualchunk">PCP ① DualChunkSwap 切分</button>
-        <button type="button" data-scene="pcp_prefill">PCP ② Prefill (KDA + SFA/KPool)</button>
-        <button type="button" data-scene="pcp_decode">PCP ③ Decode &amp; TP×PCP 权重切分</button>
-        <button type="button" data-scene="pcp_dcp_stacked">PCP+DCP 叠加全景</button>
+        <span class="group-label">GLM-5.3-Flash 算子数据流：</span>
+        <button type="button" data-scene="kda_layer">1 · KDA 线性层 (34层)</button>
+        <button type="button" data-scene="sfa_layer">2 · NoPE SFA + KPool 稀疏层 (11层)</button>
+        <button type="button" data-scene="pcp_prefill">3 · PCP Prefill 异构流</button>
+        <button type="button" data-scene="dcp_decode">4 · DCP Decode 归并流</button>
+        <button type="button" data-scene="pcp_dcp_stacked">5 · PCP + DCP 叠加全景</button>
       </div>
       <div class="btn-group">
-        <span class="group-label">单层深潜：</span>
-        <button type="button" data-scene="kda_layer">KDA 34层</button>
-        <button type="button" data-scene="sfa_layer">SFA+KPool 11层</button>
-        <button type="button" id="btn-reset" style="margin-left:3px;">全部连线</button>
+        <button type="button" id="btn-reset">显示全部连线</button>
       </div>
     </nav>
 

@@ -1,10 +1,10 @@
-<!-- Slide 05: DCP 核心机制三：GLM-5.3-Flash Chunked Prefill 紧凑 KV Gather 与 SFA 双模式 -->
+<!-- Slide 05: DCP ③ SFA 双模式与 Prefill 紧凑 KV Gather -->
 <section data-stage="02 深入 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>DCP 核心机制 ③：GLM-5.3-Flash Chunked Prefill 与 Indexer 双模式</strong></h3>
-        <p class="slide-subtitle">GQA DCP 已移除（RFC #21305）；GLM-5.3-Flash 默认采用 <strong>Replicated KPool (4:1) + Compact KV Block Gather</strong></p>
+        <h3><strong>DCP ③：KPool 双模式与紧凑 KV Gather</strong></h3>
+        <p class="slide-subtitle">GQA DCP 已移除（RFC #21305）；GLM-5.3-Flash 默认采用 Replicated KPool + 紧凑块表 AllGather</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-glm53-kpool-pcp" type="button">
@@ -16,35 +16,35 @@
       </div>
     </div>
 
-    <div class="interactive-card" style="margin-bottom:1.1rem;">
-      <div class="interactive-card-bar">
-        <span class="interactive-card-title">
-          <span class="interactive-card-dot"></span>
-          GLM-5.3-Flash 动态算子流 · Replicated KPool (默认) vs Sharded Indexer (Radix Sort) + <code>_record_dcp_kv_gather_context</code>
-        </span>
-        <div style="display:flex; gap:0.6rem;">
-          <button class="btn-code" data-code="code-sfa-dcp-impl" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; _record_dcp_kv_gather
-          </button>
-        </div>
-      </div>
-      <div class="interactive-card-body" style="height:49vh;">
-        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=dcp_chunked&amp;compact=1" scrolling="no" title="GLM-5.3-Flash DCP Chunked Prefill 与双模式数据流"></iframe>
+    <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/glm53-dcp-sfa-prefill.svg" alt="GLM-5.3-Flash SFA DCP Modes" style="width:100%; max-height:48vh; object-fit:contain;">
+
+        <button class="hotspot-pin" style="left: 32%; top: 36%;" data-code="code-glm53-kpool-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 Replicated KPool (4:1) 源码</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 84%; top: 36%;" data-code="code-sfa-dcp-impl" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 _record_dcp_kv_gather_context</span>
+        </button>
+
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
       </div>
     </div>
 
     <div class="template-grid-2">
-      <div class="surface-card" style="padding:0.95rem 1.5rem;">
-        <h4>模式 A：Replicated KPool Indexer（GLM-5.3-Flash 默认）</h4>
-        <p style="font-size:1.26rem; margin:0;">
-          KPool 4:1 池化后每 Token 仅占 32 Elements（主 KV 的 ~1/16），全卡复制开销极小，直接零通信选出一致的全局 Top-2051！
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>为什么 KPool 默认复制？</h4>
+        <p style="font-size:1.3rem; margin:0;">4:1 池化后体积仅为主 KV 的 <code>~1/16</code>，全卡复制可零通信直出一致的全局 Top-2051。</p>
       </div>
-      <div class="surface-card" style="padding:0.95rem 1.5rem;">
-        <h4>Prefill/Mixed 紧凑 KV 收集 &amp; 模式 B（Sharded Indexer）</h4>
-        <p style="font-size:1.26rem; margin:0;">
-          Prefill 写完新 KV 后仅对本步活跃块 ID (<code>kv_gather_block_ids</code>) 跨 DCP AllGather；可选 Sharded Indexer 支持 Triton Radix Sort 跨卡归并。
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>Prefill 紧凑块收集 (<code>kv_gather_block_ids</code>)</h4>
+        <p style="font-size:1.3rem; margin:0;">写完本地新 KV 后，仅提取本步活跃块跨 DCP AllGather 拼接，支撑 Chunked Prefill 与 APC。</p>
       </div>
     </div>
   </div>

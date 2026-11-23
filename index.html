@@ -87,10 +87,9 @@
 <!-- Slide 00: 封面 & 导读 -->
 <section class="aligncenter" data-stage="封面">
   <div class="wrap">
-    <h1><strong>vLLM-Ascend 序列并行（PCP &amp; DCP）<br>原理与代码架构指南</strong></h1>
-    <p class="text-intro" style="margin-top:1.4rem;">
-      以 <strong>GLM-5.3-Flash (KDA + SFA/KPool)</strong> 为例快速掌握最新 MRV2 实现<br>
-      vLLM &amp; vLLM-Ascend Onboarding 技术分享
+    <h1><strong>vLLM-Ascend 序列并行（PCP &amp; DCP）</strong></h1>
+    <p class="text-intro" style="margin-top:1.2rem;">
+      原理架构与 <strong>GLM-5.3-Flash</strong> 代码走读
     </p>
     <p style="margin-top:2.4rem;">
       <button class="btn-branch" data-go-slide="1" type="button">
@@ -108,43 +107,40 @@
       <ol class="toc-items">
         <li class="toc-item" data-go-slide="2">
           <span class="toc-num">01</span>
-          <span class="toc-title">【总】两句话讲透 PCP &amp; DCP 与通信组拓扑</span>
+          <span class="toc-title">【总】核心思想与通信组拓扑</span>
         </li>
         <li class="toc-item" data-go-slide="3">
           <span class="toc-num">02</span>
-          <span class="toc-title">【分 ①】深入 DCP：Virtual Block、LSE 归并与 SFA 双模式</span>
+          <span class="toc-title">【分 ①】深入 DCP：KV 分片与 LSE 归并</span>
         </li>
         <li class="toc-item" data-go-slide="7">
           <span class="toc-num">03</span>
-          <span class="toc-title">【分 ②】深入 PCP：MRV2 虚拟请求段与 DualChunkSwap</span>
+          <span class="toc-title">【分 ②】深入 PCP：DualChunkSwap 与异构同步</span>
         </li>
         <li class="toc-item" data-go-slide="11">
           <span class="toc-num">04</span>
-          <span class="toc-title">【分 ③】PCP+DCP 叠加 &amp; GLM-5.3-Flash 动态数据流走读</span>
+          <span class="toc-title">【分 ③】PCP+DCP 叠加 &amp; GLM-5.3-Flash 数据流</span>
         </li>
         <li class="toc-item" data-go-slide="14">
           <span class="toc-num">05</span>
-          <span class="toc-title">【总】最新适配矩阵、部署选型与未来演进规划</span>
+          <span class="toc-title">【总】适配矩阵、部署选型与演进规划</span>
         </li>
       </ol>
     </div>
   </div>
 </section>
 
-<!-- Slide 02: CP 核心思想（两句话讲透 PCP & DCP）+ GLM-5.3-Flash 全景架构图 (Excalidraw) -->
+<!-- Slide 02: CP 核心思想（两句话讲透 PCP & DCP） -->
 <section data-stage="01 总览">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>CP 特性总览：以 GLM-5.3-Flash 为锚点的算力与显存切分</strong></h3>
-        <p class="slide-subtitle">45 层混合主干（<code>mHC</code> + 34 层 <code>KDA</code> 线性注意力 + 11 层 <code>NoPE SFA / KPool</code> 稀疏注意力 + <code>288 MoE</code>）在 PCP &amp; DCP 下的协同全景</p>
+        <h3><strong>CP 总览：算力切分 vs 显存切分</strong></h3>
+        <p class="slide-subtitle">以 GLM-5.3-Flash（34 层 KDA + 11 层 SFA/KPool）为锚点的 PCP &amp; DCP 协同</p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-comm-topology" type="button">
           通信组拓扑沙盘 &#10132;
-        </button>
-        <button class="btn-branch" data-branch="branch-glm53-dataflow" type="button">
-          全屏动态算子流 &#10132;
         </button>
         <button class="btn-code" data-code="code-parallel-state" type="button">
           &lt;/&gt; parallel_state.py
@@ -152,50 +148,44 @@
       </div>
     </div>
 
-    <!-- 两句话讲透 PCP & DCP -->
     <div class="takeaway-grid">
       <div class="takeaway-card">
         <div class="takeaway-title">
           <span>PCP (Prefill Context Parallel)</span>
-          <span class="takeaway-tag">算力切分 &middot; 降低 TTFT</span>
+          <span class="takeaway-tag">切算力 &middot; 降 TTFT</span>
         </div>
         <p class="takeaway-desc">
-          将长 Prefill 按 <strong>DualChunkSwap</strong> 切为 2x 虚拟请求段：<code>KDA</code> 按 <code>TP&times;PCP</code> 切 Head 并还原因果顺序，<code>SFA+KPool</code> 异步 Gather Key 并仅对本地 <code>1/PCP</code> Query 算稀疏注意力。
+          将长 Prefill 按 <strong>DualChunkSwap</strong> 头尾对称切分到多卡并行计算，并将 KDA Heads 与常驻权重沿 <code>TP &times; PCP</code> 切分。
         </p>
       </div>
       <div class="takeaway-card accent-secondary">
         <div class="takeaway-title">
           <span>DCP (Decode Context Parallel)</span>
-          <span class="takeaway-tag">显存切分 &middot; 提升容量与 TPOT</span>
+          <span class="takeaway-tag">切显存 &middot; 降 TPOT</span>
         </div>
         <p class="takeaway-desc">
-          复用 <code>PCP / TP</code> 进程组：<code>KPool Indexer (4:1)</code> 全量复制零通信直出 Top-2051，而占显存大头的 <code>SFA 512维主 KV</code> 按虚拟块跨卡交错分片（<code>1/DCP</code>），Decode 经 <code>dcp_a2a_fused</code> 归并。
+          复用 <code>PCP / TP</code> 进程组，将占显存大头的 <strong>SFA 主 KV Cache</strong> 按虚拟块跨卡交错分片（<code>1/DCP</code>），支撑百万上下文。
         </p>
       </div>
     </div>
 
-    <!-- GLM-5.3-Flash Excalidraw 全景架构图 + 悬浮微红点 -->
     <div class="surface-card" style="padding:1rem 1.2rem;">
       <div class="img-zoom-wrap">
-        <img src="static/images/CP/glm53-cp-overview.svg" alt="GLM-5.3-Flash PCP & DCP Excalidraw Architecture" style="width:100%; max-height:47vh; object-fit:contain;">
+        <img src="static/images/CP/glm53-cp-overview.svg" alt="GLM-5.3-Flash PCP & DCP Overview" style="width:100%; max-height:47vh; object-fit:contain;">
 
-        <button class="hotspot-pin" style="left: 21%; top: 44%;" data-go-slide="7" type="button">
-          <span class="pin-label">深入 MRV2 PCP DualChunkSwap 切分 &#10132;</span>
+        <button class="hotspot-pin" style="left: 18%; top: 38%;" data-go-slide="7" type="button">
+          <span class="pin-label">深入 PCP 切分机制 &#10132;</span>
         </button>
 
-        <button class="hotspot-pin" style="left: 55%; top: 24%;" data-code="code-glm53-kda-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 34 层 KDA TP&times;PCP 源码 (kda.py)</span>
+        <button class="hotspot-pin" style="left: 50%; top: 44%;" data-code="code-glm53-kda-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 KDA TP&times;PCP 源码</span>
         </button>
 
-        <button class="hotspot-pin" style="left: 55%; top: 58%;" data-go-slide="3" type="button">
-          <span class="pin-label">深入 11 层 SFA+KPool 的 DCP 显存分片 &#10132;</span>
+        <button class="hotspot-pin" style="left: 82%; top: 38%;" data-go-slide="3" type="button">
+          <span class="pin-label">深入 DCP 显存分片 &#10132;</span>
         </button>
 
-        <button class="hotspot-pin" style="left: 88%; top: 82%;" data-branch="branch-comm-topology" type="button">
-          <span class="pin-label">交互演示：TP &times; PCP &times; DCP 通信组排布 &#10132;</span>
-        </button>
-
-        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大 Excalidraw 架构图">
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
@@ -206,17 +196,17 @@
   </div>
 </section>
 
-<!-- Slide 03: DCP 核心机制一：GLM-5.3-Flash 的 Virtual Block 与 5 组异构 Cache 交错 Slot Mapping -->
+<!-- Slide 03: DCP ① Virtual Block 与交错 Slot Mapping -->
 <section data-stage="02 深入 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>DCP 核心机制 ①：GLM-5.3-Flash 虚拟块与异构 Cache 交错落盘</strong></h3>
-        <p class="slide-subtitle">通过 <code>dcp_sharded: list[bool]</code> 区分 5 个 Cache Group：仅 <code>Group 0 SFA 主 KV</code> 按 DCP 交错切分，非归属 Rank 写 <code>PAD_SLOT_ID (-1)</code></p>
+        <h3><strong>DCP ①：Virtual Block 与交错 Slot Mapping</strong></h3>
+        <p class="slide-subtitle">仅 SFA 主 KV 按 DCP 交错切分（<code>I = 128</code>），非归属 Rank 写 <code>-1</code></p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-dcp-detail" data-anchor="branch-dcp-blocktable" type="button">
-          BlockTable 交互沙盘 &#10132;
+          BlockTable 沙盘 &#10132;
         </button>
         <button class="btn-code" data-code="code-slot-mapping-kernel" type="button">
           &lt;/&gt; compute_slot_mappings.py
@@ -224,52 +214,55 @@
       </div>
     </div>
 
-    <div class="template-grid-2" style="margin-bottom:1.1rem;">
-      <div class="surface-card" style="padding:1rem 1.5rem;">
-        <h4>交错映射公式（SFA+DCP: <code>I == block_size == 128</code>）</h4>
-        <p style="font-size:1.28rem; line-height:1.55; margin:0; font-family:ui-monospace, monospace;">
-          virtual_block_size = 128 &times; DCP &nbsp;&nbsp;|&nbsp;&nbsp; vblock_offset = pos % virtual_block_size<br>
-          <strong>target_dcp_rank = (vblock_offset // 128) % DCP</strong> &nbsp;（非 Owner 写入 <code>-1</code> 跳过落盘）
-        </p>
-      </div>
-      <div class="surface-card" style="padding:1rem 1.5rem;">
-        <h4>GLM-5.3-Flash 的 <code>dcp_sharded</code> 异构分片契约</h4>
-        <p style="font-size:1.28rem; line-height:1.55; margin:0;">
-          &bull; <strong>Group 0 (SFA 512维主 KV)</strong>：<code>dcp_sharded=True</code>，单卡显存降至 <code>1/DCP</code>。<br>
-          &bull; <strong>Group 0/1 (KPool 4:1 + Tail) &amp; Group 2~4 (KDA SSM)</strong>：<code>dcp_sharded=False</code>。
-        </p>
+    <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/glm53-dcp-slot-mapping.svg" alt="GLM-5.3-Flash DCP Slot Mapping" style="width:100%; max-height:48vh; object-fit:contain;">
+
+        <button class="hotspot-pin" style="left: 18%; top: 38%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-blocktable" type="button">
+          <span class="pin-label">交互演示：Virtual Block 跨卡映射 &#10132;</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 46%; top: 48%;" data-code="code-slot-mapping-kernel" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 Triton Slot Mapping 源码</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 78%; top: 30%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
+          <span class="pin-label">交互演示：Token 分布与 -1 掩码 &#10132;</span>
+        </button>
+
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
       </div>
     </div>
 
-    <div class="interactive-card">
-      <div class="interactive-card-bar">
-        <span class="interactive-card-title">
-          <span class="interactive-card-dot"></span>
-          GLM-5.3-Flash 动态算子流 · DCP Prefill 异构 Slot Mapping 与紧凑 KV Gather（点击节点追踪上下游 Tensor &amp; 源码）
-        </span>
-        <div style="display:flex; gap:0.6rem;">
-          <button class="btn-branch" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            Token -1 掩码沙盘 &#10132;
-          </button>
-          <button class="btn-code" data-code="code-sfa-dcp-impl" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; sfa_cp.py
-          </button>
-        </div>
+    <div class="template-grid-2">
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>交错映射公式</h4>
+        <p style="font-size:1.32rem; margin:0; font-family:ui-monospace, monospace;">
+          virtual_block_size = block_size &times; DCP &nbsp;|&nbsp; <strong>target_rank = ((pos % VBlock) // I) % DCP</strong>
+        </p>
       </div>
-      <div class="interactive-card-body" style="height:49vh;">
-        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=dcp_prefill&amp;compact=1" scrolling="no" title="GLM-5.3-Flash DCP Prefill 数据流"></iframe>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>按 Cache Group 独立控制 (<code>dcp_sharded: list[bool]</code>)</h4>
+        <p style="font-size:1.32rem; margin:0;">
+          SFA 主 KV 设为 <code>True</code>（切为 <code>1/DCP</code>）；KPool 压缩池与 KDA 线性状态设为 <code>False</code>。
+        </p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Slide 04: DCP 核心机制二：GLM-5.3-Flash Decode 阶段的 sparse_index_remap 与 dcp_a2a_fused 归并 -->
+<!-- Slide 04: DCP ② Decode 局部注意力与 dcp_a2a_fused -->
 <section data-stage="02 深入 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>DCP 核心机制 ②：GLM-5.3-Flash Decode 局部稀疏注意力与 <code>dcp_a2a_fused</code></strong></h3>
-        <p class="slide-subtitle">Decode 绝不跨卡搬运 KV Cache：<code>sparse_index_remap</code> 映射本地 Top-K &#8594; 本地 <code>1/DCP</code> KV 计算 &#8594; Triton 打包 <code>(O_j, FP32 LSE_j)</code> 归并</p>
+        <h3><strong>DCP ②：Decode 局部注意力与 <code>dcp_a2a_fused</code></strong></h3>
+        <p class="slide-subtitle">KV Cache 静止不动：<code>sparse_index_remap</code> 过滤本地 Top-K &#8594; 局部 Attention &#8594; All2All LSE 归并</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-dcp-impl-mixin" type="button">
@@ -281,57 +274,55 @@
       </div>
     </div>
 
-    <div class="interactive-card" style="margin-bottom:1.1rem;">
-      <div class="interactive-card-bar">
-        <span class="interactive-card-title">
-          <span class="interactive-card-dot"></span>
-          GLM-5.3-Flash 动态算子流 · DCP Decode (MTP=5) 从 KPool 全局 Top-2051 到 <code>sparse_index_remap</code> 与 <code>dcp_a2a_fused</code>
-        </span>
-        <div style="display:flex; gap:0.6rem;">
-          <button class="btn-code" data-code="code-sfa-dcp-impl" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; sparse_index_remap
-          </button>
-          <button class="btn-code" data-code="code-dcp-a2a-fused" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; dcp_a2a_fused
-          </button>
-        </div>
-      </div>
-      <div class="interactive-card-body" style="height:49vh;">
-        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=dcp_decode&amp;compact=1" scrolling="no" title="GLM-5.3-Flash DCP Decode 数据流"></iframe>
+    <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/glm53-dcp-decode.svg" alt="GLM-5.3-Flash DCP Decode" style="width:100%; max-height:48vh; object-fit:contain;">
+
+        <button class="hotspot-pin" style="left: 20%; top: 58%;" data-code="code-sfa-dcp-impl" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 sparse_index_remap</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 52%; top: 38%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
+          <span class="pin-label">交互演示：本地 1/DCP KV 分片 &#10132;</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 82%; top: 36%;" data-code="code-dcp-a2a-fused" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 dcp_a2a_fused 打包与归并</span>
+        </button>
+
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
       </div>
     </div>
 
     <div class="template-grid-3">
-      <div class="surface-card" style="padding:0.95rem 1.4rem;">
-        <h4>1. <code>sparse_index_remap</code> 过滤</h4>
-        <p style="font-size:1.25rem; margin:0;">
-          Replicated KPool 选出全局 Top-2051 后，Triton Kernel 将其过滤并重映射为属于本 DCP Rank 的物理 KV Slot 及可见长度。
-        </p>
+      <div class="surface-card" style="padding:1rem 1.4rem;">
+        <h4>1. <code>sparse_index_remap</code></h4>
+        <p style="font-size:1.28rem; margin:0;">将 KPool 选出的全局 Top-2051 过滤映射为本卡 DCP 物理 KV 页索引。</p>
       </div>
-      <div class="surface-card" style="padding:0.95rem 1.4rem;">
-        <h4>2. 无损 LSE 打包 All-to-All</h4>
-        <p style="font-size:1.25rem; margin:0;">
-          Triton 将局部 <code>O_j [6B, 64, 512]</code> 与 FP32 <code>LSE_j</code>（INT32 位保留或 Base-256 编码）打包为单次 <code>all_to_all_single</code>。
-        </p>
+      <div class="surface-card" style="padding:1rem 1.4rem;">
+        <h4>2. 无损 LSE 打包 All2All</h4>
+        <p style="font-size:1.28rem; margin:0;">Triton 将 BF16 <code>O_j</code> 与 FP32 <code>LSE_j</code> 打包至单次 <code>all_to_all_single</code>。</p>
       </div>
-      <div class="surface-card" style="padding:0.95rem 1.4rem;">
-        <h4>3. 数值稳定 LSE 加权归并</h4>
-        <p style="font-size:1.25rem; margin:0; font-family:ui-monospace, monospace;">
-          m = max_j(L_j), &nbsp; w_j = exp(L_j - m)<br>
-          <strong>O = &Sigma;(w_j &middot; O_j) / &Sigma; w_j</strong>
-        </p>
+      <div class="surface-card" style="padding:1rem 1.4rem;">
+        <h4>3. LSE 稳定加权归并</h4>
+        <p style="font-size:1.28rem; margin:0; font-family:ui-monospace, monospace;">w_j = exp(L_j - max L) &nbsp;|&nbsp; O = &Sigma;(w_j&middot;O_j) / &Sigma;w_j</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Slide 05: DCP 核心机制三：GLM-5.3-Flash Chunked Prefill 紧凑 KV Gather 与 SFA 双模式 -->
+<!-- Slide 05: DCP ③ SFA 双模式与 Prefill 紧凑 KV Gather -->
 <section data-stage="02 深入 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>DCP 核心机制 ③：GLM-5.3-Flash Chunked Prefill 与 Indexer 双模式</strong></h3>
-        <p class="slide-subtitle">GQA DCP 已移除（RFC #21305）；GLM-5.3-Flash 默认采用 <strong>Replicated KPool (4:1) + Compact KV Block Gather</strong></p>
+        <h3><strong>DCP ③：KPool 双模式与紧凑 KV Gather</strong></h3>
+        <p class="slide-subtitle">GQA DCP 已移除（RFC #21305）；GLM-5.3-Flash 默认采用 Replicated KPool + 紧凑块表 AllGather</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-glm53-kpool-pcp" type="button">
@@ -343,51 +334,51 @@
       </div>
     </div>
 
-    <div class="interactive-card" style="margin-bottom:1.1rem;">
-      <div class="interactive-card-bar">
-        <span class="interactive-card-title">
-          <span class="interactive-card-dot"></span>
-          GLM-5.3-Flash 动态算子流 · Replicated KPool (默认) vs Sharded Indexer (Radix Sort) + <code>_record_dcp_kv_gather_context</code>
-        </span>
-        <div style="display:flex; gap:0.6rem;">
-          <button class="btn-code" data-code="code-sfa-dcp-impl" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; _record_dcp_kv_gather
-          </button>
-        </div>
-      </div>
-      <div class="interactive-card-body" style="height:49vh;">
-        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=dcp_chunked&amp;compact=1" scrolling="no" title="GLM-5.3-Flash DCP Chunked Prefill 与双模式数据流"></iframe>
+    <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/glm53-dcp-sfa-prefill.svg" alt="GLM-5.3-Flash SFA DCP Modes" style="width:100%; max-height:48vh; object-fit:contain;">
+
+        <button class="hotspot-pin" style="left: 32%; top: 36%;" data-code="code-glm53-kpool-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 Replicated KPool (4:1) 源码</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 84%; top: 36%;" data-code="code-sfa-dcp-impl" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 _record_dcp_kv_gather_context</span>
+        </button>
+
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
       </div>
     </div>
 
     <div class="template-grid-2">
-      <div class="surface-card" style="padding:0.95rem 1.5rem;">
-        <h4>模式 A：Replicated KPool Indexer（GLM-5.3-Flash 默认）</h4>
-        <p style="font-size:1.26rem; margin:0;">
-          KPool 4:1 池化后每 Token 仅占 32 Elements（主 KV 的 ~1/16），全卡复制开销极小，直接零通信选出一致的全局 Top-2051！
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>为什么 KPool 默认复制？</h4>
+        <p style="font-size:1.3rem; margin:0;">4:1 池化后体积仅为主 KV 的 <code>~1/16</code>，全卡复制可零通信直出一致的全局 Top-2051。</p>
       </div>
-      <div class="surface-card" style="padding:0.95rem 1.5rem;">
-        <h4>Prefill/Mixed 紧凑 KV 收集 &amp; 模式 B（Sharded Indexer）</h4>
-        <p style="font-size:1.26rem; margin:0;">
-          Prefill 写完新 KV 后仅对本步活跃块 ID (<code>kv_gather_block_ids</code>) 跨 DCP AllGather；可选 Sharded Indexer 支持 Triton Radix Sort 跨卡归并。
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>Prefill 紧凑块收集 (<code>kv_gather_block_ids</code>)</h4>
+        <p style="font-size:1.3rem; margin:0;">写完本地新 KV 后，仅提取本步活跃块跨 DCP AllGather 拼接，支撑 Chunked Prefill 与 APC。</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Slide 06: DCP 进阶机制：多 Token 因果 Decode 下的 History/Current 异步重叠 -->
+<!-- Slide 06: DCP ④ History / Current 拆流重叠 -->
 <section data-stage="02 深入 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>DCP 核心机制 ④：History / Current 拆分与通信计算重叠</strong></h3>
-        <p class="slide-subtitle">在 MTP 投机验证等多 Token 因果 Decode 场景下，将 DCP 分片的历史 KV 与本地当前步 KV 拆流并行</p>
+        <h3><strong>DCP ④：History / Current 拆流通信重叠</strong></h3>
+        <p class="slide-subtitle">MTP 多 Token 因果 Decode 下，将历史 KV 的 All2All 通信与当前步 KV 计算并行</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-dcp-a2a-fused" type="button">
-          &lt;/&gt; defer_combine &amp; fused_dcp_lse_combine
+          &lt;/&gt; fused_dcp_lse_combine
         </button>
       </div>
     </div>
@@ -395,44 +386,38 @@
     <div class="surface-card" style="margin-bottom:1.6rem; padding:1.6rem 2rem;">
       <div class="mermaid">
 flowchart LR
-    Q["Query Heads Gather"] --> H_ATTN["主流：History FIA<br/>(对本地 1/DCP 历史 KV)"]
+    Q["Query Heads Gather"] --> H_ATTN["主流：History Attention<br/>(本地 1/DCP 历史 KV)"]
     H_ATTN --> COMM["通信流：dcp_a2a_fused<br/>(defer_combine=True 异步 All2All)"]
-    H_ATTN --> C_ATTN["主流：Current FIA<br/>(对当前步新 Token 完整 KV)"]
-    COMM --> MERGE["主流：fused_dcp_lse_combine<br/>(一次性合并所有 History Ranks + Local Current)"]
+    H_ATTN --> C_ATTN["主流：Current Attention<br/>(当前步新 Token KV)"]
+    COMM --> MERGE["主流：fused_dcp_lse_combine<br/>(一次性合并 History + Current)"]
     C_ATTN --> MERGE
       </div>
     </div>
 
     <div class="template-grid-3">
       <div class="surface-card">
-        <h4>为什么必须拆分？</h4>
-        <p style="font-size:1.35rem; margin:0;">
-          MTP 验证时单请求携带 <code>K+1</code> 个因果 Query Token：历史 KV 已按 DCP 分散在各卡，而当前步新 Token KV 尚未跨卡切分。
-        </p>
+        <h4>1. 为什么要拆分？</h4>
+        <p style="font-size:1.32rem; margin:0;">MTP 验证携带 <code>K+1</code> 个因果 Token：历史 KV 已按 DCP 分片，而当前步新 KV 在本地完整持有。</p>
       </div>
       <div class="surface-card">
-        <h4>双流重叠隐藏 All2All</h4>
-        <p style="font-size:1.35rem; margin:0;">
-          在独立通信流 <code>cp_decode_comm_stream</code> 上执行历史输出的 Pack 与 All-to-All，与主流上的 Current Token FIA 完全并行。
-        </p>
+        <h4>2. 双流隐藏 All2All</h4>
+        <p style="font-size:1.32rem; margin:0;">在 <code>cp_decode_comm_stream</code> 上异步执行历史输出的 All-to-All，与主流 Current 计算重叠。</p>
       </div>
       <div class="surface-card">
-        <h4>单次归一化避免重复计数</h4>
-        <p style="font-size:1.35rem; margin:0;">
-          <code>fused_dcp_lse_combine</code> 将接收缓冲区与 <code>local_output / local_lse</code> 一并归约，保证 Current KV 精确计数一次。
-        </p>
+        <h4>3. 单次 LSE 归一化</h4>
+        <p style="font-size:1.32rem; margin:0;"><code>fused_dcp_lse_combine</code> 将所有 History 分片与 Local Current 一次性加权归约，避免重复计数。</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Slide 07: PCP 全局生命周期：从 Global Batch 到 Local Virtual Requests -->
+<!-- Slide 07: PCP ① MRV2 单步 Batch 生命周期 -->
 <section data-stage="03 深入 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>PCP 核心机制 ①：MRV2 下的单步 Batch 生命周期</strong></h3>
-        <p class="slide-subtitle">Scheduler 保持全局 Batch，Worker 侧通过 <code>PCPManager</code> + <code>AscendPCPManager</code> 完成切分与采样前恢复</p>
+        <h3><strong>PCP ①：MRV2 单步 Batch 生命周期</strong></h3>
+        <p class="slide-subtitle">Scheduler 维持全局 Batch，Worker 侧通过 <code>PCPManager</code> + <code>AscendPCPManager</code> 切分与还原</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-ascend-pcp-manager" type="button">
@@ -444,15 +429,14 @@ flowchart LR
     <div class="surface-card" style="margin-bottom:1.6rem; padding:1.4rem 2rem;">
       <div class="mermaid">
 flowchart LR
-    G["1. Global Batch<br/>(Scheduler 统一调度)"] --> P["2. partition_batch<br/>(DualChunkSwap 拆为 2x 虚拟请求段)"]
-    P --> R["3. _reorder_segments<br/>(规范排序：Decodes 在前, Prefills 在后)"]
-    R --> CTX["4. AscendPCPAttentionContext<br/>(Local Query 视图 + Global Cache/Restore 视图)"]
-    CTX --> FWD["5. Model Forward<br/>(跨 PCP 同步 KV / 局部 Attention)"]
-    FWD --> REST["6. restore_for_sampling<br/>(按 hidden_restore_idx 恢复全局顺序)"]
+    G["1. Global Batch<br/>(Scheduler 统一调度)"] --> P["2. partition_batch<br/>(拆为 2x 虚拟请求段)"]
+    P --> R["3. _reorder_segments<br/>(Decodes 在前, Prefills 在后)"]
+    R --> CTX["4. AscendPCPAttentionContext<br/>(Local Query + Global Cache 视图)"]
+    CTX --> FWD["5. Model Forward<br/>(KDA / SFA 异构并行)"]
+    FWD --> REST["6. restore_for_sampling<br/>(恢复全局 Token 顺序)"]
       </div>
     </div>
 
-    <!-- 四个核心阶段卡片，右上角带微红点热点 -->
     <div class="arch-flow">
       <div class="arch-node">
         <button class="hotspot-pin" data-code="code-pcp-dualchunk" type="button">
@@ -460,7 +444,7 @@ flowchart LR
         </button>
         <span class="arch-node-step">01 &middot; PARTITION</span>
         <h4 class="arch-node-title">2x 虚拟请求展开</h4>
-        <p class="arch-node-desc">每个 Prefill 拆为 Head/Tail 两个独立 <code>RankSegment</code>，Buffer 容量 <code>2 * max_num_reqs</code></p>
+        <p class="arch-node-desc">每个 Prefill 拆为 Head/Tail 两个独立 <code>RankSegment</code>，容量 <code>2 * max_num_reqs</code></p>
       </div>
 
       <div class="arch-node">
@@ -469,7 +453,7 @@ flowchart LR
         </button>
         <span class="arch-node-step">02 &middot; DUAL MAPS</span>
         <h4 class="arch-node-title">双向互逆映射表</h4>
-        <p class="arch-node-desc"><code>padded_gather_idx</code> 对齐 KV Slot；<code>hidden_restore_idx</code> 还原全局 Token 顺序</p>
+        <p class="arch-node-desc"><code>padded_gather_idx</code> 对齐 KV Slot；<code>hidden_restore_idx</code> 还原全局顺序</p>
       </div>
 
       <div class="arch-node">
@@ -486,24 +470,24 @@ flowchart LR
           <span class="pin-label">进入 PCP 切分交互沙盘 &#10132;</span>
         </button>
         <span class="arch-node-step">04 &middot; RESTORE</span>
-        <h4 class="arch-node-title">采样与投机边界还原</h4>
-        <p class="arch-node-desc"><code>restore_for_sampling</code> 在 Runner 边界恢复完整序列供 LM Head 与 Draft 使用</p>
+        <h4 class="arch-node-title">采样边界还原</h4>
+        <p class="arch-node-desc"><code>restore_for_sampling</code> 在 Runner 出口恢复完整序列供采样与 MTP 使用</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Slide 08: PCP 核心机制二：GLM-5.3-Flash 在 MRV2 下的 DualChunkSwap 头尾切分与双向映射表 -->
+<!-- Slide 08: PCP ② DualChunkSwap 头尾对称切分 -->
 <section data-stage="03 深入 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>PCP 核心机制 ②：DualChunkSwap 切分与 GLM-5.3-Flash 双向映射契约</strong></h3>
-        <p class="slide-subtitle">将长度为 <code>L</code> 的请求拆为 <code>2P</code> 个 Chunk，Rank <code>r</code> 展开为 <code>Head(r)</code> 与 <code>Tail(2P-1-r)</code> 两条独立虚拟请求段（<code>RankSegment</code>）</p>
+        <h3><strong>PCP ②：DualChunkSwap 头尾对称切分</strong></h3>
+        <p class="slide-subtitle">切分为 <code>2P</code> 个 Chunk，Rank <code>r</code> 取 <code>(r, 2P-1-r)</code> 展开为 2 条独立虚拟请求段</p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-pcp-layout" type="button">
-          请求切分交互沙盘 &#10132;
+          请求切分沙盘 &#10132;
         </button>
         <button class="btn-code" data-code="code-pcp-dualchunk" type="button">
           &lt;/&gt; pcp_manager.py
@@ -511,50 +495,47 @@ flowchart LR
       </div>
     </div>
 
-    <div class="interactive-card" style="margin-bottom:1.1rem;">
-      <div class="interactive-card-bar">
-        <span class="interactive-card-title">
-          <span class="interactive-card-dot"></span>
-          GLM-5.3-Flash 动态算子流 · 从 2x 虚拟请求展开到双向映射表（<code>padded_gather_idx</code> &#8644; <code>hidden_restore_idx</code>）如何驱动 KDA 与 SFA
-        </span>
-        <div style="display:flex; gap:0.6rem;">
-          <button class="btn-branch" data-branch="branch-pcp-layout" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            打开 PCP 切分模拟器 &#10132;
-          </button>
-          <button class="btn-code" data-code="code-pcp-restore-map" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; _build_batch_layout
-          </button>
-        </div>
-      </div>
-      <div class="interactive-card-body" style="height:49vh;">
-        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=pcp_dualchunk&amp;compact=1" scrolling="no" title="GLM-5.3-Flash PCP DualChunkSwap 数据流"></iframe>
+    <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/glm53-pcp-dualchunk.svg" alt="GLM-5.3-Flash PCP DualChunkSwap" style="width:100%; max-height:48vh; object-fit:contain;">
+
+        <button class="hotspot-pin" style="left: 25%; top: 68%;" data-branch="branch-pcp-layout" type="button">
+          <span class="pin-label">交互演示：观察各 Rank 的 Segment 布局 &#10132;</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 78%; top: 68%;" data-code="code-pcp-restore-map" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 padded_gather_idx &amp; restore_idx 源码</span>
+        </button>
+
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
       </div>
     </div>
 
     <div class="template-grid-2">
-      <div class="surface-card" style="padding:0.95rem 1.5rem;">
-        <h4>MRV2 核心演进：2x 独立虚拟请求行（<code>RankSegment</code>）</h4>
-        <p style="font-size:1.26rem; margin:0;">
-          Head 与 Tail 直接展开为 2 条独立虚拟请求行（Buffer 容量 <code>2 * max_num_reqs</code>），各自携带真实 <code>positions</code> 与 <code>num_computed_tokens</code>。
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>2x 独立虚拟请求段 (<code>RankSegment</code>)</h4>
+        <p style="font-size:1.3rem; margin:0;">Head 与 Tail 作为两条独立虚拟请求行，各自携带真实 <code>positions</code> 与 <code>num_computed_tokens</code>。</p>
       </div>
-      <div class="surface-card" style="padding:0.95rem 1.5rem;">
-        <h4>短请求自动复制保护（<code>replicated_requests</code>）</h4>
-        <p style="font-size:1.26rem; margin:0;">
-          在 <code>PCP + DCP</code> 模式下，若请求过短不够分满 <code>2P</code> 个 Chunk（<code>(2P - 1) * chunk_size &gt;= L</code>），自动在全卡完整复制，防止集合通信死锁。
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>短请求自动复制 (<code>replicated_requests</code>)</h4>
+        <p style="font-size:1.3rem; margin:0;">在 <code>PCP+DCP</code> 下若请求不够分满 <code>2P</code> 个 Chunk，自动全卡复制以保证集合通信步调一致。</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Slide 09: PCP 核心机制三：GLM-5.3-Flash Prefill & Chunked Prefill 下的 KDA 与 SFA/KPool 异构同步 -->
+<!-- Slide 09: PCP ③ GLM-5.3-Flash Prefill 异构同步 -->
 <section data-stage="03 深入 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>PCP 核心机制 ③：GLM-5.3-Flash Prefill 异构层算子流与异步重叠</strong></h3>
-        <p class="slide-subtitle">34 层 <code>KDA</code> 先 AllGather 还原因果顺序再 ReduceScatter；11 层 <code>SFA+KPool</code> 用 <code>all_gather_async</code> 重叠本地 Query 投影</p>
+        <h3><strong>PCP ③：GLM-5.3-Flash Prefill 异构层同步</strong></h3>
+        <p class="slide-subtitle">34 层 KDA 还原因果顺序推进状态；11 层 SFA+KPool 异步重叠 Key Gather 与本地 Query 计算</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-glm53-kda-pcp" type="button">
@@ -566,108 +547,100 @@ flowchart LR
       </div>
     </div>
 
-    <div class="interactive-card" style="margin-bottom:1.1rem;">
-      <div class="interactive-card-bar">
-        <span class="interactive-card-title">
-          <span class="interactive-card-dot"></span>
-          GLM-5.3-Flash 动态算子流 · PCP Prefill / Chunked Prefill 双支路对比：Branch A (34层 KDA) vs Branch B (11层 NoPE SFA + KPool)
-        </span>
-        <div style="display:flex; gap:0.6rem;">
-          <button class="btn-code" data-code="code-glm53-kda-pcp" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; KDA ReduceScatter
-          </button>
-          <button class="btn-code" data-code="code-glm53-kpool-pcp" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; KPool all_gather_async
-          </button>
-        </div>
-      </div>
-      <div class="interactive-card-body" style="height:49vh;">
-        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=pcp_prefill&amp;compact=1" scrolling="no" title="GLM-5.3-Flash PCP Prefill 异构算子数据流"></iframe>
+    <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/glm53-pcp-prefill.svg" alt="GLM-5.3-Flash PCP Prefill" style="width:100%; max-height:48vh; object-fit:contain;">
+
+        <button class="hotspot-pin" style="left: 50%; top: 28%;" data-code="code-glm53-kda-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 KDA AllGather &amp; ReduceScatter</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 30%; top: 75%;" data-code="code-glm53-kpool-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 KPool all_gather_async 重叠</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 68%; top: 75%;" data-code="code-pcp-dcp-stacked" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 SFA 主 KV 同步与稀疏注意力</span>
+        </button>
+
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
       </div>
     </div>
 
     <div class="template-grid-2">
-      <div class="surface-card" style="padding:0.95rem 1.5rem;">
-        <h4>Branch A · 34 层 KDA：因果还原 &#8594; <code>TP&times;PCP</code> 状态推进 &#8594; ReduceScatter</h4>
-        <p style="font-size:1.26rem; margin:0;">
-          入口 <code>all_gather(hidden)[hidden_restore_idx]</code> 恢复 <code>[T_global]</code> 推进 <code>64/(TP&times;PCP)</code> 个 Head 状态，出口按 <code>padded_gather_idx</code> 一步 ReduceScatter 切回 <code>[T_pcp]</code>！
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>支路 A · 34 层 KDA：因果还原 + ReduceScatter</h4>
+        <p style="font-size:1.3rem; margin:0;">入口用 <code>hidden_restore_idx</code> 恢复 <code>[T_global]</code> 推进 <code>1/(TP&times;PCP)</code> Head 状态，出口按 <code>padded_gather_idx</code> 切回 <code>[T_pcp]</code>。</p>
       </div>
-      <div class="surface-card" style="padding:0.95rem 1.5rem;">
-        <h4>Branch B · 11 层 SFA+KPool：异步 Key Gather 重叠 + 本地 <code>1/PCP</code> Query</h4>
-        <p style="font-size:1.26rem; margin:0;">
-          <code>prepare_pcp_hidden</code> 异步 Gather Key Hidden（与本地 <code>wq_b / q_b_proj</code> 重叠）更新全局 KPool；SFA 仅对本卡 <code>T_pcp</code> 个 Query 计算稀疏注意力。
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>支路 B · 11 层 SFA+KPool：异步重叠 + 本地 Query</h4>
+        <p style="font-size:1.3rem; margin:0;"><code>all_gather_async(k_hidden)</code> 与本地 <code>wq_b / q_b_proj</code> 重叠；SFA 仅算本卡 <code>T_pcp</code> 个 Query。</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Slide 10: PCP 核心机制四：GLM-5.3-Flash Decode 状态同步与 TP×PCP 四大常驻权重切分 -->
+<!-- Slide 10: PCP ④ Decode 策略与 TP×PCP 权重切分 -->
 <section data-stage="03 深入 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>PCP 核心机制 ④：GLM-5.3-Flash Decode 状态同步与 <code>TP &times; PCP</code> 权重切分</strong></h3>
-        <p class="slide-subtitle">利用 PCP 引入的额外 Rank 联合切分 <strong>Embedding / 34层 KDA 投影与状态 / 11层 SFA <code>o_proj</code> / LM Head</strong> 四大常驻显存</p>
+        <h3><strong>PCP ④：Decode 状态锁步与 <code>TP &times; PCP</code> 权重切分</strong></h3>
+        <p class="slide-subtitle">利用 PCP Rank 联合切分 Embedding、KDA 投影与状态、SFA <code>o_proj</code> 及 LM Head</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-glm53-kda-pcp" type="button">
           &lt;/&gt; PCPColumn / PCPRowParallel
         </button>
-        <button class="btn-code" data-code="code-ascend-pcp-manager" type="button">
-          &lt;/&gt; AscendPCPManager
+      </div>
+    </div>
+
+    <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/glm53-pcp-decode-weights.svg" alt="GLM-5.3-Flash PCP Decode & Weight Sharding" style="width:100%; max-height:48vh; object-fit:contain;">
+
+        <button class="hotspot-pin" style="left: 22%; top: 36%;" data-code="code-ascend-pcp-manager" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 Decode 状态同步策略</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 82%; top: 36%;" data-code="code-glm53-kda-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 KDA TP&times;PCP 权重与状态切分</span>
+        </button>
+
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
         </button>
       </div>
     </div>
 
-    <div class="interactive-card" style="margin-bottom:1.1rem;">
-      <div class="interactive-card-bar">
-        <span class="interactive-card-title">
-          <span class="interactive-card-dot"></span>
-          GLM-5.3-Flash 动态算子流 · PCP Decode 锁步状态推进与 <code>TP &times; PCP</code> 四大常驻权重切分流水线
-        </span>
-        <div style="display:flex; gap:0.6rem;">
-          <button class="btn-code" data-code="code-glm53-kda-pcp" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
-            &lt;/&gt; kda.py 权重与状态切分
-          </button>
-        </div>
+    <div class="template-grid-2">
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>为什么 GLM-5.3-Flash Decode 请求保持复制？</h4>
+        <p style="font-size:1.3rem; margin:0;">64 个 KDA Head 状态分散在 <code>TP&times;PCP</code> 各卡上，保持相同的请求顺序可让各卡零通信锁步推进本地状态。</p>
       </div>
-      <div class="interactive-card-body" style="height:49vh;">
-        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=pcp_decode&amp;compact=1" scrolling="no" title="GLM-5.3-Flash PCP Decode 与权重切分数据流"></iframe>
-      </div>
-    </div>
-
-    <div class="template-grid-3">
-      <div class="surface-card" style="padding:0.95rem 1.4rem;">
-        <h4>1. 为什么 Decode 请求保持复制？</h4>
-        <p style="font-size:1.24rem; margin:0;">
-          34 层 KDA 的 64 个 Head 状态分散在 <code>TP&times;PCP</code> 各卡上，保持相同的 Decode 请求顺序可让所有卡免通信锁步推进本地 SSM 状态。
-        </p>
-      </div>
-      <div class="surface-card" style="padding:0.95rem 1.4rem;">
-        <h4>2. KDA 权重与状态 <code>1/(TP&times;PCP)</code></h4>
-        <p style="font-size:1.24rem; margin:0;">
-          <code>PCPGlm5NextMergedColumnParallelLinear</code> 将 34 层 KDA 的投影权重、Conv1d 状态和 Recurrent 状态全按 <code>TP&times;PCP</code> 切分。
-        </p>
-      </div>
-      <div class="surface-card" style="padding:0.95rem 1.4rem;">
-        <h4>3. Embedding / <code>o_proj</code> / LM Head</h4>
-        <p style="font-size:1.24rem; margin:0;">
-          默认开启词表 Embedding、LM Head 以及 SFA <code>ParallelOProjection</code> 的跨 PCP 权重切分，显著释放单卡 HBM 空间。
-        </p>
+      <div class="surface-card" style="padding:1.1rem 1.6rem;">
+        <h4>四大常驻权重切分释放 HBM</h4>
+        <p style="font-size:1.3rem; margin:0;">Embedding、34 层 KDA 权重与 SSM 状态、11 层 SFA <code>o_proj</code>、LM Head 均沿 <code>TP&times;PCP</code> 切分。</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Slide 11: PCP + DCP 叠加原理：算力与显存的双重切分 -->
+<!-- Slide 11: PCP + DCP 叠加原理 -->
 <section data-stage="04 PCP+DCP &amp; GLM-5.3">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>PCP + DCP 叠加原理：算力与显存的双重切分</strong></h3>
-        <p class="slide-subtitle">在 <code>TP &times; PCP</code> 网格上复用进程组建 DCP（支持 <code>DCP = PCP</code> 或 <code>DCP = TP &times; PCP</code>）</p>
+        <h3><strong>PCP + DCP 叠加：算力与显存双重切分</strong></h3>
+        <p class="slide-subtitle">在 <code>TP &times; PCP</code> 网格上复用进程组建 DCP（<code>DCP = PCP</code> 或 <code>DCP = TP &times; PCP</code>）</p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-comm-topology" type="button">
@@ -682,66 +655,62 @@ flowchart LR
     <div class="stepper-box">
       <div class="stepper-tabs">
         <button class="stepper-tab active" data-step-target="stacked-step-1" type="button">
-          1 &middot; 拓扑与 KV 落盘规则
+          1 &middot; 拓扑与 KV 落盘
         </button>
         <button class="stepper-tab" data-step-target="stacked-step-2" type="button">
-          2 &middot; Stacked Prefill 协同
+          2 &middot; Stacked Prefill
         </button>
         <button class="stepper-tab" data-step-target="stacked-step-3" type="button">
-          3 &middot; Stacked Decode 协同
+          3 &middot; Stacked Decode
         </button>
       </div>
 
-      <!-- Tab 1 -->
       <div class="stepper-pane active" id="stacked-step-1">
         <div class="template-grid-2">
           <div>
-            <h4>PCP 切分计算，但只有 DCP 切分 KV Cache</h4>
-            <p style="font-size:1.42rem; line-height:1.6;">
-              &bull; 逻辑 DCP 组按 <code>flat_idx = tp_rank * PCP + pcp_rank</code> 组建，<code>dcp_local_rank = flat_idx % DCP</code>。<br>
-              &bull; Prefill 阶段各 PCP Rank 虽然通过 AllGather 获得了完整序列的新 KV，但只有满足 <code>(pos // I) % DCP == dcp_local_rank</code> 的 Token 会写入本卡物理 Slot，其余位置均被掩码为 <code>-1</code>。
+            <h4>PCP 切计算，只有 DCP 切 KV Cache</h4>
+            <p style="font-size:1.4rem; line-height:1.6;">
+              &bull; 逻辑 DCP 组按 <code>flat_idx = tp_rank * PCP + pcp_rank</code> 组建（先跨 PCP，再跨 TP）。<br>
+              &bull; Prefill 阶段仅满足 <code>(pos // 128) % DCP == dcp_local_rank</code> 的 Token 写入物理 Slot，其余写 <code>-1</code>。
             </p>
           </div>
           <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:1.4rem; font-family:ui-monospace, monospace; font-size:1.3rem;">
             <strong>[示例：TP=2, PCP=2, DCP=4]</strong><br><br>
-            TP Groups &nbsp;: [0, 1] (PCP0), [2, 3] (PCP1)<br>
-            PCP Groups : [0, 2] (TP0), &nbsp;[1, 3] (TP1)<br>
-            Logical DCP: [0, 2, 1, 3] (PCP-first, then TP)<br>
+            TP Groups &nbsp;: [0, 1], [2, 3]<br>
+            PCP Groups : [0, 2], [1, 3]<br>
+            Logical DCP: [0, 2, 1, 3] (PCP-first)<br>
             HCCL Sorted: [0, 1, 2, 3] (dcp_collective_rank_order)
           </div>
         </div>
       </div>
 
-      <!-- Tab 2 -->
       <div class="stepper-pane" id="stacked-step-2">
         <div class="template-grid-2">
           <div>
-            <h4>Stacked Prefill：全局统一发送计划 + 掩码写入</h4>
-            <p style="font-size:1.42rem; line-height:1.6;">
-              &bull; <strong>当前步新 KV</strong>：通过 <code>build_pcp_ordered_slot_mapping</code> 将全局 Slot 按 <code>padded_gather_idx</code> 重排，并用 <code>~gathered_kv_write_mask</code> 过滤 Padding 与重复行。<br>
-              &bull; <strong>历史 Cached KV</strong>：不同 PCP Rank 的 Head/Tail 分片历史长度不同，因此由 <code>_get_pcp_prefill_kv_inputs</code> 基于 <code>global_batch</code> 生成统一的 DCP AllGather 发送上界，接收后各虚拟片段只消费各自对应的历史区间。
+            <h4>Stacked Prefill：统一发送计划 + 掩码落盘</h4>
+            <p style="font-size:1.4rem; line-height:1.6;">
+              &bull; <strong>当前步新 KV</strong>：<code>build_pcp_ordered_slot_mapping</code> 按 <code>padded_gather_idx</code> 重排全局 Slot，过滤 Padding。<br>
+              &bull; <strong>历史 Cached KV</strong>：基于 <code>global_batch</code> 生成统一的 DCP AllGather 发送上界，接收后按本分片区间切片消费。
             </p>
           </div>
           <div style="display:flex; flex-direction:column; justify-content:center; gap:1rem;">
             <button class="btn-code" data-code="code-pcp-dcp-stacked" type="button">
-              &lt;/&gt; 查看 AscendSFAPCPDCPMetadataBuilder 源码
+              &lt;/&gt; 查看 AscendSFAPCPDCPMetadataBuilder
             </button>
             <button class="btn-code" data-code="code-pcp-restore-map" type="button">
-              &lt;/&gt; 查看 padded_gather_idx &amp; write_mask 源码
+              &lt;/&gt; 查看 padded_gather_idx &amp; write_mask
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Tab 3 -->
       <div class="stepper-pane" id="stacked-step-3">
         <div class="template-grid-2">
           <div>
             <h4>Stacked Decode：两级融合归并 <code>dcp_a2a_fused(tp, pcp)</code></h4>
-            <p style="font-size:1.42rem; line-height:1.6;">
-              &bull; Decode 请求在 PCP Rank 间复制，每张卡负责本地 <code>1/DCP</code> 的历史 KV 分片。<br>
-              &bull; 若 <code>DCP == PCP</code>：同组 Q Heads 已相同，无需跨 TP Gather Q，直接跨 PCP 归并 (O, LSE)。<br>
-              &bull; 若 <code>DCP == TP &times; PCP</code>：先在 <code>tp_group</code> 内 Gather Q Heads，算完局部 Attention 后调用 <code>dcp_a2a_fused(..., tp_group, pcp_group)</code> 一步完成跨 TP Head Scatter 与跨 PCP LSE 归并！
+            <p style="font-size:1.4rem; line-height:1.6;">
+              &bull; 若 <code>DCP == PCP</code>：同组 Q Heads 已一致，免 Gather Q，直接跨 PCP 归并 <code>(O, LSE)</code>。<br>
+              &bull; 若 <code>DCP == TP &times; PCP</code>：仅在 <code>tp_group</code> 内 Gather Q Heads，算完后由 <code>dcp_a2a_fused(..., tp_group, pcp_group)</code> 一步完成跨 TP Scatter 与跨 PCP LSE 归并！
             </p>
           </div>
           <div style="display:flex; flex-direction:column; justify-content:center; gap:1rem;">
@@ -755,80 +724,66 @@ flowchart LR
   </div>
 </section>
 
-<!-- Slide 12: 实战案例：GLM-5.3-Flash 混合架构与 CP 职责拆解 -->
+<!-- Slide 12: GLM-5.3-Flash 混合架构与 5 组 Cache 契约 -->
 <section data-stage="04 PCP+DCP &amp; GLM-5.3">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>实战案例：GLM-5.3-Flash 混合架构与 CP 职责拆解</strong></h3>
-        <p class="slide-subtitle">45 层主干（34 层线性 <code>KDA</code> + 11 层稀疏 <code>NoPE SFA / KPool</code> + <code>mHC</code> + <code>MoE</code>）在 PCP &amp; DCP 下的异构协同</p>
+        <h3><strong>GLM-5.3-Flash 混合架构与 CP 职责拆解</strong></h3>
+        <p class="slide-subtitle">45 层主干（34 层 KDA + 11 层 NoPE SFA/KPool + mHC + MoE）与 5 组 Cache 存储契约</p>
       </div>
       <div class="slide-actions">
         <button class="btn-slide-jump" data-go-slide="13" type="button">
-          进入动态 Tensor 数据流画布 &#10132;
+          进入动态数据流画布 &#10132;
         </button>
       </div>
     </div>
 
-    <!-- GLM-5.3-Flash 4 大核心组件在 PCP/DCP 下的分工卡片（右上角微红点直通真实代码） -->
-    <div class="arch-flow" style="margin-bottom:1.8rem;">
-      <div class="arch-node" style="border-top:4px solid #0284c7;">
+    <div class="arch-flow" style="margin-bottom:1.6rem;">
+      <div class="arch-node" style="border-top:4px solid #16a34a;">
         <button class="hotspot-pin" data-code="code-glm53-kda-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 kda.py: Glm5NextLinearAttention</span>
+          <span class="pin-label">&lt;/&gt; 查看 kda.py</span>
         </button>
-        <span class="arch-node-step">34 LAYERS &middot; LINEAR ATTN</span>
-        <h4 class="arch-node-title">KDA 线性注意力层</h4>
-        <p class="arch-node-desc">
-          <strong>Heads &amp; SSM State 按 <code>TP &times; PCP</code> 联合切分</strong>（64 Heads / (TP&times;PCP)）。<br>
-          PCP Prefill 时先 AllGather <code>hidden_states</code> 并按 <code>hidden_restore_idx</code> 还原因果顺序推进状态，输出经 <code>ReduceScatter</code> 切回本地。
-        </p>
+        <span class="arch-node-step">34 LAYERS &middot; KDA</span>
+        <h4 class="arch-node-title">KDA 线性注意力</h4>
+        <p class="arch-node-desc">64 Heads 与 SSM 状态按 <code>TP&times;PCP</code> 切分；Prefill 先 AllGather 还原因果顺序，输出经 ReduceScatter 切回本地。</p>
       </div>
 
-      <div class="arch-node" style="border-top:4px solid #7c3aed;">
+      <div class="arch-node" style="border-top:4px solid #d97706;">
         <button class="hotspot-pin" data-code="code-glm53-kpool-pcp" type="button">
           <span class="pin-label">&lt;/&gt; 查看 indexer_kpool.py</span>
         </button>
-        <span class="arch-node-step">11 LAYERS &middot; KPOOL INDEXER</span>
-        <h4 class="arch-node-title">KPool 稀疏索引器</h4>
-        <p class="arch-node-desc">
-          <strong>压缩 Pool Cache (4:1) + FP32 Tail Ring 全量复制</strong>。<br>
-          PCP Prefill 调用 <code>all_gather_async</code> 收集 Key Hidden（与本地 <code>wq_b</code> Query 投影重叠！），还原全局顺序更新 Cache，仅对本地 Query 选 Top-2048。
-        </p>
+        <span class="arch-node-step">11 LAYERS &middot; KPOOL</span>
+        <h4 class="arch-node-title">KPool 4:1 索引器</h4>
+        <p class="arch-node-desc">压缩池与 FP32 Tail Ring 全卡复制；Prefill 用 <code>all_gather_async</code> 重叠本地 Query 投影，选 Top-2051。</p>
       </div>
 
-      <div class="arch-node" style="border-top:4px solid #0369a1;">
+      <div class="arch-node" style="border-top:4px solid #7c3aed;">
         <button class="hotspot-pin" data-code="code-pcp-dcp-stacked" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 sfa_cp.py: AscendSFADCPImpl</span>
+          <span class="pin-label">&lt;/&gt; 查看 sfa_cp.py</span>
         </button>
-        <span class="arch-node-step">11 LAYERS &middot; SPARSE ATTN</span>
+        <span class="arch-node-step">11 LAYERS &middot; NoPE SFA</span>
         <h4 class="arch-node-title">NoPE SFA 主注意力</h4>
-        <p class="arch-node-desc">
-          <strong>支持 PCP 输入切分 + DCP 主 KV Cache 序列分片</strong>（512 Latent Dim，<code>RoPE=0</code>）。<br>
-          Decode 阶段将 Replicated Indexer 选出的全局 Top-K 索引重映射为本地 DCP KV 索引，计算后经 <code>dcp_a2a_fused</code> 归并。
-        </p>
+        <p class="arch-node-desc">512 维 Latent KV 按 DCP 交错切分（<code>1/DCP</code>）；Decode 用 <code>sparse_index_remap</code> + <code>dcp_a2a_fused</code>。</p>
       </div>
 
-      <div class="arch-node" style="border-top:4px solid #059669;">
+      <div class="arch-node" style="border-top:4px solid #0284c7;">
         <button class="hotspot-pin" data-code="code-ascend-pcp-manager" type="button">
           <span class="pin-label">&lt;/&gt; 查看 pcp_manager.py</span>
         </button>
         <span class="arch-node-step">45 LAYERS &middot; mHC &amp; MoE</span>
-        <h4 class="arch-node-title">mHC 流混合 &amp; EP MoE</h4>
-        <p class="arch-node-desc">
-          <strong>4 条残差流 <code>hc_pre / hc_post</code> 与 MoE 专家路由保持在 PCP 本地 Token 视图</strong>（<code>[T_local, 4096]</code>）上执行，与 EP All-to-All 及 Shared Expert 多流重叠无缝正交。
-        </p>
+        <h4 class="arch-node-title">mHC &amp; EP MoE</h4>
+        <p class="arch-node-desc">4 条残差流与 288 专家 MoE 保持在 PCP 本地视图 <code>[T_local, 4096]</code> 上执行，与 EP All2All 正交。</p>
       </div>
     </div>
 
-    <!-- 5 个 Cache Group 对照表 -->
-    <div class="surface-card" style="padding:1.2rem 1.8rem;">
-      <h4 style="margin-bottom:0.6rem;">GLM-5.3-Flash 的 5 组异构 KV / State Cache 在 PCP &amp; DCP 下的存储契约</h4>
-      <table class="progress-table" style="margin-top:0.4rem; font-size:1.25rem;">
+    <div class="surface-card" style="padding:1.1rem 1.6rem;">
+      <table class="progress-table" style="margin-top:0; font-size:1.25rem;">
         <thead>
           <tr>
             <th>Cache Group</th>
-            <th>对应模块与层数</th>
-            <th>单 Token 维度 / 精度</th>
+            <th>对应模块</th>
+            <th>单 Token 规格</th>
             <th>PCP 行为 (Prefill)</th>
             <th>DCP 行为 (Storage)</th>
           </tr>
@@ -836,30 +791,23 @@ flowchart LR
         <tbody>
           <tr>
             <td class="code">Group 0 · SFA Main KV</td>
-            <td>11 层 SFA (+ 1 层 MTP)</td>
-            <td>Latent 512 (BF16 / INT8 / FP8)</td>
+            <td>11 层 SFA (+MTP)</td>
+            <td>Latent 512 (BF16/INT8/FP8)</td>
             <td>PCP Gather 后按 Owner 写入</td>
-            <td><strong>DCP 交错切分 (1/DCP)</strong></td>
+            <td><strong>DCP 交错分片 (1/DCP)</strong></td>
           </tr>
           <tr>
-            <td class="code">Group 0 · KPool Indexer</td>
-            <td>11 层 Indexer 压缩池</td>
-            <td>128 dim / 4 tokens (BF16/INT8/FP8)</td>
-            <td>异步 Gather Hidden 还原顺序写</td>
-            <td><strong>全量复制 (Replicated)</strong></td>
+            <td class="code">Group 0/1 · KPool &amp; Tail</td>
+            <td>11 层 Indexer (4:1 + Ring)</td>
+            <td>128 dim / 4 tokens + FP32 Tail</td>
+            <td>异步 Gather 还原全局顺序写</td>
+            <td><strong>全卡复制 (Replicated)</strong></td>
           </tr>
           <tr>
-            <td class="code">Group 1 · KPool Tail Ring</td>
-            <td>11 层未满池尾部环</td>
-            <td>[2 (K/Gate), Ring, 128] (FP32)</td>
-            <td>随 Indexer 全局顺序推进</td>
-            <td><strong>全量复制 (Replicated)</strong></td>
-          </tr>
-          <tr>
-            <td class="code">Group 2~4 · KDA State A/B/C</td>
-            <td>34 层 KDA (12+11+11 层)</td>
-            <td>Conv (BF16) + Recurrent (BF16/FP32)</td>
-            <td>Gather Hidden 还原因果顺序推进</td>
+            <td class="code">Group 2~4 · KDA State</td>
+            <td>34 层 KDA (12+11+11)</td>
+            <td>Conv (BF16) + SSM (BF16/FP32)</td>
+            <td>Gather 还原因果顺序推进</td>
             <td><strong>按 TP &times; PCP 切分 Heads</strong></td>
           </tr>
         </tbody>
@@ -868,17 +816,17 @@ flowchart LR
   </div>
 </section>
 
-<!-- Slide 13: GLM-5.3-Flash 算子级动态 Tensor 数据流与代码走读地图 -->
+<!-- Slide 13: GLM-5.3-Flash 动态算子数据流与源码走读 -->
 <section data-stage="04 PCP+DCP &amp; GLM-5.3">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>GLM-5.3-Flash 全景动态 Tensor 数据流与源码走读</strong></h3>
-        <p class="slide-subtitle">顶部工具栏支持一键切换 <strong>9 大 CP 核心场景</strong>（DCP 3 大阶段 / PCP 3 大阶段 / PCP+DCP 叠加 / 34层 KDA 深潜 / 11层 SFA+KPool 深潜）</p>
+        <h3><strong>GLM-5.3-Flash 动态算子数据流走读</strong></h3>
+        <p class="slide-subtitle">点击算子框或彩色连线高亮上下游 Tensor 链路，一键唤起对应源码</p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-glm53-dataflow" type="button">
-          全屏展开数据流画布 &#10132;
+          全屏展开画布 &#10132;
         </button>
       </div>
     </div>
@@ -887,7 +835,7 @@ flowchart LR
       <div class="interactive-card-bar">
         <span class="interactive-card-title">
           <span class="interactive-card-dot"></span>
-          交互式算子级 Tensor 数据流：点击任意算子框或彩色连线高亮上下游依赖，底部面板点击「查看对应 vllm-ascend 源码」直接唤起代码抽屉
+          交互式 Tensor 数据流画布：支持切换 [KDA 34层 / SFA+KPool 11层 / PCP Prefill / DCP Decode / PCP+DCP 叠加]
         </span>
         <div style="display:flex; gap:0.6rem;">
           <button class="btn-code" data-code="code-glm53-kda-pcp" type="button" style="padding:0.2rem 0.7rem; font-size:1.12rem;">
@@ -902,24 +850,23 @@ flowchart LR
         </div>
       </div>
       <div class="interactive-card-body" style="height:64vh;">
-        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=pcp_dcp_stacked" scrolling="no" title="GLM-5.3-Flash CP 动态数据流"></iframe>
+        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=kda_layer" scrolling="no" title="GLM-5.3-Flash CP 动态数据流"></iframe>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Slide 14: vLLM & vLLM-Ascend PCP / DCP 最新适配全景表 -->
+<!-- Slide 14: PCP & DCP 适配全景矩阵 -->
 <section data-stage="05 总结与规划">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>vLLM-Ascend PCP &amp; DCP 最新特性适配全景矩阵</strong></h3>
-        <p class="slide-subtitle">基于最新 MRV2 架构实况（注：GQA 的 DCP 支持已按 <a href="https://github.com/vllm-project/vllm-ascend/issues/21305" target="_blank">RFC #21305</a> 移除，GQA 仅支持 PCP）</p>
+        <h3><strong>PCP &amp; DCP 特性适配矩阵</strong></h3>
+        <p class="slide-subtitle">基于最新 MRV2 架构（注：GQA 的 DCP 已按 <a href="https://github.com/vllm-project/vllm-ascend/issues/21305" target="_blank">RFC #21305</a> 移除，GQA 仅支持 PCP）</p>
       </div>
     </div>
 
-    <!-- PCP 适配矩阵 -->
-    <h4 style="margin:0 0 0.4rem; font-size:1.55rem;">1. Prefill Context Parallel (PCP) 支持矩阵</h4>
+    <h4 style="margin:0 0 0.4rem; font-size:1.5rem;">1. Prefill Context Parallel (PCP)</h4>
     <table class="progress-table" style="margin-top:0; font-size:1.25rem;">
       <thead>
         <tr>
@@ -927,9 +874,9 @@ flowchart LR
           <th>Basic PCP</th>
           <th>APC + Chunked</th>
           <th>Graph Mode</th>
-          <th>Speculative Decoding</th>
-          <th>P/D 分离 (Mooncake)</th>
-          <th>KV Pool (AscendStore)</th>
+          <th>Speculative</th>
+          <th>P/D 分离</th>
+          <th>KV Pool</th>
         </tr>
       </thead>
       <tbody>
@@ -939,8 +886,8 @@ flowchart LR
           <td class="status-yes"></td>
           <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
           <td class="status-partial" title="MTP"></td>
-          <td class="status-yes" title="Mooncake V1/V2"></td>
-          <td class="status-partial" title="non-layerwise"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial"></td>
         </tr>
         <tr>
           <td class="code">SFA (GLM-5.2)</td>
@@ -948,26 +895,26 @@ flowchart LR
           <td class="status-yes"></td>
           <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
           <td class="status-partial" title="MTP / DSpark"></td>
-          <td class="status-yes" title="Mooncake V1/V2"></td>
-          <td class="status-partial" title="non-layerwise"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial"></td>
         </tr>
         <tr>
-          <td class="code">KDA + SFA/KPool (GLM-5.3-Flash / Kimi-K3.1)</td>
+          <td class="code">KDA + SFA/KPool (GLM-5.3-Flash / K3.1)</td>
           <td class="status-yes"></td>
           <td class="status-yes"></td>
           <td class="status-partial" title="FULL_DECODE_ONLY"></td>
           <td class="status-partial" title="MTP / DSpark"></td>
-          <td class="status-yes" title="MooncakeConnectorV2"></td>
-          <td class="status-partial" title="non-layerwise"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial"></td>
         </tr>
         <tr>
-          <td class="code">DSA &amp; DSA V4.1 (DeepSeek-V4 / V4.1)</td>
+          <td class="code">DSA &amp; DSA V4.1 (DeepSeek-V4)</td>
           <td class="status-yes"></td>
           <td class="status-yes"></td>
           <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
           <td class="status-partial" title="MTP / DSpark"></td>
-          <td class="status-yes" title="MooncakeHybrid / V2"></td>
-          <td class="status-partial" title="non-layerwise"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial"></td>
         </tr>
         <tr>
           <td class="code">GQA (Qwen3 系列)</td>
@@ -975,14 +922,13 @@ flowchart LR
           <td class="status-yes"></td>
           <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
           <td class="status-partial" title="Eagle3"></td>
-          <td class="status-yes" title="Mooncake V1/V2"></td>
-          <td class="status-partial" title="non-layerwise"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial"></td>
         </tr>
       </tbody>
     </table>
 
-    <!-- DCP 适配矩阵 -->
-    <h4 style="margin:1.4rem 0 0.4rem; font-size:1.55rem;">2. Decode Context Parallel (DCP) 支持矩阵（A2 / A3 / 950PR &amp; 950DT）</h4>
+    <h4 style="margin:1.3rem 0 0.4rem; font-size:1.5rem;">2. Decode Context Parallel (DCP)</h4>
     <table class="progress-table" style="margin-top:0; font-size:1.25rem;">
       <thead>
         <tr>
@@ -1002,7 +948,7 @@ flowchart LR
           <td class="status-yes"></td>
           <td class="status-yes"></td>
           <td class="status-yes"></td>
-          <td class="status-yes" title="需设 I == block_size"></td>
+          <td class="status-yes"></td>
           <td class="status-yes"></td>
         </tr>
         <tr>
@@ -1011,12 +957,12 @@ flowchart LR
           <td class="status-yes"></td>
           <td class="status-yes"></td>
           <td class="status-yes"></td>
-          <td class="status-yes" title="需设 I == block_size"></td>
+          <td class="status-yes"></td>
           <td class="status-yes"></td>
         </tr>
         <tr>
           <td class="code">GQA / MQA (Qwen3 等)</td>
-          <td>必须保持 <code>DCP = 1</code>（Draft 保持原生 TP）</td>
+          <td>必须保持 <code>DCP = 1</code></td>
           <td class="status-no"></td>
           <td class="status-no"></td>
           <td class="status-no"></td>
@@ -1033,65 +979,65 @@ flowchart LR
   </div>
 </section>
 
-<!-- Slide 15: 部署策略选型与未来演进规划 -->
+<!-- Slide 15: 部署选型与演进规划 -->
 <section data-stage="05 总结与规划">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>部署场景选型与未来演进规划</strong></h3>
-        <p class="slide-subtitle">面向生产与超长上下文的典型配置范式，以及 vLLM-Ascend 序列并行的下一步优化方向</p>
+        <h3><strong>部署选型与未来演进规划</strong></h3>
+        <p class="slide-subtitle">GLM-5.3-Flash 推荐部署拓扑与 vLLM-Ascend 下一步优化方向</p>
       </div>
     </div>
 
-    <div class="template-grid-2" style="margin-bottom:1.8rem;">
+    <div class="template-grid-2" style="margin-bottom:1.6rem;">
       <div class="surface-card">
-        <h4>1. 典型部署选型范式（以 GLM-5.3-Flash 为例）</h4>
-        <p style="font-size:1.38rem; line-height:1.65; margin:0;">
-          &bull; <strong>PD 分离部署（950DT / A3 1M 上下文推荐拓扑）</strong>：<br>
-          &nbsp;&nbsp;&ndash; <strong>Prefill 节点</strong>：<code>DP1 + TP1 + PCP8 + EP8</code>（利用 PCP8 将长 Prompt 切为 16 个 DualChunk 并行计算，并将 KDA 64 Heads 与 Embedding/LM Head 切到 8 张卡，大幅压降 TTFT）。<br>
-          &nbsp;&nbsp;&ndash; <strong>Decode 节点</strong>：<code>DP8 + TP1 + PCP1 + EP8</code>（配合 <code>FULL_DECODE_ONLY</code> 图模式 + <code>MTP5</code> + <code>ReplaySSM</code> 最大化吞吐）。<br>
-          &bull; <strong>混部 / 超长序列（128K ~ 1M+）</strong>：<br>
-          &nbsp;&nbsp;&ndash; 开启 <strong>DCP</strong>（设置 <code>--cp-kv-cache-interleave-size == block_size</code>）消减 TP/PCP 间的 KV Cache 冗余，单机即可承载百万 Token 上下文。
+        <h4>1. GLM-5.3-Flash 典型部署拓扑</h4>
+        <p style="font-size:1.35rem; line-height:1.65; margin:0;">
+          &bull; <strong>PD 分离部署（1M 上下文推荐）</strong>：<br>
+          &nbsp;&nbsp;&ndash; <strong>Prefill 节点</strong>：<code>DP1 + TP1 + PCP8 + EP8</code>（16 个 DualChunk 并行 + KDA 64 Heads 与词表切到 8 卡，显著压降 TTFT）。<br>
+          &nbsp;&nbsp;&ndash; <strong>Decode 节点</strong>：<code>DP8 + TP1 + PCP1 + EP8</code>（配合 <code>FULL_DECODE_ONLY</code> + <code>MTP5</code> + <code>ReplaySSM</code>）。<br>
+          &bull; <strong>超长上下文混部（128K ~ 1M+）</strong>：<br>
+          &nbsp;&nbsp;&ndash; 开启 <strong>DCP</strong>（<code>I == block_size == 128</code>）消除主 KV 冗余。
         </p>
       </div>
 
       <div class="surface-card">
-        <h4>2. 未来规划与持续演进方向（Roadmap）</h4>
-        <p style="font-size:1.38rem; line-height:1.65; margin:0;">
-          &bull; <strong>KPool / 混合线性层下的 PCP Decode Request Sharding</strong>：<br>
-          &nbsp;&nbsp;&ndash; 目前 <code>model_uses_kpool_indexer</code> 下 Decode 保持 Replicated 以同步推进各卡 Mamba/KDA 状态（见 <code>common_cp.py</code> TODO）；后续将支持跨 PCP Rank 的 Recurrent State 归属与 Sharded Decode。<br>
-          &bull; <strong>BlockTable 架构对齐上游 <code>vLLM #57169</code></strong>：<br>
-          &nbsp;&nbsp;&ndash; 将 <code>AscendBlockTables</code> 收敛为 Manager-Block 粒度，把 Kernel-Block 展开映射下沉至 <code>AttentionGroup</code>。<br>
-          &bull; <strong>算子融合与动态 CP（Dynamic CP）</strong>：<br>
-          &nbsp;&nbsp;&ndash; 拓展 <code>dcp_q_replicate</code>（TPA）与 <code>dcp_a2a_fused</code> A3/A5 动态 Tiling；探索按请求序列长度跨 DP 动态弹性组建 CP 通信组。
+        <h4>2. 未来演进规划（Roadmap）</h4>
+        <p style="font-size:1.35rem; line-height:1.65; margin:0;">
+          &bull; <strong>KPool / 线性层下的 PCP Decode Request Sharding</strong>：<br>
+          &nbsp;&nbsp;&ndash; 支持跨 PCP Rank 的 Recurrent State 归属管理，解开当前 Decode Replicated 约束。<br>
+          &bull; <strong>BlockTable 对齐上游 <code>vLLM #57169</code></strong>：<br>
+          &nbsp;&nbsp;&ndash; <code>AscendBlockTables</code> 收敛为 Manager-Block 粒度，Kernel-Block 映射下沉至 <code>AttentionGroup</code>。<br>
+          &bull; <strong>算子融合与 Dynamic CP</strong>：<br>
+          &nbsp;&nbsp;&ndash; 拓展 <code>dcp_q_replicate</code> 与按序列长度动态组建 CP 通信组。
         </p>
       </div>
     </div>
 
     <div class="template-grid-3">
-      <div class="surface-card" style="padding:1.3rem 1.6rem;">
-        <h4>短/中序列 (4K ~ 32K)</h4>
-        <p style="font-size:1.32rem; margin:0;">优先标准 <strong>DP / TP</strong>；DCP 在短序列下通信收益小于开销，无需开启。</p>
+      <div class="surface-card" style="padding:1.2rem 1.5rem;">
+        <h4>短序列 (4K ~ 32K)</h4>
+        <p style="font-size:1.3rem; margin:0;">优先标准 <strong>DP / TP</strong>，无需开启 CP。</p>
       </div>
-      <div class="surface-card" style="padding:1.3rem 1.6rem;">
+      <div class="surface-card" style="padding:1.2rem 1.5rem;">
         <h4>中长序列 (32K ~ 256K)</h4>
-        <p style="font-size:1.32rem; margin:0;">开启 <strong>PCP</strong> 显著降低首字时延 TTFT，吞吐优于纯 TP、时延优于纯 DP。</p>
+        <p style="font-size:1.3rem; margin:0;">开启 <strong>PCP</strong> 压降首字时延 TTFT。</p>
       </div>
-      <div class="surface-card" style="padding:1.3rem 1.6rem;">
+      <div class="surface-card" style="padding:1.2rem 1.5rem;">
         <h4>超长序列 (128K ~ 1M+)</h4>
-        <p style="font-size:1.32rem; margin:0;">开启 <strong>DCP</strong> 或 <strong>PCP + DCP</strong>，释放成倍 KV 容量并降低长序列 Decode TPOT。</p>
+        <p style="font-size:1.3rem; margin:0;">开启 <strong>DCP</strong> 或 <strong>PCP + DCP</strong> 释放 KV 容量。</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Slide 16: Q & A 与新人源码速查索引 -->
+<!-- Slide 16: 核心源码速查表 & Q&A -->
 <section data-stage="05 总结与规划">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>新人 Onboarding 核心源码速查表 &amp; Q&amp;A</strong></h3>
-        <p class="slide-subtitle">点击右侧按钮可直接呼出对应的源码透视抽屉</p>
+        <h3><strong>核心源码速查表 &amp; Q&amp;A</strong></h3>
+        <p class="slide-subtitle">点击右侧按钮直接唤起代码抽屉</p>
       </div>
       <div class="slide-actions">
         <button class="btn-slide-jump" data-go-slide="0" type="button">
@@ -1117,9 +1063,9 @@ flowchart LR
           <td><button class="btn-code" data-code="code-parallel-state" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
-          <td class="code">MRV2 PCP Batch 切分</td>
+          <td class="code">MRV2 PCP 切分</td>
           <td class="code">vllm/v1/worker/gpu/pcp_manager.py<br>vllm_ascend/worker/v2/pcp_manager.py</td>
-          <td><code>PCPManager</code>, <code>AscendPCPManager</code>, <code>AscendPCPAttentionContext</code></td>
+          <td><code>PCPManager</code>, <code>AscendPCPManager</code></td>
           <td><button class="btn-code" data-code="code-pcp-dualchunk" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
@@ -1129,19 +1075,19 @@ flowchart LR
           <td><button class="btn-code" data-code="code-slot-mapping-kernel" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
-          <td class="code">DCP 通用 Mixin &amp; A2A</td>
+          <td class="code">DCP Mixin &amp; A2A</td>
           <td class="code">vllm_ascend/attention/context_parallel/common_cp.py<br>vllm_ascend/ops/triton/dcp/dcp_a2a.py</td>
-          <td><code>DCPImplMixin</code>, <code>dcp_a2a_fused</code>, <code>fused_dcp_lse_combine</code></td>
+          <td><code>DCPImplMixin</code>, <code>dcp_a2a_fused</code></td>
           <td><button class="btn-code" data-code="code-dcp-a2a-fused" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
-          <td class="code">MLA / SFA / DSA CP 后端</td>
-          <td class="code">vllm_ascend/attention/context_parallel/{mla_cp,sfa_cp,dsa_cp,dsa_v41_cp}.py</td>
-          <td><code>AscendMlaDCPImpl</code>, <code>AscendSFADCPImpl</code>, <code>AscendDSAPCPImpl</code></td>
+          <td class="code">SFA / MLA CP 后端</td>
+          <td class="code">vllm_ascend/attention/context_parallel/{sfa_cp,mla_cp}.py</td>
+          <td><code>AscendSFADCPImpl</code>, <code>AscendSFAPCPDCPImpl</code></td>
           <td><button class="btn-code" data-code="code-sfa-dcp-impl" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
-          <td class="code">GLM-5.3-Flash KDA &amp; KPool</td>
+          <td class="code">GLM-5.3 KDA &amp; KPool</td>
           <td class="code">vllm_ascend/models/glm5next/kda.py<br>vllm_ascend/attention/indexer_kpool.py</td>
           <td><code>Glm5NextLinearAttention</code>, <code>Glm5NextKPoolIndexerBackend</code></td>
           <td><button class="btn-code" data-code="code-glm53-kda-pcp" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
@@ -1151,10 +1097,6 @@ flowchart LR
 
     <div style="text-align:center; margin-top:2.2rem;">
       <h2 style="margin-bottom:0.4rem;"><strong>Thanks &amp; Q&amp;A</strong></h2>
-      <p style="font-size:1.4rem; color:#64748b; margin:0;">
-        设计文档：<code>docs/source/developer_guide/Design_Documents/context_parallel.md</code> &nbsp;&middot;&nbsp;
-        用户指南：<code>docs/source/user_guide/feature_guide/context_parallel.md</code>
-      </p>
     </div>
   </div>
 </section>

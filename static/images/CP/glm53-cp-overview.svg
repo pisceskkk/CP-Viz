@@ -1,129 +1,101 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 770" width="1600" height="770" font-family="Consolas, 'Microsoft YaHei', 'Segoe UI', monospace">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 460" width="1400" height="460" font-family="'Comic Sans MS', 'Segoe Print', 'Bradley Hand', 'Chalkboard SE', 'Microsoft YaHei', sans-serif">
 <defs>
-  <marker id="ah-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1971c2"/></marker>
-  <marker id="ah-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f9e44"/></marker>
-  <marker id="ah-violet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#7048e8"/></marker>
-  <marker id="ah-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#f08c00"/></marker>
-  <marker id="ah-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#e8590c"/></marker>
-  <marker id="ah-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#0ca678"/></marker>
+  <filter id="paper-shadow" x="-2%" y="-2%" width="104%" height="106%">
+    <feDropShadow dx="1.5" dy="2.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.07"/>
+  </filter>
 </defs>
-<rect x="0" y="0" width="1600" height="770" fill="#ffffff" rx="12"/>
-<rect x="36" y="96" width="340" height="510" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
-<rect x="56" y="145" width="300" height="74" rx="10" fill="#a5d8ff" stroke="#1971c2" stroke-width="2"/>
-<rect x="56" y="248" width="300" height="92" rx="10" fill="#d0bfff" stroke="#7048e8" stroke-width="2"/>
-<rect x="56" y="368" width="300" height="82" rx="10" fill="#c3fae8" stroke="#0ca678" stroke-width="2"/>
-<rect x="56" y="476" width="300" height="110" rx="10" fill="#1e293b" stroke="#334155" stroke-width="2"/>
-<rect x="406" y="96" width="820" height="238" rx="10" fill="#f0fdf4" stroke="#2f9e44" stroke-width="2" stroke-dasharray="7 5"/>
-<rect x="426" y="146" width="235" height="84" rx="10" fill="#b2f2bb" stroke="#2f9e44" stroke-width="2"/>
-<rect x="692" y="146" width="255" height="84" rx="10" fill="#d3f9d8" stroke="#2f9e44" stroke-width="2"/>
-<rect x="978" y="146" width="228" height="84" rx="10" fill="#b2f2bb" stroke="#2f9e44" stroke-width="2"/>
-<rect x="426" y="246" width="780" height="72" rx="10" fill="#1e293b" stroke="#334155" stroke-width="2"/>
-<rect x="406" y="352" width="820" height="396" rx="10" fill="#f8f0fc" stroke="#7048e8" stroke-width="2" stroke-dasharray="7 5"/>
-<rect x="426" y="402" width="235" height="82" rx="10" fill="#ffec99" stroke="#f08c00" stroke-width="2"/>
-<rect x="692" y="402" width="255" height="82" rx="10" fill="#fff3bf" stroke="#f08c00" stroke-width="2"/>
-<rect x="978" y="402" width="228" height="82" rx="10" fill="#ffd8a8" stroke="#e8590c" stroke-width="2"/>
-<rect x="426" y="504" width="235" height="86" rx="10" fill="#d0bfff" stroke="#7048e8" stroke-width="2"/>
-<rect x="692" y="504" width="255" height="86" rx="10" fill="#e5dbff" stroke="#7048e8" stroke-width="2"/>
-<rect x="978" y="504" width="228" height="86" rx="10" fill="#b2f2bb" stroke="#2f9e44" stroke-width="2"/>
-<rect x="426" y="608" width="780" height="122" rx="10" fill="#1e293b" stroke="#334155" stroke-width="2"/>
-<rect x="1256" y="96" width="308" height="652" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
-<rect x="1276" y="152" width="268" height="88" rx="10" fill="#c3fae8" stroke="#0ca678" stroke-width="2"/>
-<rect x="1276" y="268" width="268" height="96" rx="10" fill="#a5d8ff" stroke="#1971c2" stroke-width="2"/>
-<rect x="1276" y="392" width="268" height="96" rx="10" fill="#d0bfff" stroke="#7048e8" stroke-width="2"/>
-<rect x="1276" y="516" width="268" height="84" rx="10" fill="#ffec99" stroke="#f08c00" stroke-width="2"/>
-<rect x="1276" y="620" width="268" height="110" rx="10" fill="#1e293b" stroke="#334155" stroke-width="2"/>
-<rect x="36" y="624" width="340" height="124" rx="10" fill="#fff9db" stroke="#f08c00" stroke-width="2"/>
-<path d="M206,219 L206,248" fill="none" stroke="#1971c2" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-blue)"/>
-<path d="M206,340 L206,368" fill="none" stroke="#7048e8" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-violet)"/>
-<path d="M661,188 L692,188" fill="none" stroke="#2f9e44" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-green)"/>
-<path d="M947,188 L978,188" fill="none" stroke="#2f9e44" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-green)"/>
-<path d="M661,443 L692,443" fill="none" stroke="#f08c00" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-amber)"/>
-<path d="M947,443 L978,443" fill="none" stroke="#e8590c" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-orange)"/>
-<path d="M661,547 L692,547" fill="none" stroke="#7048e8" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-violet)"/>
-<path d="M947,547 L978,547" fill="none" stroke="#2f9e44" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-green)"/>
-<path d="M1092,484 L820,504" fill="none" stroke="#e8590c" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-orange)"/>
-<path d="M356,395 L385,395 L385,188 L426,188" fill="none" stroke="#1971c2" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-blue)"/>
-<path d="M356,420 L385,420 L385,443 L426,443" fill="none" stroke="#7048e8" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-violet)"/>
-<path d="M385,443 L385,547 L426,547" fill="none" stroke="#7048e8" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-violet)"/>
-<path d="M1206,188 L1276,188" fill="none" stroke="#2f9e44" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-green)"/>
-<path d="M1206,547 L1240,547 L1240,210 L1276,210" fill="none" stroke="#2f9e44" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-green)"/>
-<path d="M1410,240 L1410,268" fill="none" stroke="#0ca678" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-teal)"/>
-<path d="M1410,364 L1410,392" fill="none" stroke="#1971c2" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-blue)"/>
-<path d="M1410,488 L1410,516" fill="none" stroke="#7048e8" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-violet)"/>
-<text x="40" y="48.0" font-size="24" font-weight="800" fill="#0f172a">GLM-5.3-Flash (45 Layers: mHC + 34× KDA + 11× NoPE SFA/KPool + 288 MoE) — PCP &amp; DCP 全景架构图</text>
-<text x="40" y="75.0" font-size="15" font-weight="600" fill="#475569">PCP (Prefill Context Parallel) 切分输入序列算力 (TTFT)  ×  DCP (Decode Context Parallel) 交错切分 SFA 主 KV 显存 (TPOT &amp; 1M+ Context)</text>
-<text x="52" y="124.0" font-size="16" font-weight="800" fill="#0369a1">1 · MRV2 Runner &amp; PCP 序列切分</text>
-<text x="206.0" y="175.6" font-size="15" font-weight="700" fill="#1e1e1e" text-anchor="middle">Global Scheduler Batch</text>
-<text x="206.0" y="194.8" font-size="15" font-weight="600" fill="#1e1e1e" text-anchor="middle">Prefill [T_global] + Decode [T_mtp=6B]</text>
-<text x="206.0" y="279.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">AscendPCPManager.partition_batch</text>
-<text x="206.0" y="296.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">DualChunkSwap 头尾对称切分 (2P Chunks)</text>
-<text x="206.0" y="314.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">Rank r → Head(r) + Tail(2P-1-r) 2x 虚拟请求</text>
-<text x="206.0" y="394.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">VocabParallelEmbedding (TP×PCP 切分)</text>
-<text x="206.0" y="411.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">+的首层 hc_expand → 4 条 mHC 残差流</text>
-<text x="206.0" y="429.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">[T_local, 4, 4096] (Sinkhorn 20 iters)</text>
-<text x="70" y="508.8" font-size="13" font-weight="600" fill="#38bdf8" text-anchor="start">双向互逆映射表 (pcp_manager.py):</text>
-<text x="70" y="525.4" font-size="13" font-weight="600" fill="#38bdf8" text-anchor="start">• padded_gather_idx (Global → Gathered)</text>
-<text x="70" y="542.1" font-size="13" font-weight="600" fill="#38bdf8" text-anchor="start">• hidden_restore_idx (Gathered → Global)</text>
-<text x="70" y="558.7" font-size="13" font-weight="600" fill="#38bdf8" text-anchor="start">• gathered_kv_write_mask (过滤 Pad/-1)</text>
-<text x="424" y="124.0" font-size="16" font-weight="800" fill="#2b8a3e">2A · 34 层 KDA 线性注意力 (kda.py) — 64 Heads &amp; SSM State 按 TP × PCP 联合切分</text>
-<text x="543.5" y="173.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">PCP AllGather + 因果还原</text>
-<text x="543.5" y="190.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">all_gather(hidden)[restore_idx]</text>
-<text x="543.5" y="208.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">[T_local] → [T_global, 4096]</text>
-<text x="819.5" y="173.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">in_proj_qkvbfg_a + Conv1d(k=4)</text>
-<text x="819.5" y="190.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">+ chunk_kda / recurrent_kda</text>
-<text x="819.5" y="208.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">推进 n=64/(TP×PCP) Heads 状态</text>
-<text x="1092.0" y="173.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">o_norm + PCPRowParallel</text>
-<text x="1092.0" y="190.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">reduce_scatter(out[padded_idx])</text>
-<text x="1092.0" y="208.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">[T_global] → [T_local, 4096]</text>
-<text x="440" y="276.4" font-size="13" font-weight="600" fill="#86efac" text-anchor="start">Cache Groups 2~4 (KDA Conv BF16 + Recurrent State BF16/FP32): dcp_sharded = False (按请求槽位索引)</text>
-<text x="440" y="293.1" font-size="13" font-weight="600" fill="#86efac" text-anchor="start">• Prefill: 必须先还原因果顺序 [T_global] 推进状态 S_t = α_t S_{t-1} + β_t v_t k_t^T  • Decode: Replicated 顺序同步推进</text>
-<text x="424" y="380.0" font-size="16" font-weight="800" fill="#5f3dc4">2B · 11 层 NoPE SFA + KPool 稀疏注意力 (indexer_kpool.py &amp; sfa_cp.py) — PCP 算力 × DCP 显存</text>
-<text x="543.5" y="428.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">prepare_pcp_hidden (异步重叠)</text>
-<text x="543.5" y="445.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">all_gather_async(k_hidden)</text>
-<text x="543.5" y="463.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">与本地 wq_b / q_b_proj 并行!</text>
-<text x="819.5" y="428.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">cann.key_pool (4:1) + Tail Ring</text>
-<text x="819.5" y="445.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">Replicated Cache (Group 0/1)</text>
-<text x="819.5" y="463.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">pool_key_indexer → Top-2051</text>
-<text x="1092.0" y="428.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">Prefill: Compact KV Gather</text>
-<text x="1092.0" y="445.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">Decode: sparse_index_remap</text>
-<text x="1092.0" y="463.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">(Global TopK → 本卡 DCP Slot)</text>
-<text x="543.5" y="524.8" font-size="13" font-weight="700" fill="#1e1e1e" text-anchor="middle">SFA Main KV (Group 0, D=512)</text>
-<text x="543.5" y="541.4" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">dcp_sharded = True (I=128)</text>
-<text x="543.5" y="558.0" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">owner = (pos // 128) % DCP</text>
-<text x="543.5" y="574.7" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">非归属 Rank 写 PAD_SLOT (-1)</text>
-<text x="819.5" y="524.8" font-size="13" font-weight="700" fill="#1e1e1e" text-anchor="middle">q_b_proj + W_UK_T 吸收 (D=512)</text>
-<text x="819.5" y="541.4" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">npu_sparse_flash_attn</text>
-<text x="819.5" y="558.0" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">Prefill: 算 1/PCP Query</text>
-<text x="819.5" y="574.7" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">Decode: 读本地 1/DCP KV 分片</text>
-<text x="1092.0" y="524.8" font-size="13" font-weight="700" fill="#1e1e1e" text-anchor="middle">Decode: dcp_a2a_fused</text>
-<text x="1092.0" y="541.4" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">Triton 打包 (O_j, FP32 LSE_j)</text>
-<text x="1092.0" y="558.0" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">All2All + LSE 稳定加权归并</text>
-<text x="1092.0" y="574.7" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">+ W_UV + ParallelOProj</text>
-<text x="440" y="646.8" font-size="13" font-weight="600" fill="#c4b5fd" text-anchor="start">为什么 KPool 复制而 SFA 主 KV 按 DCP 切分？</text>
-<text x="440" y="663.4" font-size="13" font-weight="600" fill="#c4b5fd" text-anchor="start">• KPool Indexer 每 4 个 Token 池化为 1 个 128 维向量 (体积仅为主 KV 的 ~1/16)，全卡复制可零通信直出全局 Top-2051！</text>
-<text x="440" y="680.0" font-size="13" font-weight="600" fill="#c4b5fd" text-anchor="start">• SFA 主 KV (512 维 Latent) 占显存大头，按 DCP 交错分片 (1/DCP)；Decode 阶段 KV 静止不动，仅靠 sparse_index_remap</text>
-<text x="440" y="696.7" font-size="13" font-weight="600" fill="#c4b5fd" text-anchor="start">  过滤出落在本卡的 Top-K 子集，算完局部 (O_j, LSE_j) 后通过 dcp_a2a_fused(tp_group, pcp_group) 一次性归并！</text>
-<text x="1272" y="124.0" font-size="16" font-weight="800" fill="#0369a1">3 · mHC + EP MoE &amp; 采样还原</text>
-<text x="1410.0" y="181.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">HC_post + HC_pre (4 Streams)</text>
-<text x="1410.0" y="198.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">保持在 PCP 本地视图 [T_local, 4, 4096]</text>
-<text x="1410.0" y="216.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">零跨卡通信完成流间混合</text>
-<text x="1410.0" y="292.1" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">L0-2 Dense / L3-44 EP MoE</text>
-<text x="1410.0" y="310.0" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">288 Routed Experts (Top-8)</text>
-<text x="1410.0" y="327.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">+ 1 Shared Expert (多流重叠)</text>
-<text x="1410.0" y="345.8" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">在 [T_local, 4096] 上执行 EP All2All</text>
-<text x="1410.0" y="416.1" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">AscendPCPManager</text>
-<text x="1410.0" y="434.0" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">restore_for_sampling()</text>
-<text x="1410.0" y="451.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">末层 L44 hc_contract 后按</text>
-<text x="1410.0" y="469.8" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">hidden_restore_idx 恢复 [T_global]</text>
-<text x="1410.0" y="552.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">ParallelLMHead (TP×PCP 切分)</text>
-<text x="1410.0" y="569.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">+ Sampler &amp; MTP-5 Eagle Proposer</text>
-<text x="1290" y="652.8" font-size="13" font-weight="600" fill="#fde047" text-anchor="start">通信组复用 (parallel_state.py):</text>
-<text x="1290" y="669.4" font-size="13" font-weight="600" fill="#fde047" text-anchor="start">Grid (PCP, TP) → Transpose (TP, PCP)</text>
-<text x="1290" y="686.0" font-size="13" font-weight="600" fill="#fde047" text-anchor="start">Logical DCP = reshape(-1, DCP)</text>
-<text x="1290" y="702.7" font-size="13" font-weight="600" fill="#fde047" text-anchor="start">HCCL 排序映射: dcp_collective_rank_order</text>
-<text x="206.0" y="655.4" font-size="13" font-weight="700" fill="#1e1e1e" text-anchor="middle">四大常驻权重切分 (降低单卡 HBM):</text>
-<text x="206.0" y="672.1" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">1. Embedding: TP × PCP 切分</text>
-<text x="206.0" y="688.7" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">2. 34层 KDA 投影 &amp; 状态: TP × PCP 切分</text>
-<text x="206.0" y="705.4" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">3. 11层 SFA o_proj: TP × PCP 切分</text>
-<text x="206.0" y="722.0" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">4. LM Head: TP × PCP 切分</text>
+<rect x="0" y="0" width="1400" height="460" fill="#ffffff" rx="12"/>
+<path d="M 40.0 25 L 440.0 25 Q 450 25 450 35.0 L 450 425.0 Q 450 435 440.0 435 L 40.0 435 Q 30 435 30 425.0 L 30 35.0 Q 30 25 40.0 25 Z" fill="#f0f9ff" stroke="none"/>
+<path d="M 40.0 25 L 440.0 25 Q 450 25 450 35.0 L 450 425.0 Q 450 435 440.0 435 L 40.0 435 Q 30 435 30 425.0 L 30 35.0 Q 30 25 40.0 25 Z" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1" stroke-dasharray="9 6"/>
+<path d="M 70.0 75 L 410.0 75 Q 420 75 420 85.0 L 420 137.0 Q 420 147 410.0 147 L 70.0 147 Q 60 147 60 137.0 L 60 85.0 Q 60 75 70.0 75 Z" fill="#bae6fd" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 69.4 74.6 Q 240.0 74.9 409.4 74.6 Q 419.4 74.6 419.4 84.6 Q 421.2 111.0 419.4 136.6 Q 419.4 146.6 409.4 146.6 Q 240.0 148.2 69.4 146.6 Q 59.4 146.6 59.4 136.6 Q 60.8 111.0 59.4 84.6 Q 59.4 74.6 69.4 74.6" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 70.0 75.2 Q 240.0 75.7 410.0 75.2 Q 420.0 75.2 420.0 85.2 Q 419.5 111.0 420.0 137.2 Q 420.0 147.2 410.0 147.2 Q 240.0 146.6 70.0 147.2 Q 60.0 147.2 60.0 137.2 Q 60.7 111.0 60.0 85.2 Q 60.0 75.2 70.0 75.2" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 70.0 175 L 220.0 175 Q 230 175 230 185.0 L 230 237.0 Q 230 247 220.0 247 L 70.0 247 Q 60 247 60 237.0 L 60 185.0 Q 60 175 70.0 175 Z" fill="#e0f2fe" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 70.3 175.5 Q 145.0 174.8 220.3 175.5 Q 230.3 175.5 230.3 185.5 Q 230.5 211.0 230.3 237.5 Q 230.3 247.5 220.3 247.5 Q 145.0 245.7 70.3 247.5 Q 60.3 247.5 60.3 237.5 Q 58.7 211.0 60.3 185.5 Q 60.3 175.5 70.3 175.5" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 69.8 175.6 Q 145.0 174.7 219.8 175.6 Q 229.8 175.6 229.8 185.6 Q 230.4 211.0 229.8 237.6 Q 229.8 247.6 219.8 247.6 Q 145.0 247.6 69.8 247.6 Q 59.8 247.6 59.8 237.6 Q 60.1 211.0 59.8 185.6 Q 59.8 175.6 69.8 175.6" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 260.0 175 L 410.0 175 Q 420 175 420 185.0 L 420 237.0 Q 420 247 410.0 247 L 260.0 247 Q 250 247 250 237.0 L 250 185.0 Q 250 175 260.0 175 Z" fill="#e0f2fe" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 260.6 174.9 Q 335.0 174.1 410.6 174.9 Q 420.6 174.9 420.6 184.9 Q 420.1 211.0 420.6 236.9 Q 420.6 246.9 410.6 246.9 Q 335.0 245.6 260.6 246.9 Q 250.6 246.9 250.6 236.9 Q 251.0 211.0 250.6 184.9 Q 250.6 174.9 260.6 174.9" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 260.3 174.3 Q 335.0 174.3 410.3 174.3 Q 420.3 174.3 420.3 184.3 Q 419.4 211.0 420.3 236.3 Q 420.3 246.3 410.3 246.3 Q 335.0 247.0 260.3 246.3 Q 250.3 246.3 250.3 236.3 Q 249.9 211.0 250.3 184.3 Q 250.3 174.3 260.3 174.3" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 70.0 275 L 410.0 275 Q 420 275 420 285.0 L 420 395.0 Q 420 405 410.0 405 L 70.0 405 Q 60 405 60 395.0 L 60 285.0 Q 60 275 70.0 275 Z" fill="#ffffff" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 70.3 275.2 Q 240.0 274.3 410.3 275.2 Q 420.3 275.2 420.3 285.2 Q 420.0 340.0 420.3 395.2 Q 420.3 405.2 410.3 405.2 Q 240.0 406.0 70.3 405.2 Q 60.3 405.2 60.3 395.2 Q 59.3 340.0 60.3 285.2 Q 60.3 275.2 70.3 275.2" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 70.6 274.9 Q 240.0 274.4 410.6 274.9 Q 420.6 274.9 420.6 284.9 Q 419.3 340.0 420.6 394.9 Q 420.6 404.9 410.6 404.9 Q 240.0 404.3 70.6 404.9 Q 60.6 404.9 60.6 394.9 Q 59.9 340.0 60.6 284.9 Q 60.6 274.9 70.6 274.9" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 490.0 25 L 910.0 25 Q 920 25 920 35.0 L 920 425.0 Q 920 435 910.0 435 L 490.0 435 Q 480 435 480 425.0 L 480 35.0 Q 480 25 490.0 25 Z" fill="#f8fafc" stroke="none"/>
+<path d="M 490.0 25 L 910.0 25 Q 920 25 920 35.0 L 920 425.0 Q 920 435 910.0 435 L 490.0 435 Q 480 435 480 425.0 L 480 35.0 Q 480 25 490.0 25 Z" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1" stroke-dasharray="9 6"/>
+<path d="M 519.6 75 L 880.4 75 Q 890 75 890 84.6 L 890 129.4 Q 890 139 880.4 139 L 519.6 139 Q 510 139 510 129.4 L 510 84.6 Q 510 75 519.6 75 Z" fill="#ccfbf1" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 519.3 75.4 Q 700.0 74.1 880.1 75.4 Q 889.7 75.4 889.7 85.0 Q 890.5 107.0 889.7 129.8 Q 889.7 139.4 880.1 139.4 Q 700.0 137.9 519.3 139.4 Q 509.7 139.4 509.7 129.8 Q 510.9 107.0 509.7 85.0 Q 509.7 75.4 519.3 75.4" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 519.3 75.4 Q 700.0 74.4 880.1 75.4 Q 889.7 75.4 889.7 85.0 Q 889.2 107.0 889.7 129.8 Q 889.7 139.4 880.1 139.4 Q 700.0 139.1 519.3 139.4 Q 509.7 139.4 509.7 129.8 Q 510.8 107.0 509.7 85.0 Q 509.7 75.4 519.3 75.4" fill="none" stroke="#0d9488" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 520.0 162 L 880.0 162 Q 890 162 890 172.0 L 890 230.0 Q 890 240 880.0 240 L 520.0 240 Q 510 240 510 230.0 L 510 172.0 Q 510 162 520.0 162 Z" fill="#dcfce7" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 520.3 162.2 Q 700.0 163.0 880.3 162.2 Q 890.3 162.2 890.3 172.2 Q 888.9 201.0 890.3 230.2 Q 890.3 240.2 880.3 240.2 Q 700.0 241.2 520.3 240.2 Q 510.3 240.2 510.3 230.2 Q 510.9 201.0 510.3 172.2 Q 510.3 162.2 520.3 162.2" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 520.3 161.5 Q 700.0 162.9 880.3 161.5 Q 890.3 161.5 890.3 171.5 Q 889.1 201.0 890.3 229.5 Q 890.3 239.5 880.3 239.5 Q 700.0 239.1 520.3 239.5 Q 510.3 239.5 510.3 229.5 Q 510.4 201.0 510.3 171.5 Q 510.3 161.5 520.3 161.5" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 520.0 262 L 880.0 262 Q 890 262 890 272.0 L 890 330.0 Q 890 340 880.0 340 L 520.0 340 Q 510 340 510 330.0 L 510 272.0 Q 510 262 520.0 262 Z" fill="#f3e8ff" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 520.2 261.8 Q 700.0 262.8 880.2 261.8 Q 890.2 261.8 890.2 271.8 Q 891.4 301.0 890.2 329.8 Q 890.2 339.8 880.2 339.8 Q 700.0 340.1 520.2 339.8 Q 510.2 339.8 510.2 329.8 Q 511.3 301.0 510.2 271.8 Q 510.2 261.8 520.2 261.8" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 519.7 262.3 Q 700.0 261.9 879.7 262.3 Q 889.7 262.3 889.7 272.3 Q 890.2 301.0 889.7 330.3 Q 889.7 340.3 879.7 340.3 Q 700.0 339.3 519.7 340.3 Q 509.7 340.3 509.7 330.3 Q 510.8 301.0 509.7 272.3 Q 509.7 262.3 519.7 262.3" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 518.4 360 L 881.6 360 Q 890 360 890 368.4 L 890 407.6 Q 890 416 881.6 416 L 518.4 416 Q 510 416 510 407.6 L 510 368.4 Q 510 360 518.4 360 Z" fill="#ffedd5" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 518.1 359.5 Q 700.0 361.4 881.3 359.5 Q 889.7 359.5 889.7 367.9 Q 889.6 388.0 889.7 407.1 Q 889.7 415.5 881.3 415.5 Q 700.0 417.3 518.1 415.5 Q 509.7 415.5 509.7 407.1 Q 510.2 388.0 509.7 367.9 Q 509.7 359.5 518.1 359.5" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 518.0 360.7 Q 700.0 359.9 881.2 360.7 Q 889.6 360.7 889.6 369.1 Q 889.1 388.0 889.6 408.3 Q 889.6 416.7 881.2 416.7 Q 700.0 417.0 518.0 416.7 Q 509.6 416.7 509.6 408.3 Q 509.8 388.0 509.6 369.1 Q 509.6 360.7 518.0 360.7" fill="none" stroke="#ea580c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 960.0 25 L 1360.0 25 Q 1370 25 1370 35.0 L 1370 425.0 Q 1370 435 1360.0 435 L 960.0 435 Q 950 435 950 425.0 L 950 35.0 Q 950 25 960.0 25 Z" fill="#faf5ff" stroke="none"/>
+<path d="M 960.0 25 L 1360.0 25 Q 1370 25 1370 35.0 L 1370 425.0 Q 1370 435 1360.0 435 L 960.0 435 Q 950 435 950 425.0 L 950 35.0 Q 950 25 960.0 25 Z" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1" stroke-dasharray="9 6"/>
+<path d="M 990.0 75 L 1330.0 75 Q 1340 75 1340 85.0 L 1340 137.0 Q 1340 147 1330.0 147 L 990.0 147 Q 980 147 980 137.0 L 980 85.0 Q 980 75 990.0 75 Z" fill="#e9d5ff" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 990.6 75.5 Q 1160.0 75.3 1330.6 75.5 Q 1340.6 75.5 1340.6 85.5 Q 1339.0 111.0 1340.6 137.5 Q 1340.6 147.5 1330.6 147.5 Q 1160.0 146.1 990.6 147.5 Q 980.6 147.5 980.6 137.5 Q 980.2 111.0 980.6 85.5 Q 980.6 75.5 990.6 75.5" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 989.5 74.9 Q 1160.0 74.3 1329.5 74.9 Q 1339.5 74.9 1339.5 84.9 Q 1339.8 111.0 1339.5 136.9 Q 1339.5 146.9 1329.5 146.9 Q 1160.0 146.3 989.5 146.9 Q 979.5 146.9 979.5 136.9 Q 980.3 111.0 979.5 84.9 Q 979.5 74.9 989.5 74.9" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 990.0 175 L 1140.0 175 Q 1150 175 1150 185.0 L 1150 237.0 Q 1150 247 1140.0 247 L 990.0 247 Q 980 247 980 237.0 L 980 185.0 Q 980 175 990.0 175 Z" fill="#f3e8ff" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 990.3 175.3 Q 1065.0 174.1 1140.3 175.3 Q 1150.3 175.3 1150.3 185.3 Q 1148.8 211.0 1150.3 237.3 Q 1150.3 247.3 1140.3 247.3 Q 1065.0 246.5 990.3 247.3 Q 980.3 247.3 980.3 237.3 Q 979.9 211.0 980.3 185.3 Q 980.3 175.3 990.3 175.3" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 990.2 175.3 Q 1065.0 174.1 1140.2 175.3 Q 1150.2 175.3 1150.2 185.3 Q 1149.9 211.0 1150.2 237.3 Q 1150.2 247.3 1140.2 247.3 Q 1065.0 246.2 990.2 247.3 Q 980.2 247.3 980.2 237.3 Q 979.8 211.0 980.2 185.3 Q 980.2 175.3 990.2 175.3" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 1180.0 175 L 1330.0 175 Q 1340 175 1340 185.0 L 1340 237.0 Q 1340 247 1330.0 247 L 1180.0 247 Q 1170 247 1170 237.0 L 1170 185.0 Q 1170 175 1180.0 175 Z" fill="#f3e8ff" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 1179.5 175.2 Q 1255.0 174.6 1329.5 175.2 Q 1339.5 175.2 1339.5 185.2 Q 1339.1 211.0 1339.5 237.2 Q 1339.5 247.2 1329.5 247.2 Q 1255.0 246.9 1179.5 247.2 Q 1169.5 247.2 1169.5 237.2 Q 1171.2 211.0 1169.5 185.2 Q 1169.5 175.2 1179.5 175.2" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 1179.5 174.8 Q 1255.0 175.7 1329.5 174.8 Q 1339.5 174.8 1339.5 184.8 Q 1340.5 211.0 1339.5 236.8 Q 1339.5 246.8 1329.5 246.8 Q 1255.0 246.9 1179.5 246.8 Q 1169.5 246.8 1169.5 236.8 Q 1169.2 211.0 1169.5 184.8 Q 1169.5 174.8 1179.5 174.8" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 990.0 275 L 1330.0 275 Q 1340 275 1340 285.0 L 1340 395.0 Q 1340 405 1330.0 405 L 990.0 405 Q 980 405 980 395.0 L 980 285.0 Q 980 275 990.0 275 Z" fill="#ffffff" stroke="none" filter="url(#paper-shadow)"/>
+<path d="M 989.6 275.7 Q 1160.0 276.1 1329.6 275.7 Q 1339.6 275.7 1339.6 285.7 Q 1341.0 340.0 1339.6 395.7 Q 1339.6 405.7 1329.6 405.7 Q 1160.0 406.1 989.6 405.7 Q 979.6 405.7 979.6 395.7 Q 981.3 340.0 979.6 285.7 Q 979.6 275.7 989.6 275.7" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="1"/>
+<path d="M 989.3 275.1 Q 1160.0 275.1 1329.3 275.1 Q 1339.3 275.1 1339.3 285.1 Q 1339.9 340.0 1339.3 395.1 Q 1339.3 405.1 1329.3 405.1 Q 1160.0 404.9 989.3 405.1 Q 979.3 405.1 979.3 395.1 Q 979.9 340.0 979.3 285.1 Q 979.3 275.1 989.3 275.1" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+<path d="M 145.3 147.6 Q 143.7 160.8 145.4 175.3" fill="none" stroke="#0284c7" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 145.1 146.8 Q 145.7 160.6 145.1 175.3" fill="none" stroke="#0284c7" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 144.8 175.2 Q 148.0 169.3 150.9 163.8" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 145.2 174.8 Q 141.6 169.2 139.1 164.1" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 334.9 146.7 Q 333.9 161.9 334.6 175.2" fill="none" stroke="#0284c7" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 335.1 147.4 Q 335.9 160.2 334.8 175.1" fill="none" stroke="#0284c7" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 334.8 175.1 Q 337.4 169.4 340.8 163.9" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 334.9 175.0 Q 331.9 168.9 329.0 163.8" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1064.5 147.3 Q 1065.4 161.7 1065.0 175.5" fill="none" stroke="#7c3aed" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 1064.9 147.2 Q 1064.7 160.2 1065.3 174.7" fill="none" stroke="#7c3aed" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 1065.0 175.0 Q 1067.5 169.1 1070.9 163.9" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1065.2 175.0 Q 1062.5 169.9 1059.2 163.7" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1255.3 146.4 Q 1255.1 162.5 1254.9 174.9" fill="none" stroke="#7c3aed" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 1254.8 147.4 Q 1255.6 160.3 1255.2 174.7" fill="none" stroke="#7c3aed" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 1255.1 175.2 Q 1257.5 169.5 1260.7 164.1" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1254.8 175.0 Q 1252.6 169.9 1249.3 163.7" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 450.4 210.1 Q 479.1 209.2 510.2 210.4" fill="none" stroke="#0284c7" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 450.2 210.2 Q 480.2 210.1 509.9 209.6" fill="none" stroke="#0284c7" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 510.2 209.8 Q 504.0 207.5 498.8 204.2" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 509.8 210.2 Q 505.0 213.2 499.1 215.5" fill="none" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 889.6 300.5 Q 921.1 256.0 950.6 209.8" fill="none" stroke="#7c3aed" stroke-width="2.3" stroke-linecap="round"/>
+<path d="M 890.2 300.3 Q 920.3 254.8 950.1 210.3" fill="none" stroke="#7c3aed" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M 949.8 210.1 Q 944.2 212.6 939.0 215.8" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 949.9 210.2 Q 949.2 215.7 948.5 222.7" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round"/>
+<text x="46.0" y="53.0" font-size="16" font-weight="700" fill="#0369a1" text-anchor="start">PCP · 算力切分 (切 Query 序列)</text>
+<text x="240.0" y="103.5" font-size="17" font-weight="700" fill="#1e293b" text-anchor="middle">长序列 Prefill 输入 [T_global]</text>
+<text x="240.0" y="125.6" font-size="17" font-weight="600" fill="#334155" text-anchor="middle">DualChunkSwap 头尾对称切分</text>
+<text x="145.0" y="204.0" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">PCP Rank 0</text>
+<text x="145.0" y="224.8" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">Head 0 + Tail 3</text>
+<text x="335.0" y="204.0" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">PCP Rank 1</text>
+<text x="335.0" y="224.8" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">Head 1 + Tail 2</text>
+<text x="240.0" y="323.6" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">核心收益：降低首字时延 TTFT</text>
+<text x="240.0" y="343.1" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">• Attention 仅算 1/PCP 本地 Query</text>
+<text x="240.0" y="362.6" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">• 权重与 KDA 状态按 TP × PCP 切分</text>
+<text x="496.0" y="53.0" font-size="16" font-weight="700" fill="#334155" text-anchor="start">GLM-5.3-Flash (45层混合主干)</text>
+<text x="700.0" y="110.4" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">mHC 4条残差流 (hc_pre / hc_post)</text>
+<text x="700.0" y="194.0" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">34 层 · KDA 线性注意力</text>
+<text x="700.0" y="214.8" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">64 Heads &amp; SSM 状态按 TP×PCP 切分</text>
+<text x="700.0" y="294.0" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">11 层 · NoPE SFA + KPool (4:1)</text>
+<text x="700.0" y="314.8" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">KPool 全卡复制 + SFA 主 KV 按 DCP 切分</text>
+<text x="700.0" y="391.4" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">288 Routed MoE (EP All-to-All)</text>
+<text x="966.0" y="53.0" font-size="16" font-weight="700" fill="#6d28d9" text-anchor="start">DCP · 显存切分 (切 SFA KV Cache)</text>
+<text x="1160.0" y="104.0" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">Virtual Block 交错落盘 (I = 128)</text>
+<text x="1160.0" y="124.8" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">target_rank = (pos // 128) % DCP</text>
+<text x="1065.0" y="204.0" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">DCP Rank 0</text>
+<text x="1065.0" y="224.8" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">仅存 1/DCP KV 块</text>
+<text x="1255.0" y="204.0" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">DCP Rank 1</text>
+<text x="1255.0" y="224.8" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">非归属 Slot 写 -1</text>
+<text x="1160.0" y="323.6" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">核心收益：1M+ 容量 &amp; 降低 TPOT</text>
+<text x="1160.0" y="343.1" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">• Decode 阶段 KV 静止不动免通信</text>
+<text x="1160.0" y="362.6" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">• 局部 (O_j, LSE_j) 经 All2All 归并</text>
 </svg>
