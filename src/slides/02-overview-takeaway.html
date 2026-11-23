@@ -1,0 +1,69 @@
+<!-- Slide 02: 【总】两句话核心思想 + 简洁阶段卡片（右上角红点悬停展开） -->
+<section data-stage="01 总览">
+  <div class="wrap">
+    <div class="slide-header">
+      <h3><strong>核心思想总览</strong></h3>
+    </div>
+
+    <!-- 两句话核心思想 -->
+    <div class="takeaway-grid">
+      <div class="takeaway-card">
+        <div class="takeaway-title">
+          <span>核心特性 A（如 PCP）</span>
+          <span class="takeaway-tag">算力切分 &middot; 降 TTFT</span>
+        </div>
+        <p class="takeaway-desc">
+          一句话概括：切分 Prefill 输入序列，多卡并行计算降低首字时延。
+        </p>
+      </div>
+      <div class="takeaway-card accent-secondary">
+        <div class="takeaway-title">
+          <span>核心特性 B（如 DCP）</span>
+          <span class="takeaway-tag">显存切分 &middot; 提吞吐</span>
+        </div>
+        <p class="takeaway-desc">
+          一句话概括：沿序列维度交错分片 KV Cache，消除冗余存储并提升最大上下文。
+        </p>
+      </div>
+    </div>
+
+    <!-- 简洁四阶段流程卡片：右上角带闪烁红点，悬停展开跳转按钮 -->
+    <div class="arch-flow">
+      <div class="arch-node">
+        <button class="hotspot-pin" data-code="code-demo-entry" type="button">
+          <span class="pin-label">&lt;/&gt; 查看入口源码</span>
+        </button>
+        <span class="arch-node-step">01 &middot; INPUT</span>
+        <h4 class="arch-node-title">序列切分</h4>
+        <p class="arch-node-desc">Global Batch &#8594; Local Segments</p>
+      </div>
+
+      <div class="arch-node">
+        <button class="hotspot-pin" data-branch="branch-demo-deepdive" data-anchor="branch-sec-1" type="button">
+          <span class="pin-label">进入 BlockTable 支线 &#10132;</span>
+        </button>
+        <span class="arch-node-step">02 &middot; STORAGE</span>
+        <h4 class="arch-node-title">KV 交错映射</h4>
+        <p class="arch-node-desc">Virtual Block &amp; Slot Mapping</p>
+      </div>
+
+      <div class="arch-node">
+        <button class="hotspot-pin" data-code="code-demo-kernel" type="button">
+          <span class="pin-label">&lt;/&gt; 查看算子代码</span>
+        </button>
+        <span class="arch-node-step">03 &middot; COMPUTE</span>
+        <h4 class="arch-node-title">通信与注意力</h4>
+        <p class="arch-node-desc">Q/KV Gather &amp; Local Attention</p>
+      </div>
+
+      <div class="arch-node">
+        <button class="hotspot-pin" data-branch="branch-demo-deepdive" data-anchor="branch-sec-2" type="button">
+          <span class="pin-label">进入 Token 分布支线 &#10132;</span>
+        </button>
+        <span class="arch-node-step">04 &middot; MERGE</span>
+        <h4 class="arch-node-title">归并与恢复</h4>
+        <p class="arch-node-desc">LSE Combine &amp; Order Restore</p>
+      </div>
+    </div>
+  </div>
+</section>

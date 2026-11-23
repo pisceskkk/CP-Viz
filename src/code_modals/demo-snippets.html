@@ -1,0 +1,55 @@
+<!-- 示例代码片段 1 -->
+<div id="code-demo-entry"
+     class="code-snippet-tpl"
+     data-tag="PYTHON"
+     data-title="示例模块入口代码 (Template Demo A)"
+     data-file="path/to/example_manager.py"
+     data-lines="L100-L120"
+     data-start-line="100"
+     data-highlight="105-108,114"
+     data-desc="<strong>代码抽屉功能说明：</strong>支持配置起始行号 <code>data-start-line</code> 与高亮行区间 <code>data-highlight=&quot;105-108,114&quot;</code>，可在幻灯片或支线的任意位置通过 <code>data-code=&quot;code-demo-entry&quot;</code> 呼出。">
+<pre>
+class ExampleManager:
+    """示例代码块：仅用于演示 WebSlides 代码透视抽屉能力。"""
+
+    def partition_batch(self, input_batch, batch_desc):
+        # [高亮行示例] 执行核心切分逻辑
+        local_batch = super().partition_batch(input_batch, batch_desc)
+        padded_num_reqs = batch_desc.num_reqs
+        local_batch = self._finalize_partition(input_batch, local_batch, padded_num_reqs)
+
+        # 保存本地视图与全局采样恢复状态
+        self._local_batch = local_batch
+        self._sampling_global_batch = None
+
+        # [单行高亮示例] 返回当前 rank 的局部 Batch
+        return local_batch
+</pre>
+</div>
+
+<!-- 示例代码片段 2 -->
+<div id="code-demo-kernel"
+     class="code-snippet-tpl"
+     data-tag="TRITON / KERNEL"
+     data-title="示例核心算子代码 (Template Demo B)"
+     data-file="path/to/example_kernel.py"
+     data-lines="L40-L58"
+     data-start-line="40"
+     data-highlight="46-51"
+     data-desc="<strong>算子透视说明：</strong>用于展示关键算子调用或 Triton Kernel 的核心计算公式与参数约定。">
+<pre>
+def compute_slot_mapping_demo(token_idx: int, block_size: int, cp_size: int, interleave: int):
+    """示例算子逻辑占位：演示高亮关键计算公式。"""
+    virtual_block_size = block_size * cp_size
+
+    # [高亮核心公式区间]
+    virtual_block_idx = token_idx // virtual_block_size
+    offset_in_vblock = token_idx % virtual_block_size
+    interleave_idx = offset_in_vblock // interleave
+    target_rank = interleave_idx % cp_size
+
+    if target_rank != current_cp_rank():
+        return -1  # PAD_SLOT_ID
+    return resolve_physical_slot(virtual_block_idx, offset_in_vblock)
+</pre>
+</div>

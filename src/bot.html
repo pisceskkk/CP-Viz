@@ -1,26 +1,39 @@
 
+    <!-- ========== CODE INSPECTOR DRAWER ========== -->
+    <div id="code-drawer-backdrop" class="code-drawer-backdrop" onclick="closeCodeDrawer()" aria-hidden="true"></div>
+    <aside id="code-drawer" class="code-drawer" aria-hidden="true" aria-label="代码透视面板">
+      <div class="code-drawer-header">
+        <div class="code-drawer-title-group">
+          <span class="code-drawer-badge" id="code-drawer-tag">CODE</span>
+          <h4 id="code-drawer-title">代码详情</h4>
+        </div>
+        <button class="code-drawer-close" onclick="closeCodeDrawer()" type="button" aria-label="关闭代码面板">&times;</button>
+      </div>
+      <div class="code-drawer-meta">
+        <span class="code-file-pill" id="code-drawer-file">path/to/file.py</span>
+        <span class="code-lines-pill" id="code-drawer-lines">L1-L20</span>
+      </div>
+      <div class="code-drawer-desc" id="code-drawer-desc"></div>
+      <div class="code-drawer-body">
+        <pre class="code-pre"><code id="code-drawer-content"></code></pre>
+      </div>
+      <div class="code-drawer-footer" id="code-drawer-footer"></div>
+    </aside>
+
+    <!-- ========== CODE SNIPPET TEMPLATES ========== -->
+    <div id="code-snippets-store" style="display:none;">
+<!-- CODE_MODALS_PLACEHOLDER -->
     </div>
 
-    <!-- Back button (shared by all branch slides, positioned fixed top-right) -->
-    <button class="btn-back" onclick="backFromBranch()" style="display:none;" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-      返回
-    </button>
-
-    <!-- Lightbox overlay -->
+    <!-- ========== LIGHTBOX OVERLAY ========== -->
     <div id="lightbox" onclick="closeLightbox()" aria-hidden="true">
       <button class="lb-close" onclick="closeLightbox()" type="button" aria-label="关闭图片预览">&times;</button>
       <img id="lightbox-img" src="" alt="">
     </div>
 
-    <!-- Required -->
+    <!-- Required Scripts -->
     <script src="static/js/webslides.js"></script>
     <script src="static/js/presentation.js"></script>
-
-    <!-- OPTIONAL - svg-icons.js (fontastic.me - Font Awesome as svg icons) -->
     <script defer src="static/js/svg-icons.js"></script>
-
   </body>
 </html>

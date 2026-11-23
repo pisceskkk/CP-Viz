@@ -5,24 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- SEO -->
-    <title>vLLM PCP&DCP 技术分享</title>
-    <meta name="description" content="vLLM PCP&DCP 技术分享演示">
+    <title>WebSlides 交互式技术演示模板</title>
+    <meta name="description" content="支持总分总导航、热点跳转、支线深潜与代码透视抽屉的 WebSlides 演示模板">
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,700,700i%7CMaitree:200,300,400,600,700&amp;subset=latin-ext" rel="stylesheet">
 
     <!-- Mermaid -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({startOnLoad:false, theme:'default', securityLevel:'loose', fontSize:20, flowchart:{useMaxWidth:true, htmlLabels:true}});</script>
+    <script>
+      if (window.mermaid) {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'base',
+          securityLevel: 'loose',
+          fontSize: 18,
+          themeVariables: {
+            primaryColor: '#e0f2fe',
+            primaryTextColor: '#0f172a',
+            primaryBorderColor: '#0369a1',
+            lineColor: '#475569',
+            secondaryColor: '#f1f5f9',
+            tertiaryColor: '#ffffff'
+          },
+          flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+        });
+      }
+    </script>
 
     <!-- CSS WebSlides -->
-    <link rel="stylesheet" type='text/css' media='all' href="static/css/webslides.css">
+    <link rel="stylesheet" type="text/css" media="all" href="static/css/webslides.css">
 
-    <!-- CSS Presentation -->
-    <link rel="stylesheet" type='text/css' media='all' href="static/css/presentation.css">
+    <!-- CSS Presentation Template -->
+    <link rel="stylesheet" type="text/css" media="all" href="static/css/presentation.css">
 
     <!-- Optional - CSS SVG Icons (Font Awesome) -->
-    <link rel="stylesheet" type='text/css' media='all' href="static/css/svg-icons.css">
+    <link rel="stylesheet" type="text/css" media="all" href="static/css/svg-icons.css">
 
     <!-- FAVICONS -->
     <link rel="shortcut icon" sizes="16x16" href="static/images/favicons/favicon.png">
@@ -35,5 +53,5 @@
 
     <!-- Android -->
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#333333">
-</head>
+    <meta name="theme-color" content="#0369a1">
+  </head>

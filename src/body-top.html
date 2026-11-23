@@ -1,15 +1,27 @@
-<body>
-    <!-- Fixed logo: always visible, independent of WebSlides auto-hide header -->
-    <div class="fixed-logo">
-      <img src="static/images/logos/vllm-ascend.webp" alt="vLLM Ascend">
-    </div>
+  <body>
+    <!-- Top Bar: Strictly aligned with slide .wrap container -->
+    <header class="deck-topbar" aria-label="演示导航栏">
+      <div class="deck-topbar-inner">
+        <div class="fixed-logo" onclick="goToSlideIndex(0)" title="返回封面">
+          <img src="static/images/logos/vllm-ascend.webp" alt="vLLM Ascend">
+        </div>
+
+        <nav class="stage-nav" id="stage-nav" aria-label="章节阶段导航">
+          <!-- Populated dynamically from window.ws.slides -->
+        </nav>
+
+        <div class="topbar-actions">
+          <span class="branch-badge" id="branch-indicator" style="display:none;">支线视图</span>
+          <button class="btn-back" id="btn-back-branch" onclick="backFromBranch()" style="display:none;" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            返回主线
+          </button>
+        </div>
+      </div>
+    </header>
 
     <main role="main">
       <article id="webslides" class="vertical">
-        <!-- Quick Guide
-          - Each parent <section> in the <article id="webslides"> element is an individual slide.
-          - Vertical sliding = <article id="webslides" class="vertical">
-          - <div class="wrap"> = container 90% / <div class="wrap size-50"> = 45%;
-        -->
-
         <!-- ========== SLIDES START ========== -->

@@ -1,0 +1,55 @@
+<!-- Slide 04: 【分 ②】简洁流程图 + 分步切换 -->
+<section data-stage="03 分步流程">
+  <div class="wrap">
+    <div class="slide-header">
+      <h3><strong>执行链路与分步拆解</strong></h3>
+    </div>
+
+    <!-- Mermaid 流程图卡片 -->
+    <div class="surface-card" style="margin-bottom:1.8rem; padding:1.4rem 2rem;">
+      <div class="mermaid">
+flowchart LR
+    S1["1. Batch 切分"] --> S2["2. 跨卡通信同步"] --> S3["3. 核心算子计算"] --> S4["4. 结果归并还原"]
+      </div>
+    </div>
+
+    <!-- 简洁 Stepper -->
+    <div class="stepper-box">
+      <div class="stepper-tabs">
+        <button class="stepper-tab active" data-step-target="demo-step-1" type="button">Step 1 &middot; 输入切分</button>
+        <button class="stepper-tab" data-step-target="demo-step-2" type="button">Step 2 &middot; 通信同步</button>
+        <button class="stepper-tab" data-step-target="demo-step-3" type="button">Step 3 &middot; 归并还原</button>
+      </div>
+
+      <div class="stepper-pane active" id="demo-step-1">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:2rem;">
+          <div>
+            <h4>Step 1：将全局请求切分为本地虚拟请求段</h4>
+            <p style="font-size:1.5rem; margin:0;"><code>Global Input [T_global, D]</code> &#8594; <code>Local Segments [T_local, D]</code></p>
+          </div>
+          <button class="btn-code" data-code="code-demo-entry" type="button">&lt;/&gt; 查看源码</button>
+        </div>
+      </div>
+
+      <div class="stepper-pane" id="demo-step-2">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:2rem;">
+          <div>
+            <h4>Step 2：在通信组内聚合 Q Heads 或历史 KV</h4>
+            <p style="font-size:1.5rem; margin:0;"><code>all_gather_async</code> / <code>all_to_all_single</code> 与主流计算重叠</p>
+          </div>
+          <button class="btn-branch" data-branch="branch-demo-deepdive" data-anchor="branch-sec-1" type="button">查看支线沙盘 &#10132;</button>
+        </div>
+      </div>
+
+      <div class="stepper-pane" id="demo-step-3">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:2rem;">
+          <div>
+            <h4>Step 3：按 LSE 加权归并局部输出并恢复全局顺序</h4>
+            <p style="font-size:1.5rem; margin:0;"><code>w_j = exp(L_j - max L)</code> &#8594; <code>hidden_restore_idx</code></p>
+          </div>
+          <button class="btn-code" data-code="code-demo-kernel" type="button">&lt;/&gt; 查看算子代码</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

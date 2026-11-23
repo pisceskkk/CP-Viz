@@ -5,24 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- SEO -->
-    <title>vLLM PCP&DCP 技术分享</title>
-    <meta name="description" content="vLLM PCP&DCP 技术分享演示">
+    <title>WebSlides 交互式技术演示模板</title>
+    <meta name="description" content="支持总分总导航、热点跳转、支线深潜与代码透视抽屉的 WebSlides 演示模板">
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,700,700i%7CMaitree:200,300,400,600,700&amp;subset=latin-ext" rel="stylesheet">
 
     <!-- Mermaid -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({startOnLoad:false, theme:'default', securityLevel:'loose', fontSize:20, flowchart:{useMaxWidth:true, htmlLabels:true}});</script>
+    <script>
+      if (window.mermaid) {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'base',
+          securityLevel: 'loose',
+          fontSize: 18,
+          themeVariables: {
+            primaryColor: '#e0f2fe',
+            primaryTextColor: '#0f172a',
+            primaryBorderColor: '#0369a1',
+            lineColor: '#475569',
+            secondaryColor: '#f1f5f9',
+            tertiaryColor: '#ffffff'
+          },
+          flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+        });
+      }
+    </script>
 
     <!-- CSS WebSlides -->
-    <link rel="stylesheet" type='text/css' media='all' href="static/css/webslides.css">
+    <link rel="stylesheet" type="text/css" media="all" href="static/css/webslides.css">
 
-    <!-- CSS Presentation -->
-    <link rel="stylesheet" type='text/css' media='all' href="static/css/presentation.css">
+    <!-- CSS Presentation Template -->
+    <link rel="stylesheet" type="text/css" media="all" href="static/css/presentation.css">
 
     <!-- Optional - CSS SVG Icons (Font Awesome) -->
-    <link rel="stylesheet" type='text/css' media='all' href="static/css/svg-icons.css">
+    <link rel="stylesheet" type="text/css" media="all" href="static/css/svg-icons.css">
 
     <!-- FAVICONS -->
     <link rel="shortcut icon" sizes="16x16" href="static/images/favicons/favicon.png">
@@ -35,477 +53,519 @@
 
     <!-- Android -->
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#333333">
-</head>
+    <meta name="theme-color" content="#0369a1">
+  </head>
 
-<body>
-    <!-- Fixed logo: always visible, independent of WebSlides auto-hide header -->
-    <div class="fixed-logo">
-      <img src="static/images/logos/vllm-ascend.webp" alt="vLLM Ascend">
-    </div>
+  <body>
+    <!-- Top Bar: Strictly aligned with slide .wrap container -->
+    <header class="deck-topbar" aria-label="演示导航栏">
+      <div class="deck-topbar-inner">
+        <div class="fixed-logo" onclick="goToSlideIndex(0)" title="返回封面">
+          <img src="static/images/logos/vllm-ascend.webp" alt="vLLM Ascend">
+        </div>
+
+        <nav class="stage-nav" id="stage-nav" aria-label="章节阶段导航">
+          <!-- Populated dynamically from window.ws.slides -->
+        </nav>
+
+        <div class="topbar-actions">
+          <span class="branch-badge" id="branch-indicator" style="display:none;">支线视图</span>
+          <button class="btn-back" id="btn-back-branch" onclick="backFromBranch()" style="display:none;" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            返回主线
+          </button>
+        </div>
+      </div>
+    </header>
 
     <main role="main">
       <article id="webslides" class="vertical">
-        <!-- Quick Guide
-          - Each parent <section> in the <article id="webslides"> element is an individual slide.
-          - Vertical sliding = <article id="webslides" class="vertical">
-          - <div class="wrap"> = container 90% / <div class="wrap size-50"> = 45%;
-        -->
-
         <!-- ========== SLIDES START ========== -->
-<section class="aligncenter">
-          <div class="wrap">
-            <h1><strong>vLLM DCP &amp; PCP 技术分享</strong></h1>
-            <p class="text-intro">
-              分享人：邱纯硕<br>
-              vLLM PCP 特性核心贡献者 @华为昇腾
-            </p>
-            <p class="text-symbols">2026.05.30</p>
-          </div></section>
-<section class="aligncenter">
-          <div class="wrap size-60 toc-wrap">
-            <h2><strong>目录</strong></h2>
-            <div class="toc-container">
-              <ol class="toc-items">
-                <li class="toc-item" onclick="window.ws.goToSlide(2)">
-                  <span class="toc-num">01</span>
-                  <span class="toc-title">CP 特性总览</span>
-                </li>
-                <li class="toc-item" onclick="window.ws.goToSlide(3)">
-                  <span class="toc-num">02</span>
-                  <span class="toc-title">vLLM DCP 特性</span>
-                </li>
-                <li class="toc-item" onclick="window.ws.goToSlide(7)">
-                  <span class="toc-num">03</span>
-                  <span class="toc-title">vLLM PCP 特性</span>
-                </li>
-                <li class="toc-item" onclick="window.ws.goToSlide(13)">
-                  <span class="toc-num">04</span>
-                  <span class="toc-title">部署场景</span>
-                </li>
-                <li class="toc-item" onclick="window.ws.goToSlide(15)">
-                  <span class="toc-num">05</span>
-                  <span class="toc-title">CP 特性优化与拓展</span>
-                </li>
-              </ol>
-            </div>
-          </div></section>
 
-<!-- Ch1: CP 特性总览 -->
-        <section>
-          <div class="wrap">
-            <h2><strong>CP 特性总览</strong></h2>
-            <p class="text-intro" style="margin-bottom:2rem;">
-              <strong>tl;dr</strong> &mdash; PCP 对 prefill 的输入序列进行切分，降低 TTFT；DCP 对 KVCache 进行序列切分，消除冗余存储，提升最大长度与吞吐。
-            </p>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/overview.svg" alt="CP Overview" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-          </div></section>
-<!-- Ch2: vLLM DCP 特性 (section header) -->
-        <section class="aligncenter">
-          <div class="wrap">
-            <h2><strong>vLLM DCP 特性</strong></h2>
-            <p style="margin-top:1rem; font-size:1.5rem; color:#64748b;">
-              PR &mdash; <a href="https://github.com/vllm-project/vllm/pull/23734" target="_blank">vllm#23734</a>
-              &nbsp;&middot;&nbsp; <a href="https://github.com/youzhedian" target="_blank">@youzhedian</a> (ChaoHong @月之暗面)
-            </p>
-          </div></section>
-<!-- Ch2.1: DCP Prefill 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>DCP Prefill 方案</strong></h3>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/DCP-prefill-nochunkedprefill.svg" alt="DCP Prefill" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-            <p style="text-align:right; margin-top:1.5rem;">
-              <button class="btn-branch" onclick="jumpToBranch('branch-dcp-detail')">
-                查看 BlockTable &amp; Slot Mapping 细节 &#10132;
-              </button>
-            </p>
-          </div></section>
-<!-- Ch2.3: DCP Decode 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>DCP Decode 方案</strong></h3>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/DCP-decode.svg" alt="DCP Decode" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-          </div></section>
-<!-- Ch2.4: DCP ChunkedPrefill 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>DCP ChunkedPrefill 方案</strong></h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
-              <div>
-                <p style="text-align:center; font-weight:600; margin-bottom:0.5rem;">MLA 路径</p>
-                <div class="img-zoom-wrap">
-                  <img src="static/images/CP/DCP-prefill-MLA.svg" alt="DCP MLA" style="width:100%; max-height:46vh; object-fit:contain;">
-                  <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-                </div>
-              </div>
-              <div>
-                <p style="text-align:center; font-weight:600; margin-bottom:0.5rem;">GQA 路径</p>
-                <div class="img-zoom-wrap">
-                  <img src="static/images/CP/DCP-prefill-GQA.svg" alt="DCP GQA" style="width:100%; max-height:46vh; object-fit:contain;">
-                  <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-                </div>
-              </div>
-            </div>
-          </div></section>
-<!-- Ch3: vLLM PCP 特性 -->
-        <section class="aligncenter">
-          <div class="wrap">
-            <h2><strong>vLLM PCP 特性</strong></h2>
-            <p style="margin-top:1rem; font-size:1.5rem; color:#64748b;">
-              RFC &mdash; <a href="https://github.com/vllm-project/vllm/issues/25749" target="_blank">vllm#25749</a>
-              &nbsp;&middot;&nbsp; <a href="https://github.com/pisceskkk" target="_blank">@pisceskkk</a> (邱纯硕 @华为昇腾)
-            </p>
-          </div></section>
-<!-- Ch3.1: PCP 通信组 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>PCP 通信组</strong></h3>
-            <div style="height:75vh;">
-              <iframe src="src/dynamics/PCP_comm_group.html" style="width:100%; height:100%; border:1px solid #e2e8f0; border-radius:8px;" scrolling="no"></iframe>
-            </div>
-          </div></section>
-<!-- Ch3.2: PCP 序列切分 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>PCP 序列切分</strong></h3>
-            <p class="text-intro" style="margin-bottom:1.5rem;">
-              切分逻辑在 <code>cp_utils.py:PCPManager</code> 中处理，涵盖 <strong>query_lens</strong>、<strong>kv_lens</strong>、<strong>positions</strong> 等序列属性，以及 <strong>q_head_idx</strong> / <strong>q_tail_idx</strong> 偏移量的计算。
-            </p>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/PCP-dualchunkswap.svg" alt="PCP DualChunkSwap" style="width:100%; max-height:58vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-            <p style="text-align:right; margin-top:1rem;">
-              <button class="btn-branch" onclick="jumpToBranch('branch-pcp-layout')">
-                请求切分排布示意 &#10132;
-              </button>
-            </p>
-          </div></section>
-<!-- Ch3.3: PCP Prefill 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>PCP Prefill 方案</strong></h3>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/PCP-prefill-nochunedprefill.svg" alt="PCP Prefill" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-          </div></section>
-<!-- Ch3.4: PCP Decode 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>PCP Decode 方案</strong></h3>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/PCP-decode.svg" alt="PCP Decode" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-          </div></section>
-<!-- Ch3.5: PCP Chunked Prefill 方案 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>PCP Chunked Prefill 方案</strong></h3>
-            <div class="img-zoom-wrap">
-              <img src="static/images/CP/PCP-chunkedprefill.svg" alt="PCP Chunked Prefill" style="width:100%; max-height:62vh; object-fit:contain;">
-              <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-            </div>
-          </div></section>
-<!-- Ch5: 部署场景 -->
-        <section class="aligncenter">
-          <div class="wrap">
-            <h2><strong>部署场景</strong></h2>
-          </div></section>
-<!-- Ch5.1: CP 适配进度 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>DCP 适配进度</strong></h3>
-            <table class="progress-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Chunked Prefill</th>
-                  <th>APC</th>
-                  <th>MTP / Eagle</th>
-                  <th>Piecewise Graph</th>
-                  <th>Full Graph</th>
-                  <th>PD 分离</th>
-                  <th>Qwen3 (GQA)</th>
-                  <th>DeepSeek (MLA)</th>
-                  <th>Qwen3.5 (混合线性)</th>
-                  <th>DSv3.2</th>
-                  <th>DSv4</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="code">vLLM DCP</td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-no"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-no"></td>
-                  <td class="status-no"></td>
-                </tr>
-                <tr>
-                  <td class="code">vLLM Ascend DCP</td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-no"></td>
-                </tr>
-              </tbody>
-            </table>
+<!-- Slide 00: 封面页模板 -->
+<section class="aligncenter" data-stage="封面">
+  <div class="wrap">
+    <h1><strong>[主标题占位] 技术分享演示</strong></h1>
+    <p class="text-intro" style="margin-top:1.2rem;">
+      分享人：[姓名占位]<br>
+      @vLLM-Ascend Team
+    </p>
+  </div>
+</section>
 
-            <h3 style="margin-top:3rem;"><strong>PCP 适配进度</strong></h3>
-            <table class="progress-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Chunked Prefill</th>
-                  <th>APC</th>
-                  <th>MTP / Eagle</th>
-                  <th>Piecewise Graph</th>
-                  <th>Full Graph</th>
-                  <th>PD 分离</th>
-                  <th>Qwen3 (GQA)</th>
-                  <th>DeepSeek (MLA)</th>
-                  <th>Qwen3.5 (混合线性)</th>
-                  <th>DSv3.2</th>
-                  <th>DSv4</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="code">vLLM PCP</td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-no"></td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-no"></td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-no"></td>
-                  <td class="status-wip">🚧</td>
-                  <td class="status-no"></td>
-                </tr>
-                <tr>
-                  <td class="code">vLLM Ascend PCP</td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                  <td class="status-yes"></td>
-                </tr>
-              </tbody>
-            </table>
-            <p class="legend-line"><span class="dot green"></span> 已支持 &nbsp;&nbsp;&nbsp; <span class="dot red"></span> 未支持 &nbsp;&nbsp;&nbsp; 🚧 PR 适配中</p>
-          </div></section>
-<!-- Ch5.2: DCP & PCP 部署 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>DCP 部署</strong></h3>
-            <div class="grid" style="margin-bottom:2rem;">
-              <div class="column">
-                <h4>时延</h4>
-                <p>短序列下额外通信会带来一定劣化；长序列（通常 128K 以上）因 KVCache 切分独立计算，<strong>有效降低 TPOT</strong>。</p>
-              </div>
-              <div class="column">
-                <h4>吞吐</h4>
-                <p>资源紧张时通过 DCP 提升 KVCache 容量，可承载更多并发请求，<strong>吞吐显著提升</strong>。</p>
-              </div>
-              <div class="column">
-                <h4>超长序列</h4>
-                <p>开启 DCP 后 KVCache 可用量大幅增长，常见模型可在单机 A3 上推理<strong>超过 1M token</strong> 的超长序列。</p>
-              </div>
-            </div>
-            <hr style="border:0; border-top:1px solid #e2e8f0; margin:1rem 0 1.5rem;">
-            <h3><strong>PCP 部署</strong></h3>
-            <div class="grid">
-              <div class="column">
-                <h4>性能</h4>
-                <p>中长序列（32K～256K）场景下，时延<strong>优于 DP</strong>、略逊于 TP；吞吐<strong>优于 TP</strong>、略逊于 DP，在 DP/TP 之间取得平衡。</p>
-              </div>
-              <div class="column">
-                <h4>适用场景</h4>
-                <p>当请求并发量接近系统最优吞吐时，通过 PCP 进一步降低时延，兼顾吞吐与响应速度。</p>
-              </div>
-            </div>
-          </div></section>
-<!-- Ch4: CP 特性优化与拓展 -->
-        <section class="aligncenter">
-          <div class="wrap">
-            <h2><strong>CP 特性优化与拓展</strong></h2>
-          </div></section>
-<!-- Ch4.1: TPA 特性 -->
-        <section>
-          <div class="wrap">
-            <h3><strong>TPA 特性</strong> <span style="font-size:0.7em;color:#64748b;font-weight:400;">tensor-parallel-size-attention</span></h3>
-            <p style="margin-bottom:0.5rem; font-size:1.5rem; color:#64748b;">
-              RFC &mdash; <a href="https://github.com/vllm-project/vllm/issues/34444" target="_blank">vllm#34444</a>
-              &nbsp;&middot;&nbsp; <a href="https://github.com/SungsooHa" target="_blank">@SungsooHa</a> (NVIDIA)
-            </p>
-            <div style="display:flex; flex-direction:column; gap:0.3rem; margin-bottom:0.8rem;">
-              <div style="flex:1;">
-                <p style="font-weight:600; margin-bottom:0.1rem; font-size:1.5rem;">标准 TP + DCP 路径</p>
-                <div class="mermaid">
-graph LR
-    HS[hidden_states] --> QP["q_proj (slice by TP)"]
-    QP --> Q["Q(1, h/tp)"]
-    Q --> AG["DCP.all_gather (dim=1)"]
-    AG --> ATT[attn]
-    ATT --> CP["cp_lse_ag_out_rs (DCP)"]
-    CP --> OUT["output(1, h/tp)"]
-    OUT --> OP["o_proj (slice by TP)"]
-    OP --> END[out]
-    style AG color:#dc2626
-                </div>
-              </div>
-              <div style="flex:1;">
-                <p style="font-weight:600; margin-bottom:0.1rem; font-size:1.5rem;">TPA 优化路径 </p>
-                <div class="mermaid">
-graph LR
-    HS[hidden_states] --> QP["q_proj (slice by TPA=tp/dcp)"]
-    QP --> Q["Q(1, h*dcp/tp)"]
-    Q --> ATT[attn]
-    ATT --> CP["cp_lse_ag_out_rs (DCP)"]
-    CP --> OUT["output(1, h/tp)"]
-    OUT --> OP["o_proj (slice by TP)"]
-    OP --> END[out]
-                </div>
-              </div>
-            </div>
-            <p style="font-size:1.5rem; color:#475569;">
-              TPA 通过将 q_proj 的切分维度从 <em>TP</em> 调整为 <em>TP/DCP</em>，减少了一次 all_gather 通信，<strong>降低 KV 计算前的同步开销</strong>。
-            </p>
-            <hr style="border:0; border-top:1px solid #e2e8f0; margin:0.8rem 0;">
-            <h3 style="margin-top:0;"><strong>动态 CP 特性</strong></h3>
-            <p style="margin-bottom:0.5rem; font-size:1.5rem; color:#64748b;">
-              RFC &mdash; <a href="https://github.com/vllm-project/vllm/issues/29295" target="_blank">vllm#29295</a>
-              &nbsp;&middot;&nbsp; <a href="https://github.com/Kurumi5210" target="_blank">@Kurumi5210</a> (陈潇 @ICT&amp;UCAS)
-            </p>
-            <div class="mermaid" style="margin-bottom:0.5rem;">
+<!-- Slide 01: 简洁目录页模板 -->
+<section class="aligncenter" data-stage="目录">
+  <div class="wrap toc-wrap">
+    <h2><strong>目录</strong></h2>
+    <div class="toc-container">
+      <ol class="toc-items">
+        <li class="toc-item" data-go-slide="2">
+          <span class="toc-num">01</span>
+          <span class="toc-title">核心思想与全局流程（总览版式）</span>
+        </li>
+        <li class="toc-item" data-go-slide="3">
+          <span class="toc-num">02</span>
+          <span class="toc-title">架构图解与热点下钻（图解版式）</span>
+        </li>
+        <li class="toc-item" data-go-slide="4">
+          <span class="toc-num">03</span>
+          <span class="toc-title">分步执行流程（Stepper 版式）</span>
+        </li>
+        <li class="toc-item" data-go-slide="5">
+          <span class="toc-num">04</span>
+          <span class="toc-title">交互式动态沙盘（卡片封装版式）</span>
+        </li>
+        <li class="toc-item" data-go-slide="6">
+          <span class="toc-num">05</span>
+          <span class="toc-title">适配现状与未来规划（总结版式）</span>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 02: 【总】两句话核心思想 + 简洁阶段卡片（右上角红点悬停展开） -->
+<section data-stage="01 总览">
+  <div class="wrap">
+    <div class="slide-header">
+      <h3><strong>核心思想总览</strong></h3>
+    </div>
+
+    <!-- 两句话核心思想 -->
+    <div class="takeaway-grid">
+      <div class="takeaway-card">
+        <div class="takeaway-title">
+          <span>核心特性 A（如 PCP）</span>
+          <span class="takeaway-tag">算力切分 &middot; 降 TTFT</span>
+        </div>
+        <p class="takeaway-desc">
+          一句话概括：切分 Prefill 输入序列，多卡并行计算降低首字时延。
+        </p>
+      </div>
+      <div class="takeaway-card accent-secondary">
+        <div class="takeaway-title">
+          <span>核心特性 B（如 DCP）</span>
+          <span class="takeaway-tag">显存切分 &middot; 提吞吐</span>
+        </div>
+        <p class="takeaway-desc">
+          一句话概括：沿序列维度交错分片 KV Cache，消除冗余存储并提升最大上下文。
+        </p>
+      </div>
+    </div>
+
+    <!-- 简洁四阶段流程卡片：右上角带闪烁红点，悬停展开跳转按钮 -->
+    <div class="arch-flow">
+      <div class="arch-node">
+        <button class="hotspot-pin" data-code="code-demo-entry" type="button">
+          <span class="pin-label">&lt;/&gt; 查看入口源码</span>
+        </button>
+        <span class="arch-node-step">01 &middot; INPUT</span>
+        <h4 class="arch-node-title">序列切分</h4>
+        <p class="arch-node-desc">Global Batch &#8594; Local Segments</p>
+      </div>
+
+      <div class="arch-node">
+        <button class="hotspot-pin" data-branch="branch-demo-deepdive" data-anchor="branch-sec-1" type="button">
+          <span class="pin-label">进入 BlockTable 支线 &#10132;</span>
+        </button>
+        <span class="arch-node-step">02 &middot; STORAGE</span>
+        <h4 class="arch-node-title">KV 交错映射</h4>
+        <p class="arch-node-desc">Virtual Block &amp; Slot Mapping</p>
+      </div>
+
+      <div class="arch-node">
+        <button class="hotspot-pin" data-code="code-demo-kernel" type="button">
+          <span class="pin-label">&lt;/&gt; 查看算子代码</span>
+        </button>
+        <span class="arch-node-step">03 &middot; COMPUTE</span>
+        <h4 class="arch-node-title">通信与注意力</h4>
+        <p class="arch-node-desc">Q/KV Gather &amp; Local Attention</p>
+      </div>
+
+      <div class="arch-node">
+        <button class="hotspot-pin" data-branch="branch-demo-deepdive" data-anchor="branch-sec-2" type="button">
+          <span class="pin-label">进入 Token 分布支线 &#10132;</span>
+        </button>
+        <span class="arch-node-step">04 &middot; MERGE</span>
+        <h4 class="arch-node-title">归并与恢复</h4>
+        <p class="arch-node-desc">LSE Combine &amp; Order Restore</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 03: 【分 ①】干净大图 + 闪烁红点（悬停展开跳转按钮，不遮挡原图） -->
+<section data-stage="02 图解与热点">
+  <div class="wrap">
+    <div class="slide-header">
+      <h3><strong>架构方案图解（悬停红点展开跳转）</strong></h3>
+      <div class="slide-actions">
+        <button class="btn-branch" data-branch="branch-demo-deepdive" type="button">
+          支线详情 &#10132;
+        </button>
+      </div>
+    </div>
+
+    <div class="surface-card" style="padding:1.4rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/overview.svg" alt="Overview Diagram" style="width:100%; max-height:62vh; object-fit:contain;">
+
+        <!-- 闪烁红点 1：悬停展开，点击跳转支线子节 1 -->
+        <button class="hotspot-pin" style="left: 24%; top: 26%;" data-branch="branch-demo-deepdive" data-anchor="branch-sec-1" type="button">
+          <span class="pin-label">查看 BlockTable 细节 &#10132;</span>
+        </button>
+
+        <!-- 闪烁红点 2：悬停展开，点击弹出代码抽屉 -->
+        <button class="hotspot-pin" style="left: 62%; top: 36%;" data-code="code-demo-kernel" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 Slot Mapping 代码</span>
+        </button>
+
+        <!-- 闪烁红点 3：悬停展开，点击跳转支线子节 3 -->
+        <button class="hotspot-pin" style="left: 48%; top: 75%;" data-branch="branch-demo-deepdive" data-anchor="branch-sec-3" type="button">
+          <span class="pin-label">查看序列切分排布 &#10132;</span>
+        </button>
+
+        <!-- 右下角全屏放大按钮 -->
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 04: 【分 ②】简洁流程图 + 分步切换 -->
+<section data-stage="03 分步流程">
+  <div class="wrap">
+    <div class="slide-header">
+      <h3><strong>执行链路与分步拆解</strong></h3>
+    </div>
+
+    <!-- Mermaid 流程图卡片 -->
+    <div class="surface-card" style="margin-bottom:1.8rem; padding:1.4rem 2rem;">
+      <div class="mermaid">
 flowchart LR
-    REQ["请求到达"]
-    REQ --> JUDGE{"CrossDPScheduler<br/>按序列长度判断"}
+    S1["1. Batch 切分"] --> S2["2. 跨卡通信同步"] --> S3["3. 核心算子计算"] --> S4["4. 结果归并还原"]
+      </div>
+    </div>
 
-    JUDGE -->|"短序列"| CP1["CP=1 标准 DP 通路"]
-    JUDGE -->|"长序列"| CPSEL["选择最优 CP size<br/>(预建立通信组)"]
-    JUDGE -->|"长尾请求"| MIG["从 CP=1 迁移到 CP>1"]
+    <!-- 简洁 Stepper -->
+    <div class="stepper-box">
+      <div class="stepper-tabs">
+        <button class="stepper-tab active" data-step-target="demo-step-1" type="button">Step 1 &middot; 输入切分</button>
+        <button class="stepper-tab" data-step-target="demo-step-2" type="button">Step 2 &middot; 通信同步</button>
+        <button class="stepper-tab" data-step-target="demo-step-3" type="button">Step 3 &middot; 归并还原</button>
+      </div>
 
-    CP1 --> DOMAIN["Domain<br/>聚合多个 DP replica<br/>为统一调度实体"]
-    CPSEL --> DOMAIN
-    MIG --> DOMAIN
+      <div class="stepper-pane active" id="demo-step-1">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:2rem;">
+          <div>
+            <h4>Step 1：将全局请求切分为本地虚拟请求段</h4>
+            <p style="font-size:1.5rem; margin:0;"><code>Global Input [T_global, D]</code> &#8594; <code>Local Segments [T_local, D]</code></p>
+          </div>
+          <button class="btn-code" data-code="code-demo-entry" type="button">&lt;/&gt; 查看源码</button>
+        </div>
+      </div>
 
-    DOMAIN --> SCHED["list SchedulerOutput<br/>跨 DP domain 的异构调度决策"]
-    SCHED --> RUNNER["ModelRunner<br/>CP 请求重排到 batch 最前<br/>2D CUDA Graph"]
+      <div class="stepper-pane" id="demo-step-2">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:2rem;">
+          <div>
+            <h4>Step 2：在通信组内聚合 Q Heads 或历史 KV</h4>
+            <p style="font-size:1.5rem; margin:0;"><code>all_gather_async</code> / <code>all_to_all_single</code> 与主流计算重叠</p>
+          </div>
+          <button class="btn-branch" data-branch="branch-demo-deepdive" data-anchor="branch-sec-1" type="button">查看支线沙盘 &#10132;</button>
+        </div>
+      </div>
 
-    RUNNER --> KVCACHE["CrossDPKVCacheManager<br/>统一管理跨 DP Block Pool"]
-    KVCACHE --> ATTN["Attention Backend<br/>Prefill CP + Decode CP"]
-            </div>
-            <p style="font-size:1.5rem; color:#1e293b;">
-              实测：中短序列（4K-128K）与变长场景下，吞吐和 TTFT <strong>均优于 DP</strong>，TPOT 无明显劣化。
-            </p>
-          </div></section>
-<!-- 感谢页 -->
-        <section class="aligncenter">
-          <div class="wrap">
-            <h1><strong>谢谢</strong></h1>
-            <p class="text-intro" style="margin-top:2rem;">Q &amp; A</p>
-            <p style="margin-top:3rem; font-size:1.5rem; color:#64748b;">
-              PR &mdash; <a href="https://github.com/vllm-project/vllm/pull/23734" target="_blank">vllm#23734</a>
-              &nbsp;&middot;&nbsp;
-              RFC &mdash; <a href="https://github.com/vllm-project/vllm/issues/25749" target="_blank">vllm#25749</a>
-            </p>
-          </div></section>
+      <div class="stepper-pane" id="demo-step-3">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:2rem;">
+          <div>
+            <h4>Step 3：按 LSE 加权归并局部输出并恢复全局顺序</h4>
+            <p style="font-size:1.5rem; margin:0;"><code>w_j = exp(L_j - max L)</code> &#8594; <code>hidden_restore_idx</code></p>
+          </div>
+          <button class="btn-code" data-code="code-demo-kernel" type="button">&lt;/&gt; 查看算子代码</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 05: 【分 ③】交互组件封装在独立卡片内，隔离内部与外部布局 -->
+<section data-stage="04 交互沙盘">
+  <div class="wrap">
+    <div class="slide-header">
+      <h3><strong>通信组拓扑沙盘</strong></h3>
+      <div class="slide-actions">
+        <button class="btn-branch" data-branch="branch-demo-deepdive" type="button">
+          更多交互支线 &#10132;
+        </button>
+      </div>
+    </div>
+
+    <!-- 独立卡片包裹交互页面，防止内部布局外溢 -->
+    <div class="interactive-card">
+      <div class="interactive-card-bar">
+        <span class="interactive-card-title">
+          <span class="interactive-card-dot"></span>
+          交互式组件：PCP / TP / DCP 通信组排布
+        </span>
+        <button class="btn-code" data-code="code-demo-entry" type="button" style="padding:0.25rem 0.8rem; font-size:1.15rem;">
+          &lt;/&gt; 关联代码
+        </button>
+      </div>
+      <div class="interactive-card-body">
+        <iframe src="src/dynamics/PCP_comm_group.html" scrolling="auto" title="通信组交互沙盘"></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 06: 【总】适配状态矩阵与简洁总结卡片 -->
+<section data-stage="05 总结与规划">
+  <div class="wrap">
+    <div class="slide-header">
+      <h3><strong>特性适配矩阵与演进规划</strong></h3>
+    </div>
+
+    <table class="progress-table">
+      <thead>
+        <tr>
+          <th>架构 / 后端</th>
+          <th>Chunked Prefill</th>
+          <th>Prefix Caching</th>
+          <th>Graph Mode</th>
+          <th>Speculative</th>
+          <th>PD 分离</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="code">Backend A (示例)</td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial"></td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+        </tr>
+        <tr>
+          <td class="code">Backend B (示例)</td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+        </tr>
+        <tr>
+          <td class="code">Backend C (示例)</td>
+          <td class="status-no"></td>
+          <td class="status-no"></td>
+          <td class="status-no"></td>
+          <td class="status-no"></td>
+          <td class="status-no"></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="legend-line">
+      <span class="dot green"></span> 已支持 &nbsp;&nbsp;&nbsp;
+      <span class="dot amber"></span> 部分支持 &nbsp;&nbsp;&nbsp;
+      <span class="dot red"></span> 未支持
+    </p>
+
+    <div class="template-grid-3" style="margin-top:2rem;">
+      <div class="surface-card">
+        <h4>适用场景</h4>
+        <p style="font-size:1.45rem; margin:0;">中长序列降 TTFT 选 PCP；超长序列扩容量选 DCP。</p>
+      </div>
+      <div class="surface-card">
+        <h4>核心架构</h4>
+        <p style="font-size:1.45rem; margin:0;">MRV2 虚拟请求切分 + Mixin 化后端与 Triton 融合通信。</p>
+      </div>
+      <div class="surface-card">
+        <h4>后续规划</h4>
+        <p style="font-size:1.45rem; margin:0;">混合线性层 Decode 切分、算子进一步融合与动态 CP。</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 
-<!-- ========== SLIDES END ========== -->
-
+        <!-- ========== SLIDES END ========== -->
       </article>
-      <!-- end article -->
     </main>
-    <!-- end main -->
 
-    <!-- ========== BRANCH SLIDES (off mainline, scrollable longform) ========== -->
-    <div id="branch-container">
-<div id="branch-dcp-detail" class="branch-slide">
-        <!-- Branch sub-slide 1: BlockTable 变化 -->
-        <div class="branch-page">
-          <div class="wrap">
-            <h3><strong>BlockTable 变化</strong></h3>
-            <p class="text-intro">引入 <strong>virtual block</strong> 概念处理跨设备 block 管理，主要影响 block 分配、prefix caching 命中。</p>
-            <iframe src="src/dynamics/BlockTable.html" style="width:100%; border:1px solid #e2e8f0; border-radius:8px;" scrolling="no"></iframe>
-          </div>
+    <!-- ========== BRANCH SLIDES (off mainline, scrollable longform with sub-anchor nav) ========== -->
+    <div id="branch-container" aria-hidden="true">
+<div id="branch-demo-deepdive" class="branch-slide" data-branch-title="交互式支线">
+  <!-- 支线顶部轻量导航 -->
+  <div class="branch-subnav">
+    <span class="branch-subnav-label">快速定位：</span>
+    <button class="btn-slide-jump" onclick="document.getElementById('branch-sec-1').scrollIntoView({behavior:'smooth'})" type="button">
+      1. BlockTable 沙盘
+    </button>
+    <button class="btn-slide-jump" onclick="document.getElementById('branch-sec-2').scrollIntoView({behavior:'smooth'})" type="button">
+      2. Token 分布沙盘
+    </button>
+    <button class="btn-slide-jump" onclick="document.getElementById('branch-sec-3').scrollIntoView({behavior:'smooth'})" type="button">
+      3. 序列切分沙盘
+    </button>
+  </div>
+
+  <!-- 支线子模块 1：封装在独立卡片中 -->
+  <div class="branch-page" id="branch-sec-1">
+    <div class="wrap">
+      <div class="interactive-card">
+        <div class="interactive-card-bar">
+          <span class="interactive-card-title">
+            <span class="interactive-card-dot"></span>
+            1. BlockTable 与 Virtual Block 交错映射
+          </span>
+          <button class="btn-code" data-code="code-demo-kernel" type="button" style="padding:0.25rem 0.8rem; font-size:1.15rem;">
+            &lt;/&gt; 查看算子代码
+          </button>
         </div>
-        <!-- Branch sub-slide 2: Token 分布 & Slot Mapping 动态演示 -->
-        <div class="branch-page">
-          <div class="wrap">
-            <h3><strong>Token 分布 &amp; Slot Mapping</strong></h3>
-            <p class="text-intro">调整 PCP size、TP size、DCP size 和 interleave 观察 token 在 KV Cache 中的分布规律与 slot 映射变化。</p>
-            <iframe src="docs/html/token-distribution.html" style="width:100%; border:1px solid #e2e8f0; border-radius:8px;" scrolling="no"></iframe>
-          </div>
+        <div class="interactive-card-body" style="height:68vh;">
+          <iframe src="src/dynamics/BlockTable.html" scrolling="auto" title="BlockTable 交互沙盘"></iframe>
         </div>
       </div>
+    </div>
+  </div>
 
-<div id="branch-pcp-layout" class="branch-slide">
-        <div class="branch-page">
-          <div class="wrap">
-            <h3><strong>请求切分排布示意</strong></h3>
-            <p class="text-intro">PCP Manager 对输入序列进行切分后，各 rank 上的请求排布与 token 分配示意。</p>
-            <iframe src="src/dynamics/pcp_prefill_split.html" style="width:100%; border:1px solid #e2e8f0; border-radius:8px;" scrolling="no"></iframe>
-          </div>
+  <!-- 支线子模块 2：封装在独立卡片中 -->
+  <div class="branch-page" id="branch-sec-2">
+    <div class="wrap">
+      <div class="interactive-card">
+        <div class="interactive-card-bar">
+          <span class="interactive-card-title">
+            <span class="interactive-card-dot"></span>
+            2. Token 分布与 Slot Mapping 模拟
+          </span>
+        </div>
+        <div class="interactive-card-body" style="height:68vh;">
+          <iframe src="docs/html/token-distribution.html" scrolling="auto" title="Token 分布沙盘"></iframe>
         </div>
       </div>
+    </div>
+  </div>
 
+  <!-- 支线子模块 3：封装在独立卡片中 -->
+  <div class="branch-page" id="branch-sec-3">
+    <div class="wrap">
+      <div class="interactive-card">
+        <div class="interactive-card-bar">
+          <span class="interactive-card-title">
+            <span class="interactive-card-dot"></span>
+            3. PCP 输入序列切分排布模拟
+          </span>
+          <button class="btn-code" data-code="code-demo-entry" type="button" style="padding:0.25rem 0.8rem; font-size:1.15rem;">
+            &lt;/&gt; 查看切分代码
+          </button>
+        </div>
+        <div class="interactive-card-body" style="height:68vh;">
+          <iframe src="src/dynamics/pcp_prefill_split.html" scrolling="auto" title="序列切分沙盘"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
     </div>
 
-    <!-- Back button (shared by all branch slides, positioned fixed top-right) -->
-    <button class="btn-back" onclick="backFromBranch()" style="display:none;" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-      返回
-    </button>
 
-    <!-- Lightbox overlay -->
+    <!-- ========== CODE INSPECTOR DRAWER ========== -->
+    <div id="code-drawer-backdrop" class="code-drawer-backdrop" onclick="closeCodeDrawer()" aria-hidden="true"></div>
+    <aside id="code-drawer" class="code-drawer" aria-hidden="true" aria-label="代码透视面板">
+      <div class="code-drawer-header">
+        <div class="code-drawer-title-group">
+          <span class="code-drawer-badge" id="code-drawer-tag">CODE</span>
+          <h4 id="code-drawer-title">代码详情</h4>
+        </div>
+        <button class="code-drawer-close" onclick="closeCodeDrawer()" type="button" aria-label="关闭代码面板">&times;</button>
+      </div>
+      <div class="code-drawer-meta">
+        <span class="code-file-pill" id="code-drawer-file">path/to/file.py</span>
+        <span class="code-lines-pill" id="code-drawer-lines">L1-L20</span>
+      </div>
+      <div class="code-drawer-desc" id="code-drawer-desc"></div>
+      <div class="code-drawer-body">
+        <pre class="code-pre"><code id="code-drawer-content"></code></pre>
+      </div>
+      <div class="code-drawer-footer" id="code-drawer-footer"></div>
+    </aside>
+
+    <!-- ========== CODE SNIPPET TEMPLATES ========== -->
+    <div id="code-snippets-store" style="display:none;">
+<!-- 示例代码片段 1 -->
+<div id="code-demo-entry"
+     class="code-snippet-tpl"
+     data-tag="PYTHON"
+     data-title="示例模块入口代码 (Template Demo A)"
+     data-file="path/to/example_manager.py"
+     data-lines="L100-L120"
+     data-start-line="100"
+     data-highlight="105-108,114"
+     data-desc="<strong>代码抽屉功能说明：</strong>支持配置起始行号 <code>data-start-line</code> 与高亮行区间 <code>data-highlight=&quot;105-108,114&quot;</code>，可在幻灯片或支线的任意位置通过 <code>data-code=&quot;code-demo-entry&quot;</code> 呼出。">
+<pre>
+class ExampleManager:
+    """示例代码块：仅用于演示 WebSlides 代码透视抽屉能力。"""
+
+    def partition_batch(self, input_batch, batch_desc):
+        # [高亮行示例] 执行核心切分逻辑
+        local_batch = super().partition_batch(input_batch, batch_desc)
+        padded_num_reqs = batch_desc.num_reqs
+        local_batch = self._finalize_partition(input_batch, local_batch, padded_num_reqs)
+
+        # 保存本地视图与全局采样恢复状态
+        self._local_batch = local_batch
+        self._sampling_global_batch = None
+
+        # [单行高亮示例] 返回当前 rank 的局部 Batch
+        return local_batch
+</pre>
+</div>
+
+<!-- 示例代码片段 2 -->
+<div id="code-demo-kernel"
+     class="code-snippet-tpl"
+     data-tag="TRITON / KERNEL"
+     data-title="示例核心算子代码 (Template Demo B)"
+     data-file="path/to/example_kernel.py"
+     data-lines="L40-L58"
+     data-start-line="40"
+     data-highlight="46-51"
+     data-desc="<strong>算子透视说明：</strong>用于展示关键算子调用或 Triton Kernel 的核心计算公式与参数约定。">
+<pre>
+def compute_slot_mapping_demo(token_idx: int, block_size: int, cp_size: int, interleave: int):
+    """示例算子逻辑占位：演示高亮关键计算公式。"""
+    virtual_block_size = block_size * cp_size
+
+    # [高亮核心公式区间]
+    virtual_block_idx = token_idx // virtual_block_size
+    offset_in_vblock = token_idx % virtual_block_size
+    interleave_idx = offset_in_vblock // interleave
+    target_rank = interleave_idx % cp_size
+
+    if target_rank != current_cp_rank():
+        return -1  # PAD_SLOT_ID
+    return resolve_physical_slot(virtual_block_idx, offset_in_vblock)
+</pre>
+</div>
+
+    </div>
+
+    <!-- ========== LIGHTBOX OVERLAY ========== -->
     <div id="lightbox" onclick="closeLightbox()" aria-hidden="true">
       <button class="lb-close" onclick="closeLightbox()" type="button" aria-label="关闭图片预览">&times;</button>
       <img id="lightbox-img" src="" alt="">
     </div>
 
-    <!-- Required -->
+    <!-- Required Scripts -->
     <script src="static/js/webslides.js"></script>
     <script src="static/js/presentation.js"></script>
-
-    <!-- OPTIONAL - svg-icons.js (fontastic.me - Font Awesome as svg icons) -->
     <script defer src="static/js/svg-icons.js"></script>
-
   </body>
 </html>
