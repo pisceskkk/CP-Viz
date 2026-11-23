@@ -17,6 +17,11 @@ import re
 BASE = Path(__file__).resolve().parent
 SRC = BASE / 'src'
 IFRAME_SRC_RE = re.compile(r'<iframe\b[^>]*\bsrc=["\']([^"\']+)["\']', re.IGNORECASE)
+IMG_SRC_RE = re.compile(r'<img\b[^>]*\bsrc=["\']([^"\']+)["\']', re.IGNORECASE)
+ID_RE = re.compile(r'\bid=["\']([^"\']+)["\']')
+DATA_CODE_RE = re.compile(r'\bdata-code=["\']([^"\']+)["\']')
+DATA_BRANCH_RE = re.compile(r'\bdata-branch=["\']([^"\']+)["\']')
+DATA_ANCHOR_RE = re.compile(r'\bdata-anchor=["\']([^"\']+)["\']')
 
 
 def read(name: str) -> str:
@@ -34,13 +39,25 @@ def read_all(subdir: str, optional: bool = False) -> str:
     return '\n'.join(path.read_text(encoding='utf-8') for path in files)
 
 
-def warn_missing_iframes(html: str) -> None:
-    for iframe_src in IFRAME_SRC_RE.findall(html):
-        if iframe_src.startswith(('http://', 'https://', '//', 'about:')):
+def validate_references(html: str) -> None:
+    for src in IFRAME_SRC_RE.findall(html) + IMG_SRC_RE.findall(html):
+        if not src or src.startswith(('http://', 'https://', '//', 'about:', 'data:')):
             continue
-        iframe_path = (BASE / iframe_src).resolve()
-        if not iframe_path.exists():
-            print(f'Warning: iframe source not found: {iframe_src}')
+        clean_src = src.split('?', 1)[0].split('#', 1)[0]
+        asset_path = (BASE / clean_src).resolve()
+        if not asset_path.exists():
+            print(f'Warning: referenced asset not found: {src}')
+
+    all_ids = set(ID_RE.findall(html))
+    for code_id in set(DATA_CODE_RE.findall(html)):
+        if code_id not in all_ids:
+            print(f'Warning: data-code target ID not found: {code_id}')
+    for branch_id in set(DATA_BRANCH_RE.findall(html)):
+        if branch_id not in all_ids:
+            print(f'Warning: data-branch target ID not found: {branch_id}')
+    for anchor_id in set(DATA_ANCHOR_RE.findall(html)):
+        if anchor_id not in all_ids:
+            print(f'Warning: data-anchor target ID not found: {anchor_id}')
 
 
 def main() -> None:
@@ -56,7 +73,7 @@ def main() -> None:
 
     out = top + '\n' + slides + '\n' + mid + '\n' + bot
 
-    warn_missing_iframes(out)
+    validate_references(out)
     (BASE / 'index.html').write_text(out, encoding='utf-8')
 
     slide_count = slides.count('<section')

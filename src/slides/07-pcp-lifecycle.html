@@ -1,0 +1,66 @@
+<!-- Slide 07: PCP 全局生命周期：从 Global Batch 到 Local Virtual Requests -->
+<section data-stage="03 深入 PCP">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>PCP 核心机制 ①：MRV2 下的单步 Batch 生命周期</strong></h3>
+        <p class="slide-subtitle">Scheduler 保持全局 Batch，Worker 侧通过 <code>PCPManager</code> + <code>AscendPCPManager</code> 完成切分与采样前恢复</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-code" data-code="code-ascend-pcp-manager" type="button">
+          &lt;/&gt; AscendPCPAttentionContext
+        </button>
+      </div>
+    </div>
+
+    <div class="surface-card" style="margin-bottom:1.6rem; padding:1.4rem 2rem;">
+      <div class="mermaid">
+flowchart LR
+    G["1. Global Batch<br/>(Scheduler 统一调度)"] --> P["2. partition_batch<br/>(DualChunkSwap 拆为 2x 虚拟请求段)"]
+    P --> R["3. _reorder_segments<br/>(规范排序：Decodes 在前, Prefills 在后)"]
+    R --> CTX["4. AscendPCPAttentionContext<br/>(Local Query 视图 + Global Cache/Restore 视图)"]
+    CTX --> FWD["5. Model Forward<br/>(跨 PCP 同步 KV / 局部 Attention)"]
+    FWD --> REST["6. restore_for_sampling<br/>(按 hidden_restore_idx 恢复全局顺序)"]
+      </div>
+    </div>
+
+    <!-- 四个核心阶段卡片，右上角带微红点热点 -->
+    <div class="arch-flow">
+      <div class="arch-node">
+        <button class="hotspot-pin" data-code="code-pcp-dualchunk" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 _iter_rank_chunks</span>
+        </button>
+        <span class="arch-node-step">01 &middot; PARTITION</span>
+        <h4 class="arch-node-title">2x 虚拟请求展开</h4>
+        <p class="arch-node-desc">每个 Prefill 拆为 Head/Tail 两个独立 <code>RankSegment</code>，Buffer 容量 <code>2 * max_num_reqs</code></p>
+      </div>
+
+      <div class="arch-node">
+        <button class="hotspot-pin" data-code="code-pcp-restore-map" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 _build_batch_layout</span>
+        </button>
+        <span class="arch-node-step">02 &middot; DUAL MAPS</span>
+        <h4 class="arch-node-title">双向互逆映射表</h4>
+        <p class="arch-node-desc"><code>padded_gather_idx</code> 对齐 KV Slot；<code>hidden_restore_idx</code> 还原全局 Token 顺序</p>
+      </div>
+
+      <div class="arch-node">
+        <button class="hotspot-pin" data-code="code-ascend-pcp-manager" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 AscendPCPAttentionContext</span>
+        </button>
+        <span class="arch-node-step">03 &middot; CONTEXT</span>
+        <h4 class="arch-node-title">双视图上下文注入</h4>
+        <p class="arch-node-desc">Attention 同时获取 Local Query 偏移与 Global BlockTable / Slot Mapping</p>
+      </div>
+
+      <div class="arch-node">
+        <button class="hotspot-pin" data-branch="branch-pcp-layout" type="button">
+          <span class="pin-label">进入 PCP 切分交互沙盘 &#10132;</span>
+        </button>
+        <span class="arch-node-step">04 &middot; RESTORE</span>
+        <h4 class="arch-node-title">采样与投机边界还原</h4>
+        <p class="arch-node-desc"><code>restore_for_sampling</code> 在 Runner 边界恢复完整序列供 LM Head 与 Draft 使用</p>
+      </div>
+    </div>
+  </div>
+</section>

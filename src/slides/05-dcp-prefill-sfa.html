@@ -1,0 +1,51 @@
+<!-- Slide 05: DCP 核心机制三：GLM-5.3-Flash Chunked Prefill 紧凑 KV Gather 与 SFA 双模式 -->
+<section data-stage="02 深入 DCP">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>DCP 核心机制 ③：GLM-5.3-Flash Chunked Prefill 与 Indexer 双模式</strong></h3>
+        <p class="slide-subtitle">GQA DCP 已移除（RFC #21305）；GLM-5.3-Flash 默认采用 <strong>Replicated KPool (4:1) + Compact KV Block Gather</strong></p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-code" data-code="code-glm53-kpool-pcp" type="button">
+          &lt;/&gt; indexer_kpool.py
+        </button>
+        <button class="btn-code" data-code="code-sfa-dcp-impl" type="button">
+          &lt;/&gt; sfa_cp.py
+        </button>
+      </div>
+    </div>
+
+    <div class="interactive-card" style="margin-bottom:1.1rem;">
+      <div class="interactive-card-bar">
+        <span class="interactive-card-title">
+          <span class="interactive-card-dot"></span>
+          GLM-5.3-Flash 动态算子流 · Replicated KPool (默认) vs Sharded Indexer (Radix Sort) + <code>_record_dcp_kv_gather_context</code>
+        </span>
+        <div style="display:flex; gap:0.6rem;">
+          <button class="btn-code" data-code="code-sfa-dcp-impl" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
+            &lt;/&gt; _record_dcp_kv_gather
+          </button>
+        </div>
+      </div>
+      <div class="interactive-card-body" style="height:49vh;">
+        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=dcp_chunked&amp;compact=1" scrolling="no" title="GLM-5.3-Flash DCP Chunked Prefill 与双模式数据流"></iframe>
+      </div>
+    </div>
+
+    <div class="template-grid-2">
+      <div class="surface-card" style="padding:0.95rem 1.5rem;">
+        <h4>模式 A：Replicated KPool Indexer（GLM-5.3-Flash 默认）</h4>
+        <p style="font-size:1.26rem; margin:0;">
+          KPool 4:1 池化后每 Token 仅占 32 Elements（主 KV 的 ~1/16），全卡复制开销极小，直接零通信选出一致的全局 Top-2051！
+        </p>
+      </div>
+      <div class="surface-card" style="padding:0.95rem 1.5rem;">
+        <h4>Prefill/Mixed 紧凑 KV 收集 &amp; 模式 B（Sharded Indexer）</h4>
+        <p style="font-size:1.26rem; margin:0;">
+          Prefill 写完新 KV 后仅对本步活跃块 ID (<code>kv_gather_block_ids</code>) 跨 DCP AllGather；可选 Sharded Indexer 支持 Triton Radix Sort 跨卡归并。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

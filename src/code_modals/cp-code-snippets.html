@@ -1,0 +1,451 @@
+<!-- 1. 通信组初始化：vllm/distributed/parallel_state.py -->
+<div id="code-parallel-state"
+     class="code-snippet-tpl"
+     data-tag="DISTRIBUTED"
+     data-title="PCP & DCP 通信组构建 (PCP-first, then TP)"
+     data-file="vllm/distributed/parallel_state.py"
+     data-lines="L2295-L2330"
+     data-start-line="2295"
+     data-highlight="2301-2304,2316-2318"
+     data-desc="<strong>核心机制：</strong>物理 Rank 网格按 <code>(..., pcp, tp)</code> 排布。构建 <code>_DCP</code> 时先通过 <code>transpose(-1, -2)</code> 转置为 <code>(tp, pcp)</code> 再按 <code>dcp_size</code> 切分，因此 DCP 优先跨 PCP 维度、再跨 TP 维度。">
+<pre>
+    # Build the DCP model-parallel groups.
+    global _DCP
+    assert _DCP is None, "decode context model parallel group is already initialized"
+    dcp_size = decode_context_model_parallel_size or 1
+    dcp_ranks = local_all_ranks if enable_elastic_ep else all_ranks
+    if dcp_size > 1:
+        # DCP spans PCP first, then TP for full TP x PCP groups.
+        dcp_ranks = dcp_ranks.transpose(-1, -2)
+    group_ranks = dcp_ranks.reshape(-1, dcp_size).unbind(0)
+    group_ranks = [x.tolist() for x in group_ranks]
+    _DCP = init_model_parallel_group(
+        group_ranks,
+        get_world_group().local_rank,
+        backend,
+        use_message_queue_broadcaster=True,
+        group_name="dcp",
+    )
+
+    global _PCP
+    assert _PCP is None, "prefill context parallel group is already initialized"
+    group_ranks = (
+        all_ranks.transpose(3, 4)
+        .reshape(-1, prefill_context_model_parallel_size)
+        .unbind(0)
+    )
+    group_ranks = [x.tolist() for x in group_ranks]
+    _PCP = init_model_parallel_group(
+        group_ranks, get_world_group().local_rank, backend, group_name="pcp"
+    )
+</pre>
+</div>
+
+<!-- 2. DCP Slot Mapping Triton Kernel -->
+<div id="code-slot-mapping-kernel"
+     class="code-snippet-tpl"
+     data-tag="TRITON KERNEL"
+     data-title="Virtual Block 与 Interleave Slot Mapping 计算"
+     data-file="vllm_ascend/ops/triton/block_table/compute_slot_mappings.py"
+     data-lines="L78-L118"
+     data-start-line="78"
+     data-highlight="82-91,114-115"
+     data-desc="<strong>核心机制：</strong>每个 Virtual Block 容纳 <code>kv_block_size * CP_SIZE</code> 个 token。仅当 <code>virtual_block_offsets // CP_INTERLEAVE % CP_SIZE == cp_rank</code> 时才计算本地物理 Slot，非归属 Rank 写入 <code>PAD_ID (-1)</code> 跳过写 Cache。支持按 Cache Group 配置 <code>group_dcp_sharded</code>。">
+<pre>
+        if CP_SIZE == 1:
+            local_positions = positions
+            is_local = True
+        else:
+            virtual_block_size = kv_block_size * CP_SIZE
+            virtual_block_indices = positions // virtual_block_size
+            virtual_block_offsets = positions - virtual_block_indices * virtual_block_size
+            is_local = virtual_block_offsets // CP_INTERLEAVE % CP_SIZE == cp_rank
+            rounds = virtual_block_offsets // (CP_INTERLEAVE * CP_SIZE)
+            remainder = virtual_block_offsets % CP_INTERLEAVE
+            local_offsets = rounds * CP_INTERLEAVE + remainder
+            local_positions = virtual_block_indices * kv_block_size + local_offsets
+            local_positions = tl.where(group_dcp_sharded, local_positions, positions)
+            is_local = tl.where(group_dcp_sharded, is_local, True)
+
+        block_indices = local_positions // kernel_block_size
+        block_offsets = local_positions - kernel_block_size * block_indices
+        ...
+        slot_ids = block_numbers * kernel_block_size + block_offsets
+        if CP_SIZE != 1:
+            slot_ids = tl.where(is_local, slot_ids, PAD_ID)
+        slot_ids = tl.where(is_real_req, slot_ids, PAD_ID)
+
+        tl.store(slot_mapping_ptr + offset, slot_ids, mask=valid)
+</pre>
+</div>
+
+<!-- 3. DCPImplMixin: Query Gather & Output Merge -->
+<div id="code-dcp-impl-mixin"
+     class="code-snippet-tpl"
+     data-tag="ATTENTION MIXIN"
+     data-title="DCPImplMixin：Decode Q Gather 与 A2A 输出归并"
+     data-file="vllm_ascend/attention/context_parallel/common_cp.py"
+     data-lines="L151-L206"
+     data-start-line="151"
+     data-highlight="160-165,186-205"
+     data-desc="<strong>核心机制：</strong>当 <code>DCP == PCP</code> 时，同组内各 Rank 的 TP 位置相同（Q Heads 已完全一致），直接跳过 Q AllGather；当 <code>DCP == TP * PCP</code> 时，仅在 <code>tp_group</code> 内 Gather Q Heads，最后调用 <code>dcp_a2a_fused</code> 一次性完成 TP Head Scatter 与 PCP 归并。">
+<pre>
+    def _dcp_all_gather_fragments(self, *tensors: torch.Tensor, dim: int) -> tuple[torch.Tensor, ...]:
+        if not tensors:
+            return ()
+        split_sizes = [tensor.shape[-1] for tensor in tensors]
+        pcp_group = getattr(self, "pcp_group", None)
+        if dim == 1 and pcp_group is not None and pcp_group.world_size > 1:
+            # Query heads are replicated across PCP ranks. Gather only
+            # distinct TP heads when DCP spans the full TP x PCP domain.
+            if self.dcp_size == pcp_group.world_size:
+                return tensors
+            gathered = self.tp_group.all_gather(torch.cat(tensors, dim=-1).contiguous(), dim=dim)
+        else:
+            gathered = self._dcp_all_gather(torch.cat(tensors, dim=-1), dim)
+        return torch.split(gathered, split_sizes, dim=-1)
+
+    def _merge_dcp_attention_output(self, attn_output, softmax_lse, *, defer_combine=False):
+        pcp_group = getattr(self, "pcp_group", None)
+        if pcp_group is not None and pcp_group.world_size > 1:
+            tp_size = self.tp_group.world_size if self.dcp_size > pcp_group.world_size else 1
+            return torch.ops.vllm.dcp_a2a_fused(
+                attn_output, softmax_lse, tp_size, 1,
+                self.tp_group.unique_name, pcp_group.unique_name,
+                defer_combine=defer_combine,
+            )
+        return torch.ops.vllm.dcp_a2a_fused(
+            attn_output, softmax_lse, self.dcp_size, 1,
+            self.dcp_group.unique_name if self.dcp_size > 1 else "",
+            defer_combine=defer_combine,
+        )
+</pre>
+</div>
+
+<!-- 4. dcp_a2a_fused Triton LSE Combine -->
+<div id="code-dcp-a2a-fused"
+     class="code-snippet-tpl"
+     data-tag="TRITON KERNEL"
+     data-title="dcp_a2a_fused：无损 LSE 解包与数值稳定加权归并"
+     data-file="vllm_ascend/ops/triton/dcp/dcp_a2a.py"
+     data-lines="L165-L228"
+     data-start-line="165"
+     data-highlight="165-175,204-214,225-228"
+     data-desc="<strong>核心机制：</strong>BF16/FP16 下将 FP32 LSE 拆解为 1 个带符号指数码 + 3 个 Base-256 尾数无损传输；归并时先求全局 <code>safe_lse_max</code>，再按 <code>exp(lse - safe_lse_max)</code> 加权求和，同时支持融合 Split MLA 的本地 Current KV 贡献（<code>HAS_LOCAL</code>）。">
+<pre>
+                exponent_code = tl.load(recv_ptr + recv_base + head_dim * recv_stride_d).to(tl.float32)
+                significand_hi = tl.load(recv_ptr + recv_base + (head_dim + 1) * recv_stride_d).to(tl.float32)
+                significand_mid = tl.load(recv_ptr + recv_base + (head_dim + 2) * recv_stride_d).to(tl.float32)
+                significand_lo = tl.load(recv_ptr + recv_base + (head_dim + 3) * recv_stride_d).to(tl.float32)
+                packed_valid = exponent_code != 0.0
+                sign = tl.where(exponent_code < 0.0, -1.0, 1.0)
+                exponent_magnitude = tl.where(exponent_code < 0.0, -exponent_code, exponent_code)
+                safe_exponent = exponent_magnitude - 128.0
+                significand = significand_hi * 65536.0 + significand_mid * 256.0 + significand_lo
+                lse = sign * significand * tl.exp2(safe_exponent - 23.0)
+                valid_lse = packed_valid & (lse == lse) & (lse != float("inf")) & (lse != -float("inf"))
+            lse_max = tl.maximum(lse_max, tl.where(valid_lse, lse, -float("inf")))
+        ...
+            weight = tl.where(valid_lse, tl.exp(lse - safe_lse_max), 0.0)
+            partial_output = tl.load(recv_ptr + recv_base + d_offsets * recv_stride_d, mask=d_mask, other=0.0).to(tl.float32)
+            partial_output = tl.where(valid_lse, partial_output, 0.0)
+            merged += partial_output * weight
+            weight_sum += weight
+        ...
+        denominator = tl.where(weight_sum > 0.0, weight_sum, 1.0)
+        merged /= denominator
+        tl.store(output_ptr + output_offsets, merged, mask=d_mask)
+</pre>
+</div>
+
+<!-- 5. SFA DCP Hooks & Chunked KV Gather -->
+<div id="code-sfa-dcp-impl"
+     class="code-snippet-tpl"
+     data-tag="SFA + DCP"
+     data-title="AscendSFADCPImpl：Replicated Indexer 与 Compact KV Gather"
+     data-file="vllm_ascend/attention/context_parallel/sfa_cp.py"
+     data-lines="L587-L645"
+     data-start-line="587"
+     data-highlight="591-593,598-599,638-644"
+     data-desc="<strong>核心机制：</strong>Decode 阶段在 <code>_on_query_ready</code> 异步启动 Q AllGather；Prefill/Mixed 阶段在当前层写完本地 DCP KV Cache 后（<code>_on_kv_cache_written</code>），按紧凑 Block IDs 收集跨 DCP 节点的有效 KV 块。">
+<pre>
+    def _on_query_ready(self, ql_nope: torch.Tensor, q_pe: torch.Tensor | None, attn_metadata: M) -> None:
+        assert isinstance(attn_metadata, AscendSFADCPMetadata)
+        assert attn_metadata.dcp_context is not None
+        # PCP prefill rows differ across ranks. Gather history and keep Q local.
+        if attn_metadata.dcp_context.kv_gather_block_ids is not None:
+            return
+        attn_metadata.dcp_context.gather_context = self._start_dcp_query_gather(ql_nope, q_pe)
+
+    def _on_kv_cache_written(self, kv_cache: tuple[torch.Tensor, ...], attn_metadata: M) -> None:
+        assert isinstance(attn_metadata, AscendSFADCPMetadata)
+        assert attn_metadata.dcp_context is not None
+        if attn_metadata.dcp_context.kv_gather_block_ids is not None:
+            self._record_dcp_kv_gather_context(kv_cache, attn_metadata)
+        ...
+        valid_block_ids = attn_metadata.dcp_context.kv_gather_block_ids
+        cache = kv_cache[0]
+        if self.qk_rope_head_dim == 0:
+            cache = _view_cache_as_operator_pages(cache, attn_metadata.block_size)
+        kv = _index_select_kv_blocks(cache, valid_block_ids)
+        gather_input = kv.contiguous()
+</pre>
+</div>
+
+<!-- 6. MRV2 PCP DualChunkSwap & Decode Sharding -->
+<div id="code-pcp-dualchunk"
+     class="code-snippet-tpl"
+     data-tag="MRV2 PCP"
+     data-title="PCPManager：DualChunkSwap 头尾切分与 Decode 轮询分片"
+     data-file="vllm/v1/worker/gpu/pcp_manager.py"
+     data-lines="L244-L305"
+     data-start-line="244"
+     data-highlight="251-254,283-285,292-294"
+     data-desc="<strong>核心机制：</strong>每个长 Prefill 被切成 <code>2 * P</code> 个 chunk，Rank <code>r</code> 取第 <code>(r, 2P - 1 - r)</code> 两个 chunk 生成 2 个独立的本地虚拟请求段（<code>RankSegment</code>）。若开启 <code>PCP + DCP</code> 且请求太短不够分满 <code>2P</code> 块，则自动退化为全 Rank 复制；Decode 请求在 <code>DCP=1</code> 下支持按 <code>decode_ordinal % P</code> 轮询分配。">
+<pre>
+    def replicated_requests(
+        self, num_scheduled_tokens: np.ndarray, is_prefilling: np.ndarray
+    ) -> np.ndarray:
+        """Per global request, whether every PCP rank gets the whole query."""
+        num_chunks = 2 * self.pcp_world_size
+        query_lens = np.asarray(num_scheduled_tokens, dtype=np.int64)
+        replicated = ~np.asarray(is_prefilling, dtype=np.bool_)
+        if self.dcp_world_size > 1:
+            chunk_sizes = (query_lens + num_chunks - 1) // num_chunks
+            drops_a_chunk = (num_chunks - 1) * chunk_sizes >= query_lens
+            replicated |= drops_a_chunk
+        return replicated
+
+    def _iter_rank_chunks(self, rank: int, num_scheduled_tokens: np.ndarray, is_prefilling: np.ndarray):
+        decode_ordinal = 0
+        num_chunks = 2 * self.pcp_world_size
+        replicated = self.replicated_requests(num_scheduled_tokens, is_prefilling)
+        for global_batch_req_idx, num_tokens in enumerate(num_scheduled_tokens):
+            query_len = int(num_tokens)
+            if query_len == 0:
+                continue
+            if not replicated[global_batch_req_idx]:
+                chunk_size = (query_len + num_chunks - 1) // num_chunks
+                chunk_indices = (rank, num_chunks - 1 - rank)
+            elif self.shard_decode_requests:
+                chunk_size = query_len
+                owner_rank = decode_ordinal % self.pcp_world_size
+                decode_ordinal += 1
+                chunk_indices = (0,) if rank == owner_rank else ()
+            else:  # DCP requires decode queries on every participating rank.
+                chunk_size = query_len
+                chunk_indices = (0,)
+</pre>
+</div>
+
+<!-- 7. MRV2 PCP Batch Layout & Restore Maps -->
+<div id="code-pcp-restore-map"
+     class="code-snippet-tpl"
+     data-tag="MRV2 PCP"
+     data-title="PCPManager._build_batch_layout：构建 padded_gather_idx 与 hidden_restore_idx"
+     data-file="vllm/v1/worker/gpu/pcp_manager.py"
+     data-lines="L352-L408"
+     data-start-line="352"
+     data-highlight="358-359,378-381,396-401"
+     data-desc="<strong>核心机制：</strong>维护两张互逆映射表：<code>padded_gathered = global[padded_gather_idx]</code> 用于把全局 Slot 映射转为 PCP AllGather 接收顺序；<code>global = gathered[hidden_restore_idx]</code> 用于将跨 PCP Gather 后的 Hidden States 还原为全局 Token 顺序。<code>gathered_kv_write_mask</code> 自动剔除 Padding 与重复的 Replicated 行。">
+<pre>
+        # PCP=2 example:
+        #   global batch:       [A B C D E F G]
+        #   rank 0 / rank 1:    [A B G] / [C D E F]
+        #   padded gathered:    [A B G _ | C D E F]
+        #   hidden_restore_idx: [0, 1, 4, 5, 6, 7, 2]
+        #   padded_gather_idx:  [0, 1, 6, 0, 2, 3, 4, 5]
+        # Therefore global = gathered[hidden_restore_idx] and
+        # padded_gathered = global[padded_gather_idx].
+        hidden_restore_idx = np.empty(int(query_start_loc_np[-1]), dtype=np.int64)
+        ...
+        for rank, segments in enumerate(segments_by_rank):
+            expanded_rank_offset = rank * padded_num_tokens
+            for segment in segments:
+                padded_gathered_slice = slice(
+                    expanded_rank_offset + segment.rank_local_batch_slice.start,
+                    expanded_rank_offset + segment.rank_local_batch_slice.stop,
+                )
+                padded_gather_idx[padded_gathered_slice] = np.arange(
+                    segment.global_batch_slice.start,
+                    segment.global_batch_slice.stop,
+                    dtype=np.int64,
+                )
+                is_sharded_decode = (
+                    not bool(is_prefilling[segment.global_batch_req_idx])
+                    and self.shard_decode_requests
+                )
+                if replicated[segment.global_batch_req_idx] and not is_sharded_decode and rank != 0:
+                    continue
+                gathered_kv_write_mask[padded_gathered_slice] = True
+                hidden_restore_idx[segment.global_batch_slice] = np.arange(
+                    padded_gathered_slice.start,
+                    padded_gathered_slice.stop,
+                    dtype=np.int64,
+                )
+</pre>
+</div>
+
+<!-- 8. AscendPCPAttentionContext & AscendPCPManager -->
+<div id="code-ascend-pcp-manager"
+     class="code-snippet-tpl"
+     data-tag="ASCEND MRV2"
+     data-title="AscendPCPAttentionContext 与 AscendPCPManager"
+     data-file="vllm_ascend/worker/v2/pcp_manager.py"
+     data-lines="L49-L75"
+     data-start-line="49"
+     data-highlight="54-59,63-69"
+     data-desc="<strong>核心机制：</strong><code>AscendPCPAttentionContext</code> 将本地分割后的 Query Batch 与调度器全局 Batch、全局 BlockTables、全局 Slot Mappings 以及恢复索引打包注入各层 Attention Metadata Builder。本地 InputBuffers 请求容量翻倍为 <code>2 * max_num_reqs</code>。">
+<pre>
+@dataclass(frozen=True)
+class AscendPCPAttentionContext:
+    """Canonical global PCP view for one attention step."""
+
+    # The global batch and its associated metadata, used to build DSA/KPool attention metadata.
+    global_batch: AscendInputBatch
+    global_block_tables: tuple[torch.Tensor, ...]
+    global_slot_mappings: torch.Tensor
+    hidden_restore_idx: torch.Tensor
+    padded_gather_idx: torch.Tensor | None = None
+    gathered_kv_write_mask: torch.Tensor | None = None
+    # Device snapshot of allocated kernel-block counts in global request order.
+    global_block_table_num_blocks: torch.Tensor | None = None
+    # Original batch row for each local request, in upstream segment order.
+    local_to_global_req_indices: tuple[int, ...] | None = None
+    # Actual local tokens in the unpartitioned batch, excluding padding.
+    local_token_indices: torch.Tensor | None = None
+    # Padded tensor width consumed by each rank's model forward.
+    local_num_tokens: int | None = None
+    # Local request order, including dual-chunk duplicates and graph padding.
+    local_request_state_indices: torch.Tensor | None = None
+</pre>
+</div>
+
+<!-- 9. GLM-5.3-Flash KDA Linear Attention PCP -->
+<div id="code-glm53-kda-pcp"
+     class="code-snippet-tpl"
+     data-tag="GLM-5.3-FLASH KDA"
+     data-title="Glm5NextLinearAttention：TP×PCP 联合切分 Head 与因果顺序恢复"
+     data-file="vllm_ascend/models/glm5next/kda.py"
+     data-lines="L518-L605"
+     data-start-line="518"
+     data-highlight="527-530,588-595,597-604"
+     data-desc="<strong>核心机制：</strong>KDA 线性层将 Attention Heads 与 SSM Recurrent State 按 <code>TP × PCP</code> 联合切分。由于 PCP 下单个 Rank 持有同一请求的 Head 和 Tail 两个不连续块，因此在推进 Recurrent State 前必须先跨 PCP <code>all_gather</code> 并通过 <code>hidden_restore_idx</code> 恢复全局因果顺序；计算完成后，纯 Prefill 通过 <code>reduce_scatter</code>、混合 Batch 通过 <code>all_reduce + index_select</code> 切回本地 Token。">
+<pre>
+    def _forward(self, hidden_states: torch.Tensor, output_buffer: torch.Tensor | None) -> torch.Tensor | None:
+        attn_metadata_raw = get_forward_context().attn_metadata
+        attn_metadata = attn_metadata_raw.get(self.prefix) if isinstance(attn_metadata_raw, dict) else None
+        pcp_context = getattr(attn_metadata, "pcp_context", None)
+        has_pcp_prefill = pcp_context is not None and bool(pcp_context.global_batch.is_prefilling_np.any())
+        local_num_tokens = hidden_states.size(0)
+        if has_pcp_prefill:
+            # PCP assigns the first and last chunks of a prefill to the same
+            # rank. Reconstruct causal order before advancing the head-sharded
+            # recurrent state across the combined TP and PCP head shards.
+            hidden_states = self.pcp_group.all_gather(hidden_states, dim=0)[pcp_context.hidden_restore_idx]
+        ...
+        self._forward_core(qkv_proj_states=qkv, g1=g1, beta=beta, core_attn_out=core_attn_out)
+        core_attn_out = self.o_norm(core_attn_out, g2).reshape(core_attn_out.size(1), -1)
+        use_pcp_reduce_scatter = (
+            has_pcp_prefill
+            and isinstance(self.o_proj, PCPRowParallelLinear)
+            and bool(pcp_context.global_batch.is_prefilling_np.all())
+        )
+        if use_pcp_reduce_scatter:
+            output = self.o_proj(core_attn_out, pcp_output_indices=pcp_context.padded_gather_idx)[0]
+        else:
+            output = self.o_proj(core_attn_out)[0]
+            if has_pcp_prefill:
+                local_start = self.pcp_rank * local_num_tokens
+                local_indices = pcp_context.padded_gather_idx[local_start : local_start + local_num_tokens]
+                return torch.index_select(output, 0, local_indices)
+</pre>
+</div>
+
+<!-- 10. GLM-5.3-Flash KPool Indexer PCP -->
+<div id="code-glm53-kpool-pcp"
+     class="code-snippet-tpl"
+     data-tag="GLM-5.3-FLASH KPOOL"
+     data-title="Glm5NextKPoolIndexerBackend：异步 AllGather 与 Query 投影重叠"
+     data-file="vllm_ascend/attention/indexer_kpool.py"
+     data-lines="L885-L968"
+     data-start-line="885"
+     data-highlight="901-911,932,950-958"
+     data-desc="<strong>核心机制：</strong>GLM-5.3-Flash 的 KPool Indexer 维护压缩 Pool Cache (<code>Glm5NextIndexerCache</code>) 与未满池的 FP32 Tail Ring (<code>Glm5NextTailCache</code>)。在 PCP 下调用 <code>prepare_pcp_hidden</code> 启动 <code>all_gather_async</code>，与本地 <code>wq_b</code> Query 投影及权重计算完全重叠，在进入 <code>_forward_cann</code> 前通过 <code>index_select(..., restore_indices)</code> 还原全局顺序更新 Cache，而 Top-K 检索仅针对本地 Query 行执行。">
+<pre>
+    def prepare_pcp_hidden(
+        self, k_hidden_states: torch.Tensor, indexer_metadata: AscendIndexerKPoolMetadata
+    ) -> torch.Tensor | Callable[[], torch.Tensor]:
+        """Launch KPool PCP inputs before the independent MLA/indexer queries."""
+        restore_indices = indexer_metadata.pcp_hidden_restore_indices
+        if restore_indices is None:
+            return k_hidden_states
+        num_tokens = k_hidden_states.shape[0]
+        k_hidden = k_hidden_states[:num_tokens]
+        padding = indexer_metadata.pcp_local_token_count - num_tokens
+        if padding:
+            k_hidden = F.pad(k_hidden, (0, 0, 0, padding))
+        k_hidden = k_hidden.contiguous()
+        gathered_hidden, handle = all_gather_async(k_hidden, get_pcp_group())
+
+        def finish() -> torch.Tensor:
+            if handle is not None:
+                handle.wait()
+            return torch.index_select(gathered_hidden, 0, restore_indices)
+
+        return finish
+
+    def forward(self, hidden_states, q_c, k_hidden_states, indexer_metadata, compute_topk=True):
+        if isinstance(k_hidden_states, torch.Tensor):
+            k_hidden_states = self.prepare_pcp_hidden(k_hidden_states, indexer_metadata)
+        ...
+        if compute_topk:
+            q_values = self.wq_b(q_c[row_start:row_stop])[0].view(row_stop - row_start, self.n_head, self.head_dim)
+            weights = F.linear(hidden[row_start:row_stop].float(), self._head_weight_f32).to(q_values.dtype)
+        ...
+        k_hidden = k_hidden_states[:num_tokens] if isinstance(k_hidden_states, torch.Tensor) else k_hidden_states()
+        return self._forward_cann(k_hidden, q_values, weights, indexer_cache, tail_cache, ...)
+</pre>
+</div>
+
+<!-- 11. PCP + DCP Combined Slot Mapping & SFA Metadata Builder -->
+<div id="code-pcp-dcp-stacked"
+     class="code-snippet-tpl"
+     data-tag="PCP + DCP STACKED"
+     data-title="AscendSFAPCPDCPMetadataBuilder：PCP 聚合顺序下的 DCP 掩码写入"
+     data-file="vllm_ascend/attention/context_parallel/sfa_cp.py"
+     data-lines="L428-L521"
+     data-start-line="428"
+     data-highlight="453-457,506-520"
+     data-desc="<strong>核心机制：</strong>当 PCP 与 DCP 叠加时，Prefill 阶段先通过 <code>build_pcp_ordered_slot_mapping</code> 将全局 Replicated Indexer Slots 按 <code>padded_gather_idx</code> 重排并用 <code>~write_mask</code> 置为 <code>-1</code>；同时将主 SFA KV Cache 的 DCP Local Slots 拆分为 <code>pcp_prolog_local_slots</code> 与 <code>pcp_prolog_global_slots</code>，确保每个 Rank 只向本地写入归属自己 <code>dcp_local_rank</code> 的 Token。">
+<pre>
+    def _build_pcp_ordered_indexer_slot_mapping(self, common_attn_metadata, pcp_context, pcp_cache_group_idx):
+        global_common_attn_metadata = get_sfa_pcp_global_metadata(
+            common_attn_metadata, pcp_context, pcp_cache_group_idx,
+        )
+        dcp_block_table = self._get_dcp_local_block_table(
+            global_common_attn_metadata.block_table_tensor,
+            global_common_attn_metadata.num_reqs,
+        )
+        replicated_block_table = self._build_block_table_replicated_view(
+            dcp_block_table, global_common_attn_metadata.seq_lens,
+        )
+        global_slot_mapping = self._build_slot_mapping_replicated_view(
+            global_common_attn_metadata, replicated_block_table,
+        )
+        return build_pcp_ordered_slot_mapping(
+            global_slot_mapping, pcp_context, self.pcp_indexer_slot_mapping_buf,
+        )
+    ...
+        if metadata.num_prefills or metadata.pcp_has_global_prefill:
+            group = get_pcp_group()
+            num_tokens = metadata.num_input_tokens
+            rank_slots = metadata.dcp_context.slot_mapping[: group.world_size * num_tokens].view(
+                group.world_size, num_tokens
+            )
+            num_decode_tokens = metadata.num_decode_tokens
+            local_slots = rank_slots[group.rank_in_group].contiguous()
+            metadata.pcp_prolog_local_slots = local_slots
+            metadata.pcp_prolog_global_slots = rank_slots[:, num_decode_tokens:].reshape(-1)
+</pre>
+</div>

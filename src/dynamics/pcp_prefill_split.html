@@ -3,418 +3,374 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PCP Prefill Token Split Visualizer</title>
+  <title>MRV2 PCP DualChunkSwap & RankSegment Visualizer</title>
   <style>
     :root {
       --bg: #ffffff;
-      --panel: #f8fbff;
-      --border: #d7e1ef;
-      --text: #111827;
+      --panel: #f8fafc;
+      --border: #cbd5e1;
+      --text: #0f172a;
       --muted: #64748b;
-      --blue: #2563eb;
-      --blue2: #dbeafe;
+      --blue: #0369a1;
       --green: #059669;
-      --green2: #dcfce7;
-      --red: #dc2626;
-      --red2: #fee2e2;
       --purple: #7c3aed;
-      --purple2: #ede9fe;
-      --pad-bg: #e5e7eb;
-      --pad-text: #64748b;
+      --amber: #d97706;
     }
-
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 12px 16px;
     }
-
-    .page {
-      max-width: 1460px;
-      margin: 0 auto;
-      padding: 12px 14px 18px;
-    }
-
     .controls {
       display: grid;
-      grid-template-columns: 160px 220px 220px 1fr;
-      gap: 10px;
-      align-items: end;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--panel);
-    }
-
-    .control {
-      display: grid;
-      gap: 4px;
-      font-size: 12px;
-    }
-
-    .control label {
-      font-weight: 700;
-      color: #334155;
-    }
-
-    .control select,
-    .control input[type="range"] {
-      width: 100%;
-    }
-
-    .value {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .summary {
-      font-size: 12px;
-      line-height: 1.5;
-      color: #334155;
-    }
-
-    .summary b {
-      color: var(--text);
-    }
-
-    .section {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: #ffffff;
-      padding: 10px 12px 12px;
-      margin-bottom: 10px;
-    }
-
-    .section h2 {
-      margin: 0 0 10px;
-      font-size: 15px;
-      line-height: 1.2;
-      color: var(--blue);
-    }
-
-    .req-grid {
-      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
       gap: 12px;
-    }
-
-    .req-card {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: #fafcff;
-      padding: 10px 12px;
-    }
-
-    .req-layout {
-      display: grid;
-      grid-template-columns: minmax(320px, 0.8fr) minmax(760px, 1.6fr);
-      gap: 12px;
-      align-items: start;
-    }
-
-    .row-block {
+      padding: 10px 14px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      background: #ffffff;
-      padding: 10px 12px;
-    }
-
-    .row-title {
-      margin: 0 0 8px;
+      background: var(--panel);
+      margin-bottom: 12px;
       font-size: 12px;
-      color: #475569;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
+    .control { display: flex; flex-direction: column; gap: 4px; }
+    .control label { font-weight: 700; color: #334155; }
+    .control select, .control input { width: 100%; }
+    .val { color: var(--blue); font-weight: 700; font-family: monospace; }
 
-    .chip-row {
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 14px;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #fff;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: var(--blue);
       display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
+      justify-content: space-between;
       align-items: center;
     }
-
-    .rank-grid {
-      display: grid;
-      grid-template-columns: repeat(var(--pcp-size, 2), minmax(0, 1fr));
-      gap: 6px;
+    .sub-note { font-size: 11px; color: var(--muted); font-weight: 400; }
+    .req-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      background: #fafcff;
     }
+    .req-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      font-family: monospace;
+    }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    .chip {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      border: 1px solid #93c5fd;
+      background: #eff6ff;
+      color: #1e3a8a;
+    }
+    .chip.d0, .chip.d1 { background: #dcfce7; border-color: #86efac; color: #166534; }
+    .chip.p0 { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+    .chip.p0.tail { background: #0284c7; border-color: #0369a1; color: #fff; font-weight: 700; }
+    .chip.p1 { background: #f3e8ff; border-color: #d8b4fe; color: #6b21a8; }
+    .chip.p1.tail { background: #7c3aed; border-color: #6d28d9; color: #fff; font-weight: 700; }
+    .chip.pad { background: #f1f5f9; border-color: #cbd5e1; color: #94a3b8; }
+    .chip.rep { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
 
     .rank-card {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: #ffffff;
-      padding: 6px 7px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      background: #fff;
     }
-
-    .rank-title {
-      margin: 0 0 6px;
+    .meta-table {
+      width: 100%;
+      border-collapse: collapse;
       font-size: 11px;
-      color: #475569;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: ui-monospace, monospace;
+      margin-top: 6px;
     }
-
-    .chip {
-      min-width: 44px;
-      height: 24px;
-      padding: 0 6px;
-      border-radius: 5px;
-      border: 1px solid #9cbcf7;
-      background: #eef5ff;
-      color: #34507d;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    .meta-table th, .meta-table td {
+      border: 1px solid #e2e8f0;
+      padding: 4px 6px;
+      text-align: left;
     }
-
-    .chip.p0 {
-      background: #eef5ff;
-      border-color: #9cbcf7;
-      color: #3b5a8a;
-    }
-
-    .chip.p1 {
-      background: #f1efff;
-      border-color: #b8a5f2;
-      color: #5b42a8;
-    }
-
-    .chip.selected {
-      background: #cfe0ff;
-      border-color: #7aa7ff;
-      color: #1d4ed8;
-      font-weight: 700;
-    }
-
-    .chip.p1.selected {
-      background: #ded6ff;
-      border-color: #a99af0;
-      color: #5b42a8;
-    }
-
-    .chip.pad {
-      background: var(--pad-bg);
-      border-color: #cbd5e1;
-      color: var(--pad-text);
-    }
-
-    .chip.sep {
-      background: #ffffff;
-      border-color: #94a3b8;
-      color: #475569;
-      min-width: 18px;
-      padding: 0 6px;
-    }
-
-    .meta {
+    .meta-table th { background: #f1f5f9; color: #334155; }
+    .map-box {
       margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-family: ui-monospace, monospace;
       font-size: 11px;
-      line-height: 1.45;
-      color: var(--muted);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-
-    .rank-summary {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-
-    @media (max-width: 1050px) {
-      .controls,
-      .req-layout {
-        grid-template-columns: 1fr;
-      }
+      line-height: 1.55;
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="controls">
-      <div class="control">
-        <label for="pcpSize">PCP size</label>
-        <select id="pcpSize">
-          <option value="2" selected>2</option>
-          <option value="4">4</option>
-        </select>
-        <div class="value">支持 2 / 4</div>
-      </div>
+  <div class="controls">
+    <div class="control">
+      <label>PCP Size: <span class="val" id="pcpVal">2</span></label>
+      <select id="pcpSize">
+        <option value="2" selected>2 (切成 4 块)</option>
+        <option value="4">4 (切成 8 块)</option>
+      </select>
+    </div>
+    <div class="control">
+      <label>DCP Size: <span class="val" id="dcpVal">1</span></label>
+      <select id="dcpSize">
+        <option value="1" selected>1 (仅 PCP)</option>
+        <option value="2">2 (PCP + DCP 叠加)</option>
+      </select>
+    </div>
+    <div class="control">
+      <label>Decode 策略: <span class="val" id="decModeVal">Shard</span></label>
+      <select id="decShard">
+        <option value="1" selected>Round-Robin 分片 (DCP=1)</option>
+        <option value="0">全 Rank 复制 (DCP>1 / KPool)</option>
+      </select>
+    </div>
+    <div class="control">
+      <label>Prefill P0 长度: <span class="val" id="len0Val">8</span></label>
+      <input id="len0" type="range" min="2" max="12" value="8" />
+    </div>
+    <div class="control">
+      <label>Prefill P1 长度: <span class="val" id="len1Val">6</span></label>
+      <input id="len1" type="range" min="1" max="12" value="6" />
+    </div>
+  </div>
 
-      <div class="control">
-        <label for="len0">Prefill request P0 length</label>
-        <input id="len0" type="range" min="1" max="8" value="8" />
-        <div class="value">当前：<span id="len0Val">18</span></div>
-      </div>
-
-      <div class="control">
-        <label for="len1">Prefill request P1 length</label>
-        <input id="len1" type="range" min="1" max="8" value="8" />
-        <div class="value">当前：<span id="len1Val">11</span></div>
-      </div>
-
-      <div class="summary" id="summary"></div>
+  <div class="layout-grid">
+    <!-- 左栏：Global Batch 与 DualChunkSwap 切分 -->
+    <div class="card">
+      <h3>
+        <span>1. Scheduler Global Batch &amp; DualChunkSwap (2P 切分)</span>
+        <span class="sub-note">深色块 = Tail Chunk；黄色 = 短请求自动复制</span>
+      </h3>
+      <div id="globalReqs"></div>
+      <div class="map-box" id="restoreMaps"></div>
     </div>
 
-    <div class="section">
-      <h2>PCP 切分后各 rank 的 prefill token</h2>
-      <div class="req-grid" id="requestGrid"></div>
-    </div>
-
-    <div class="section">
-      <h2>各 PCP rank 上拼接后的 token</h2>
-      <div class="rank-summary" id="rankSummary"></div>
+    <!-- 右栏：各 PCP Rank 的 Local Virtual Requests (RankSegment) -->
+    <div class="card">
+      <h3>
+        <span>2. 各 PCP Rank 本地虚拟请求行 (RankSegments · Decodes-First)</span>
+        <span class="sub-note">每个 Prefill 展开为 Head / Tail 2 条虚拟请求</span>
+      </h3>
+      <div id="rankPanels"></div>
     </div>
   </div>
 
   <script>
-    const pcpEl = document.getElementById("pcpSize");
-    const len0El = document.getElementById("len0");
-    const len1El = document.getElementById("len1");
-    const requestGridEl = document.getElementById("requestGrid");
-    const rankSummaryEl = document.getElementById("rankSummary");
-    const summaryEl = document.getElementById("summary");
-
-    function chip(text, cls = "") {
-      return `<span class="chip ${cls}">${text}</span>`;
-    }
-
-    function buildTokens(prefix, len) {
-      return Array.from({ length: len }, (_, i) => `${prefix}:${i}`);
-    }
-
-    function splitByPcp(prefix, len, pcpSize) {
-      const original = buildTokens(prefix, len);
-      const chunkCount = 2 * pcpSize;
-      const chunkSize = Math.max(1, Math.ceil(len / chunkCount));
-      const paddedLen = chunkSize * chunkCount;
-
-      const padded = [];
-      for (let i = 0; i < paddedLen; i++) {
-        padded.push(i < len ? `${prefix}:${i}` : "PAD");
-      }
-
-      const chunks = [];
-      for (let c = 0; c < chunkCount; c++) {
-        const start = c * chunkSize;
-        chunks.push(padded.slice(start, start + chunkSize));
-      }
-
-      const rankRows = [];
-      for (let r = 0; r < pcpSize; r++) {
-        const headChunk = chunks[r];
-        const tailChunk = chunks[chunkCount - 1 - r];
-        rankRows.push({
-          rank: r,
-          leftChunk: r,
-          rightChunk: chunkCount - 1 - r,
-          tokens: [...headChunk, ...tailChunk],
-        });
-      }
-
-      return {
-        prefix,
-        len,
-        chunkCount,
-        chunkSize,
-        paddedLen,
-        padded,
-        chunks,
-        rankRows,
-      };
-    }
-
-    function renderTokenRow(tokens, prefix) {
-      return tokens.map(t => {
-        if (t === "PAD") return chip("PAD", "pad");
-        return chip(t, prefix.toLowerCase());
-      }).join("");
-    }
-
-    function renderRankTokenRow(tokens, prefix, leftChunkSize) {
-      return tokens.map((t, idx) => {
-        let cls = prefix.toLowerCase();
-        if (t === "PAD") cls = "pad";
-        else if (idx >= leftChunkSize) cls += " selected";
-        return chip(t === "PAD" ? "PAD" : t, cls);
-      }).join("");
-    }
-
-    function renderRequestCard(data) {
-      const headTailCards = data.rankRows.map(row => `
-        <div class="rank-card">
-          <div class="rank-title">pcp rank ${row.rank} · ${row.tokens.length} tokens</div>
-          <div class="chip-row">${renderRankTokenRow(row.tokens, data.prefix, data.chunkSize)}</div>
-        </div>
-      `).join("");
-
-      return `
-        <div class="req-card" style="--pcp-size: ${Number(document.getElementById("pcpSize").value)};">
-          <div class="req-layout">
-            <div class="row-block">
-              <div class="row-title">${data.prefix} padded to ${data.paddedLen}</div>
-              <div class="chip-row">${renderTokenRow(data.padded, data.prefix)}</div>
-            </div>
-            <div class="rank-grid">${headTailCards}</div>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderRankSummary(allReqs, pcpSize) {
-      const cards = [];
-      for (let r = 0; r < pcpSize; r++) {
-        const pieces = [];
-        for (let i = 0; i < allReqs.length; i++) {
-          const req = allReqs[i];
-          const row = req.rankRows[r];
-          row.tokens.forEach((t, idx) => {
-            let cls = req.prefix.toLowerCase();
-            if (t === "PAD") cls = "pad";
-            else if (idx >= req.chunkSize) cls += " selected";
-            pieces.push(chip(t === "PAD" ? "PAD" : t, cls));
-          });
-          if (i !== allReqs.length - 1) {
-            pieces.push(chip("|", "sep"));
-          }
-        }
-
-        cards.push(`
-          <div class="rank-card">
-            <div class="rank-title">pcp rank ${r}</div>
-            <div class="chip-row">${pieces.join("")}</div>
-          </div>
-        `);
-      }
-      return cards.join("");
-    }
+    const pcpEl = document.getElementById('pcpSize');
+    const dcpEl = document.getElementById('dcpSize');
+    const decShardEl = document.getElementById('decShard');
+    const len0El = document.getElementById('len0');
+    const len1El = document.getElementById('len1');
 
     function render() {
-      const pcpSize = Number(pcpEl.value);
-      const len0 = Number(len0El.value);
-      const len1 = Number(len1El.value);
+      const P = Number(pcpEl.value);
+      const D = Number(dcpEl.value);
+      if (D > 1) decShardEl.value = "0";
+      const shardDecode = D === 1 && decShardEl.value === "1";
+      const L0 = Number(len0El.value);
+      const L1 = Number(len1El.value);
 
-      document.getElementById("len0Val").textContent = len0;
-      document.getElementById("len1Val").textContent = len1;
+      document.getElementById('pcpVal').textContent = P;
+      document.getElementById('dcpVal').textContent = D;
+      document.getElementById('decModeVal').textContent = shardDecode ? 'Round-Robin' : 'Replicated';
+      document.getElementById('len0Val').textContent = L0;
+      document.getElementById('len1Val').textContent = L1;
 
-      const req0 = splitByPcp("P0", len0, pcpSize);
-      const req1 = splitByPcp("P1", len1, pcpSize);
+      // Global requests: D0 (len=1, decode), D1 (len=1, decode), P0 (len=L0, prefill), P1 (len=L1, prefill)
+      const reqs = [
+        { id: 'D0', isPrefill: false, len: 1, computed: 20 },
+        { id: 'D1', isPrefill: false, len: 1, computed: 35 },
+        { id: 'P0', isPrefill: true,  len: L0, computed: 0 },
+        { id: 'P1', isPrefill: true,  len: L1, computed: 10 },
+      ];
 
-      requestGridEl.innerHTML = renderRequestCard(req0) + renderRequestCard(req1);
-      rankSummaryEl.innerHTML = renderRankSummary([req0, req1], pcpSize);
+      let globalOffset = 0;
+      const numChunks = 2 * P;
+      reqs.forEach((r, idx) => {
+        r.reqIdx = idx;
+        r.globalStart = globalOffset;
+        r.globalEnd = globalOffset + r.len;
+        globalOffset += r.len;
 
+        const chunkSize = Math.ceil(r.len / numChunks);
+        const dropsAChunk = (numChunks - 1) * chunkSize >= r.len;
+        r.replicated = !r.isPrefill || (D > 1 && dropsAChunk);
+        r.chunkSize = r.replicated ? r.len : chunkSize;
+      });
+      const totalGlobalTokens = globalOffset;
+
+      // Render Global Requests
+      const globalHtml = reqs.map(r => {
+        const chips = [];
+        for (let i = 0; i < r.len; i++) {
+          const gIdx = r.globalStart + i;
+          if (!r.isPrefill) {
+            chips.push(`<span class="chip ${r.id.toLowerCase()}" title="global_idx=${gIdx}">${r.id}:pos${r.computed} (g${gIdx})</span>`);
+          } else if (r.replicated) {
+            chips.push(`<span class="chip rep" title="短请求复制 global_idx=${gIdx}">${r.id}:${i} (g${gIdx})</span>`);
+          } else {
+            const cIdx = Math.floor(i / r.chunkSize);
+            const ownerRank = cIdx < P ? cIdx : (numChunks - 1 - cIdx);
+            const isTail = cIdx >= P;
+            chips.push(`<span class="chip ${r.id.toLowerCase()} ${isTail ? 'tail' : ''}" title="chunk=${cIdx}, rank=${ownerRank}, global_idx=${gIdx}">${r.id}:${i}[c${cIdx}→r${ownerRank}]</span>`);
+          }
+        }
+        const tag = !r.isPrefill
+          ? (shardDecode ? 'Decode (Round-Robin Sharded)' : 'Decode (Replicated)')
+          : (r.replicated ? `短 Prefill < 2P 块 → 自动全 Rank 复制` : `2P=${numChunks} Chunks, chunk_size=${r.chunkSize}, computed_prefix=${r.computed}`);
+        return `<div class="req-box">
+          <div class="req-head"><span>${r.id} (len=${r.len}, global_slice=[${r.globalStart}:${r.globalEnd}])</span><span style="color:#64748b">${tag}</span></div>
+          <div class="chip-row">${chips.join('')}</div>
+        </div>`;
+      }).join('');
+      document.getElementById('globalReqs').innerHTML = globalHtml;
+
+      // Build RankSegments per rank following vllm/v1/worker/gpu/pcp_manager.py
+      const segmentsByRank = [];
+      const perRankTokens = [];
+      for (let rank = 0; rank < P; rank++) {
+        let decodeOrdinal = 0;
+        const rawSegments = [];
+        for (const r of reqs) {
+          let chunkIndices = [];
+          if (!r.replicated) {
+            chunkIndices = [rank, numChunks - 1 - rank];
+          } else if (shardDecode && !r.isPrefill) {
+            const owner = decodeOrdinal % P;
+            decodeOrdinal++;
+            chunkIndices = (rank === owner) ? [0] : [];
+          } else {
+            chunkIndices = [0];
+          }
+          for (const cIdx of chunkIndices) {
+            const cOffset = cIdx * r.chunkSize;
+            const cLen = Math.min(r.chunkSize, r.len - cOffset);
+            if (cLen <= 0) continue;
+            rawSegments.push({
+              req: r,
+              cIdx,
+              isTail: !r.replicated && cIdx >= P,
+              globalStart: r.globalStart + cOffset,
+              globalEnd: r.globalStart + cOffset + cLen,
+              len: cLen,
+              startPos: r.computed + cOffset
+            });
+          }
+        }
+        // _reorder_segments: Decodes first, then Prefills, by reqIdx then globalStart
+        rawSegments.sort((a, b) => {
+          if (a.req.isPrefill !== b.req.isPrefill) return a.req.isPrefill ? 1 : -1;
+          if (a.req.reqIdx !== b.req.reqIdx) return a.req.reqIdx - b.req.reqIdx;
+          return a.globalStart - b.globalStart;
+        });
+        let localOffset = 0;
+        rawSegments.forEach(seg => {
+          seg.localStart = localOffset;
+          seg.localEnd = localOffset + seg.len;
+          localOffset += seg.len;
+        });
+        segmentsByRank.push(rawSegments);
+        perRankTokens.push(localOffset);
+      }
+
+      const paddedNumTokens = Math.max(1, ...perRankTokens);
+      const numExpanded = paddedNumTokens * P;
+      const paddedGatherIdx = new Array(numExpanded).fill(0);
+      const writeMask = new Array(numExpanded).fill(false);
+      const hiddenRestoreIdx = new Array(totalGlobalTokens).fill(0);
+
+      segmentsByRank.forEach((segs, rank) => {
+        const base = rank * paddedNumTokens;
+        segs.forEach(seg => {
+          for (let k = 0; k < seg.len; k++) {
+            const expIdx = base + seg.localStart + k;
+            const gIdx = seg.globalStart + k;
+            paddedGatherIdx[expIdx] = gIdx;
+            const isShardedDecode = !seg.req.isPrefill && shardDecode;
+            if (seg.req.replicated && !isShardedDecode && rank !== 0) {
+              continue;
+            }
+            writeMask[expIdx] = true;
+            hiddenRestoreIdx[gIdx] = expIdx;
+          }
+        });
+      });
+
+      document.getElementById('restoreMaps').innerHTML =
+        `<strong>MRV2 Restore &amp; Gather 映射表 (padded_local_tokens = ${paddedNumTokens}, expanded = ${numExpanded})：</strong><br>` +
+        `&bull; <b>padded_gather_idx</b>  = [${paddedGatherIdx.join(', ')}]<br>` +
+        `&bull; <b>kv_write_mask</b>      = [${writeMask.map(v => v ? '1' : '0').join(', ')}]<br>` +
+        `&bull; <b>hidden_restore_idx</b> = [${hiddenRestoreIdx.join(', ')}] &nbsp;<span style="color:#0369a1">(global = gathered[hidden_restore_idx])</span>`;
+
+      // Render Rank Panels
+      const rankHtml = segmentsByRank.map((segs, rank) => {
+        const chips = [];
+        const qStartLoc = [0];
+        segs.forEach(seg => {
+          qStartLoc.push(seg.localEnd);
+          for (let k = 0; k < seg.len; k++) {
+            const tokIdx = seg.globalStart - seg.req.globalStart + k;
+            const cls = !seg.req.isPrefill ? seg.req.id.toLowerCase() : (seg.req.replicated ? 'rep' : `${seg.req.id.toLowerCase()} ${seg.isTail ? 'tail' : ''}`);
+            chips.push(`<span class="chip ${cls}">${seg.req.id}:${tokIdx}</span>`);
+          }
+        });
+        const padCount = paddedNumTokens - perRankTokens[rank];
+        for (let p = 0; p < padCount; p++) {
+          chips.push(`<span class="chip pad">PAD</span>`);
+        }
+
+        const rows = segs.map((seg, sIdx) => `
+          <tr>
+            <td>Seg #${sIdx} (${seg.req.id}${seg.req.isPrefill && !seg.req.replicated ? (seg.isTail ? '_tail' : '_head') : ''})</td>
+            <td>[${seg.localStart}:${seg.localEnd}]</td>
+            <td>[${seg.globalStart}:${seg.globalEnd}]</td>
+            <td>${seg.startPos} .. ${seg.startPos + seg.len - 1}</td>
+          </tr>
+        `).join('');
+
+        return `<div class="rank-card">
+          <div class="req-head">
+            <span>PCP Rank ${rank} · ${segs.length} 虚拟请求行 · 实算 ${perRankTokens[rank]} / Padded ${paddedNumTokens} tokens</span>
+            <span style="color:#0369a1">query_start_loc = [${qStartLoc.join(', ')}]</span>
+          </div>
+          <div class="chip-row" style="margin-bottom:6px;">${chips.join('')}</div>
+          <table class="meta-table">
+            <thead><tr><th>Virtual Segment</th><th>Local Slice</th><th>Global Slice</th><th>Positions (含历史 Prefix)</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+      }).join('');
+      document.getElementById('rankPanels').innerHTML = rankHtml;
     }
 
-    [pcpEl, len0El, len1El].forEach(el => {
-      el.addEventListener("input", render);
-      el.addEventListener("change", render);
+    [pcpEl, dcpEl, decShardEl, len0El, len1El].forEach(el => {
+      el.addEventListener('input', render);
+      el.addEventListener('change', render);
     });
-
     render();
   </script>
 </body>

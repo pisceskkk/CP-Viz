@@ -1,0 +1,112 @@
+<!-- Slide 12: 实战案例：GLM-5.3-Flash 混合架构与 CP 职责拆解 -->
+<section data-stage="04 PCP+DCP &amp; GLM-5.3">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>实战案例：GLM-5.3-Flash 混合架构与 CP 职责拆解</strong></h3>
+        <p class="slide-subtitle">45 层主干（34 层线性 <code>KDA</code> + 11 层稀疏 <code>NoPE SFA / KPool</code> + <code>mHC</code> + <code>MoE</code>）在 PCP &amp; DCP 下的异构协同</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-slide-jump" data-go-slide="13" type="button">
+          进入动态 Tensor 数据流画布 &#10132;
+        </button>
+      </div>
+    </div>
+
+    <!-- GLM-5.3-Flash 4 大核心组件在 PCP/DCP 下的分工卡片（右上角微红点直通真实代码） -->
+    <div class="arch-flow" style="margin-bottom:1.8rem;">
+      <div class="arch-node" style="border-top:4px solid #0284c7;">
+        <button class="hotspot-pin" data-code="code-glm53-kda-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 kda.py: Glm5NextLinearAttention</span>
+        </button>
+        <span class="arch-node-step">34 LAYERS &middot; LINEAR ATTN</span>
+        <h4 class="arch-node-title">KDA 线性注意力层</h4>
+        <p class="arch-node-desc">
+          <strong>Heads &amp; SSM State 按 <code>TP &times; PCP</code> 联合切分</strong>（64 Heads / (TP&times;PCP)）。<br>
+          PCP Prefill 时先 AllGather <code>hidden_states</code> 并按 <code>hidden_restore_idx</code> 还原因果顺序推进状态，输出经 <code>ReduceScatter</code> 切回本地。
+        </p>
+      </div>
+
+      <div class="arch-node" style="border-top:4px solid #7c3aed;">
+        <button class="hotspot-pin" data-code="code-glm53-kpool-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 indexer_kpool.py</span>
+        </button>
+        <span class="arch-node-step">11 LAYERS &middot; KPOOL INDEXER</span>
+        <h4 class="arch-node-title">KPool 稀疏索引器</h4>
+        <p class="arch-node-desc">
+          <strong>压缩 Pool Cache (4:1) + FP32 Tail Ring 全量复制</strong>。<br>
+          PCP Prefill 调用 <code>all_gather_async</code> 收集 Key Hidden（与本地 <code>wq_b</code> Query 投影重叠！），还原全局顺序更新 Cache，仅对本地 Query 选 Top-2048。
+        </p>
+      </div>
+
+      <div class="arch-node" style="border-top:4px solid #0369a1;">
+        <button class="hotspot-pin" data-code="code-pcp-dcp-stacked" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 sfa_cp.py: AscendSFADCPImpl</span>
+        </button>
+        <span class="arch-node-step">11 LAYERS &middot; SPARSE ATTN</span>
+        <h4 class="arch-node-title">NoPE SFA 主注意力</h4>
+        <p class="arch-node-desc">
+          <strong>支持 PCP 输入切分 + DCP 主 KV Cache 序列分片</strong>（512 Latent Dim，<code>RoPE=0</code>）。<br>
+          Decode 阶段将 Replicated Indexer 选出的全局 Top-K 索引重映射为本地 DCP KV 索引，计算后经 <code>dcp_a2a_fused</code> 归并。
+        </p>
+      </div>
+
+      <div class="arch-node" style="border-top:4px solid #059669;">
+        <button class="hotspot-pin" data-code="code-ascend-pcp-manager" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 pcp_manager.py</span>
+        </button>
+        <span class="arch-node-step">45 LAYERS &middot; mHC &amp; MoE</span>
+        <h4 class="arch-node-title">mHC 流混合 &amp; EP MoE</h4>
+        <p class="arch-node-desc">
+          <strong>4 条残差流 <code>hc_pre / hc_post</code> 与 MoE 专家路由保持在 PCP 本地 Token 视图</strong>（<code>[T_local, 4096]</code>）上执行，与 EP All-to-All 及 Shared Expert 多流重叠无缝正交。
+        </p>
+      </div>
+    </div>
+
+    <!-- 5 个 Cache Group 对照表 -->
+    <div class="surface-card" style="padding:1.2rem 1.8rem;">
+      <h4 style="margin-bottom:0.6rem;">GLM-5.3-Flash 的 5 组异构 KV / State Cache 在 PCP &amp; DCP 下的存储契约</h4>
+      <table class="progress-table" style="margin-top:0.4rem; font-size:1.25rem;">
+        <thead>
+          <tr>
+            <th>Cache Group</th>
+            <th>对应模块与层数</th>
+            <th>单 Token 维度 / 精度</th>
+            <th>PCP 行为 (Prefill)</th>
+            <th>DCP 行为 (Storage)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="code">Group 0 · SFA Main KV</td>
+            <td>11 层 SFA (+ 1 层 MTP)</td>
+            <td>Latent 512 (BF16 / INT8 / FP8)</td>
+            <td>PCP Gather 后按 Owner 写入</td>
+            <td><strong>DCP 交错切分 (1/DCP)</strong></td>
+          </tr>
+          <tr>
+            <td class="code">Group 0 · KPool Indexer</td>
+            <td>11 层 Indexer 压缩池</td>
+            <td>128 dim / 4 tokens (BF16/INT8/FP8)</td>
+            <td>异步 Gather Hidden 还原顺序写</td>
+            <td><strong>全量复制 (Replicated)</strong></td>
+          </tr>
+          <tr>
+            <td class="code">Group 1 · KPool Tail Ring</td>
+            <td>11 层未满池尾部环</td>
+            <td>[2 (K/Gate), Ring, 128] (FP32)</td>
+            <td>随 Indexer 全局顺序推进</td>
+            <td><strong>全量复制 (Replicated)</strong></td>
+          </tr>
+          <tr>
+            <td class="code">Group 2~4 · KDA State A/B/C</td>
+            <td>34 层 KDA (12+11+11 层)</td>
+            <td>Conv (BF16) + Recurrent (BF16/FP32)</td>
+            <td>Gather Hidden 还原因果顺序推进</td>
+            <td><strong>按 TP &times; PCP 切分 Heads</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

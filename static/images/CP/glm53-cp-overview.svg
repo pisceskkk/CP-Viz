@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 770" width="1600" height="770" font-family="Consolas, 'Microsoft YaHei', 'Segoe UI', monospace">
+<defs>
+  <marker id="ah-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1971c2"/></marker>
+  <marker id="ah-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#2f9e44"/></marker>
+  <marker id="ah-violet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#7048e8"/></marker>
+  <marker id="ah-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#f08c00"/></marker>
+  <marker id="ah-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#e8590c"/></marker>
+  <marker id="ah-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#0ca678"/></marker>
+</defs>
+<rect x="0" y="0" width="1600" height="770" fill="#ffffff" rx="12"/>
+<rect x="36" y="96" width="340" height="510" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="56" y="145" width="300" height="74" rx="10" fill="#a5d8ff" stroke="#1971c2" stroke-width="2"/>
+<rect x="56" y="248" width="300" height="92" rx="10" fill="#d0bfff" stroke="#7048e8" stroke-width="2"/>
+<rect x="56" y="368" width="300" height="82" rx="10" fill="#c3fae8" stroke="#0ca678" stroke-width="2"/>
+<rect x="56" y="476" width="300" height="110" rx="10" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+<rect x="406" y="96" width="820" height="238" rx="10" fill="#f0fdf4" stroke="#2f9e44" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="426" y="146" width="235" height="84" rx="10" fill="#b2f2bb" stroke="#2f9e44" stroke-width="2"/>
+<rect x="692" y="146" width="255" height="84" rx="10" fill="#d3f9d8" stroke="#2f9e44" stroke-width="2"/>
+<rect x="978" y="146" width="228" height="84" rx="10" fill="#b2f2bb" stroke="#2f9e44" stroke-width="2"/>
+<rect x="426" y="246" width="780" height="72" rx="10" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+<rect x="406" y="352" width="820" height="396" rx="10" fill="#f8f0fc" stroke="#7048e8" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="426" y="402" width="235" height="82" rx="10" fill="#ffec99" stroke="#f08c00" stroke-width="2"/>
+<rect x="692" y="402" width="255" height="82" rx="10" fill="#fff3bf" stroke="#f08c00" stroke-width="2"/>
+<rect x="978" y="402" width="228" height="82" rx="10" fill="#ffd8a8" stroke="#e8590c" stroke-width="2"/>
+<rect x="426" y="504" width="235" height="86" rx="10" fill="#d0bfff" stroke="#7048e8" stroke-width="2"/>
+<rect x="692" y="504" width="255" height="86" rx="10" fill="#e5dbff" stroke="#7048e8" stroke-width="2"/>
+<rect x="978" y="504" width="228" height="86" rx="10" fill="#b2f2bb" stroke="#2f9e44" stroke-width="2"/>
+<rect x="426" y="608" width="780" height="122" rx="10" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+<rect x="1256" y="96" width="308" height="652" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="1276" y="152" width="268" height="88" rx="10" fill="#c3fae8" stroke="#0ca678" stroke-width="2"/>
+<rect x="1276" y="268" width="268" height="96" rx="10" fill="#a5d8ff" stroke="#1971c2" stroke-width="2"/>
+<rect x="1276" y="392" width="268" height="96" rx="10" fill="#d0bfff" stroke="#7048e8" stroke-width="2"/>
+<rect x="1276" y="516" width="268" height="84" rx="10" fill="#ffec99" stroke="#f08c00" stroke-width="2"/>
+<rect x="1276" y="620" width="268" height="110" rx="10" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+<rect x="36" y="624" width="340" height="124" rx="10" fill="#fff9db" stroke="#f08c00" stroke-width="2"/>
+<path d="M206,219 L206,248" fill="none" stroke="#1971c2" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-blue)"/>
+<path d="M206,340 L206,368" fill="none" stroke="#7048e8" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-violet)"/>
+<path d="M661,188 L692,188" fill="none" stroke="#2f9e44" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-green)"/>
+<path d="M947,188 L978,188" fill="none" stroke="#2f9e44" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-green)"/>
+<path d="M661,443 L692,443" fill="none" stroke="#f08c00" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-amber)"/>
+<path d="M947,443 L978,443" fill="none" stroke="#e8590c" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-orange)"/>
+<path d="M661,547 L692,547" fill="none" stroke="#7048e8" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-violet)"/>
+<path d="M947,547 L978,547" fill="none" stroke="#2f9e44" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-green)"/>
+<path d="M1092,484 L820,504" fill="none" stroke="#e8590c" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-orange)"/>
+<path d="M356,395 L385,395 L385,188 L426,188" fill="none" stroke="#1971c2" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-blue)"/>
+<path d="M356,420 L385,420 L385,443 L426,443" fill="none" stroke="#7048e8" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-violet)"/>
+<path d="M385,443 L385,547 L426,547" fill="none" stroke="#7048e8" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-violet)"/>
+<path d="M1206,188 L1276,188" fill="none" stroke="#2f9e44" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-green)"/>
+<path d="M1206,547 L1240,547 L1240,210 L1276,210" fill="none" stroke="#2f9e44" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-green)"/>
+<path d="M1410,240 L1410,268" fill="none" stroke="#0ca678" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-teal)"/>
+<path d="M1410,364 L1410,392" fill="none" stroke="#1971c2" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-blue)"/>
+<path d="M1410,488 L1410,516" fill="none" stroke="#7048e8" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#ah-violet)"/>
+<text x="40" y="48.0" font-size="24" font-weight="800" fill="#0f172a">GLM-5.3-Flash (45 Layers: mHC + 34× KDA + 11× NoPE SFA/KPool + 288 MoE) — PCP &amp; DCP 全景架构图</text>
+<text x="40" y="75.0" font-size="15" font-weight="600" fill="#475569">PCP (Prefill Context Parallel) 切分输入序列算力 (TTFT)  ×  DCP (Decode Context Parallel) 交错切分 SFA 主 KV 显存 (TPOT &amp; 1M+ Context)</text>
+<text x="52" y="124.0" font-size="16" font-weight="800" fill="#0369a1">1 · MRV2 Runner &amp; PCP 序列切分</text>
+<text x="206.0" y="175.6" font-size="15" font-weight="700" fill="#1e1e1e" text-anchor="middle">Global Scheduler Batch</text>
+<text x="206.0" y="194.8" font-size="15" font-weight="600" fill="#1e1e1e" text-anchor="middle">Prefill [T_global] + Decode [T_mtp=6B]</text>
+<text x="206.0" y="279.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">AscendPCPManager.partition_batch</text>
+<text x="206.0" y="296.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">DualChunkSwap 头尾对称切分 (2P Chunks)</text>
+<text x="206.0" y="314.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">Rank r → Head(r) + Tail(2P-1-r) 2x 虚拟请求</text>
+<text x="206.0" y="394.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">VocabParallelEmbedding (TP×PCP 切分)</text>
+<text x="206.0" y="411.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">+的首层 hc_expand → 4 条 mHC 残差流</text>
+<text x="206.0" y="429.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">[T_local, 4, 4096] (Sinkhorn 20 iters)</text>
+<text x="70" y="508.8" font-size="13" font-weight="600" fill="#38bdf8" text-anchor="start">双向互逆映射表 (pcp_manager.py):</text>
+<text x="70" y="525.4" font-size="13" font-weight="600" fill="#38bdf8" text-anchor="start">• padded_gather_idx (Global → Gathered)</text>
+<text x="70" y="542.1" font-size="13" font-weight="600" fill="#38bdf8" text-anchor="start">• hidden_restore_idx (Gathered → Global)</text>
+<text x="70" y="558.7" font-size="13" font-weight="600" fill="#38bdf8" text-anchor="start">• gathered_kv_write_mask (过滤 Pad/-1)</text>
+<text x="424" y="124.0" font-size="16" font-weight="800" fill="#2b8a3e">2A · 34 层 KDA 线性注意力 (kda.py) — 64 Heads &amp; SSM State 按 TP × PCP 联合切分</text>
+<text x="543.5" y="173.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">PCP AllGather + 因果还原</text>
+<text x="543.5" y="190.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">all_gather(hidden)[restore_idx]</text>
+<text x="543.5" y="208.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">[T_local] → [T_global, 4096]</text>
+<text x="819.5" y="173.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">in_proj_qkvbfg_a + Conv1d(k=4)</text>
+<text x="819.5" y="190.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">+ chunk_kda / recurrent_kda</text>
+<text x="819.5" y="208.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">推进 n=64/(TP×PCP) Heads 状态</text>
+<text x="1092.0" y="173.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">o_norm + PCPRowParallel</text>
+<text x="1092.0" y="190.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">reduce_scatter(out[padded_idx])</text>
+<text x="1092.0" y="208.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">[T_global] → [T_local, 4096]</text>
+<text x="440" y="276.4" font-size="13" font-weight="600" fill="#86efac" text-anchor="start">Cache Groups 2~4 (KDA Conv BF16 + Recurrent State BF16/FP32): dcp_sharded = False (按请求槽位索引)</text>
+<text x="440" y="293.1" font-size="13" font-weight="600" fill="#86efac" text-anchor="start">• Prefill: 必须先还原因果顺序 [T_global] 推进状态 S_t = α_t S_{t-1} + β_t v_t k_t^T  • Decode: Replicated 顺序同步推进</text>
+<text x="424" y="380.0" font-size="16" font-weight="800" fill="#5f3dc4">2B · 11 层 NoPE SFA + KPool 稀疏注意力 (indexer_kpool.py &amp; sfa_cp.py) — PCP 算力 × DCP 显存</text>
+<text x="543.5" y="428.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">prepare_pcp_hidden (异步重叠)</text>
+<text x="543.5" y="445.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">all_gather_async(k_hidden)</text>
+<text x="543.5" y="463.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">与本地 wq_b / q_b_proj 并行!</text>
+<text x="819.5" y="428.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">cann.key_pool (4:1) + Tail Ring</text>
+<text x="819.5" y="445.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">Replicated Cache (Group 0/1)</text>
+<text x="819.5" y="463.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">pool_key_indexer → Top-2051</text>
+<text x="1092.0" y="428.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">Prefill: Compact KV Gather</text>
+<text x="1092.0" y="445.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">Decode: sparse_index_remap</text>
+<text x="1092.0" y="463.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">(Global TopK → 本卡 DCP Slot)</text>
+<text x="543.5" y="524.8" font-size="13" font-weight="700" fill="#1e1e1e" text-anchor="middle">SFA Main KV (Group 0, D=512)</text>
+<text x="543.5" y="541.4" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">dcp_sharded = True (I=128)</text>
+<text x="543.5" y="558.0" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">owner = (pos // 128) % DCP</text>
+<text x="543.5" y="574.7" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">非归属 Rank 写 PAD_SLOT (-1)</text>
+<text x="819.5" y="524.8" font-size="13" font-weight="700" fill="#1e1e1e" text-anchor="middle">q_b_proj + W_UK_T 吸收 (D=512)</text>
+<text x="819.5" y="541.4" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">npu_sparse_flash_attn</text>
+<text x="819.5" y="558.0" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">Prefill: 算 1/PCP Query</text>
+<text x="819.5" y="574.7" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">Decode: 读本地 1/DCP KV 分片</text>
+<text x="1092.0" y="524.8" font-size="13" font-weight="700" fill="#1e1e1e" text-anchor="middle">Decode: dcp_a2a_fused</text>
+<text x="1092.0" y="541.4" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">Triton 打包 (O_j, FP32 LSE_j)</text>
+<text x="1092.0" y="558.0" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">All2All + LSE 稳定加权归并</text>
+<text x="1092.0" y="574.7" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">+ W_UV + ParallelOProj</text>
+<text x="440" y="646.8" font-size="13" font-weight="600" fill="#c4b5fd" text-anchor="start">为什么 KPool 复制而 SFA 主 KV 按 DCP 切分？</text>
+<text x="440" y="663.4" font-size="13" font-weight="600" fill="#c4b5fd" text-anchor="start">• KPool Indexer 每 4 个 Token 池化为 1 个 128 维向量 (体积仅为主 KV 的 ~1/16)，全卡复制可零通信直出全局 Top-2051！</text>
+<text x="440" y="680.0" font-size="13" font-weight="600" fill="#c4b5fd" text-anchor="start">• SFA 主 KV (512 维 Latent) 占显存大头，按 DCP 交错分片 (1/DCP)；Decode 阶段 KV 静止不动，仅靠 sparse_index_remap</text>
+<text x="440" y="696.7" font-size="13" font-weight="600" fill="#c4b5fd" text-anchor="start">  过滤出落在本卡的 Top-K 子集，算完局部 (O_j, LSE_j) 后通过 dcp_a2a_fused(tp_group, pcp_group) 一次性归并！</text>
+<text x="1272" y="124.0" font-size="16" font-weight="800" fill="#0369a1">3 · mHC + EP MoE &amp; 采样还原</text>
+<text x="1410.0" y="181.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">HC_post + HC_pre (4 Streams)</text>
+<text x="1410.0" y="198.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">保持在 PCP 本地视图 [T_local, 4, 4096]</text>
+<text x="1410.0" y="216.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">零跨卡通信完成流间混合</text>
+<text x="1410.0" y="292.1" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">L0-2 Dense / L3-44 EP MoE</text>
+<text x="1410.0" y="310.0" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">288 Routed Experts (Top-8)</text>
+<text x="1410.0" y="327.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">+ 1 Shared Expert (多流重叠)</text>
+<text x="1410.0" y="345.8" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">在 [T_local, 4096] 上执行 EP All2All</text>
+<text x="1410.0" y="416.1" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">AscendPCPManager</text>
+<text x="1410.0" y="434.0" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">restore_for_sampling()</text>
+<text x="1410.0" y="451.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">末层 L44 hc_contract 后按</text>
+<text x="1410.0" y="469.8" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">hidden_restore_idx 恢复 [T_global]</text>
+<text x="1410.0" y="552.0" font-size="14" font-weight="700" fill="#1e1e1e" text-anchor="middle">ParallelLMHead (TP×PCP 切分)</text>
+<text x="1410.0" y="569.9" font-size="14" font-weight="600" fill="#1e1e1e" text-anchor="middle">+ Sampler &amp; MTP-5 Eagle Proposer</text>
+<text x="1290" y="652.8" font-size="13" font-weight="600" fill="#fde047" text-anchor="start">通信组复用 (parallel_state.py):</text>
+<text x="1290" y="669.4" font-size="13" font-weight="600" fill="#fde047" text-anchor="start">Grid (PCP, TP) → Transpose (TP, PCP)</text>
+<text x="1290" y="686.0" font-size="13" font-weight="600" fill="#fde047" text-anchor="start">Logical DCP = reshape(-1, DCP)</text>
+<text x="1290" y="702.7" font-size="13" font-weight="600" fill="#fde047" text-anchor="start">HCCL 排序映射: dcp_collective_rank_order</text>
+<text x="206.0" y="655.4" font-size="13" font-weight="700" fill="#1e1e1e" text-anchor="middle">四大常驻权重切分 (降低单卡 HBM):</text>
+<text x="206.0" y="672.1" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">1. Embedding: TP × PCP 切分</text>
+<text x="206.0" y="688.7" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">2. 34层 KDA 投影 &amp; 状态: TP × PCP 切分</text>
+<text x="206.0" y="705.4" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">3. 11层 SFA o_proj: TP × PCP 切分</text>
+<text x="206.0" y="722.0" font-size="13" font-weight="600" fill="#1e1e1e" text-anchor="middle">4. LM Head: TP × PCP 切分</text>
+</svg>

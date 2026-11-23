@@ -1,0 +1,57 @@
+<!-- Slide 10: PCP 核心机制四：GLM-5.3-Flash Decode 状态同步与 TP×PCP 四大常驻权重切分 -->
+<section data-stage="03 深入 PCP">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>PCP 核心机制 ④：GLM-5.3-Flash Decode 状态同步与 <code>TP &times; PCP</code> 权重切分</strong></h3>
+        <p class="slide-subtitle">利用 PCP 引入的额外 Rank 联合切分 <strong>Embedding / 34层 KDA 投影与状态 / 11层 SFA <code>o_proj</code> / LM Head</strong> 四大常驻显存</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-code" data-code="code-glm53-kda-pcp" type="button">
+          &lt;/&gt; PCPColumn / PCPRowParallel
+        </button>
+        <button class="btn-code" data-code="code-ascend-pcp-manager" type="button">
+          &lt;/&gt; AscendPCPManager
+        </button>
+      </div>
+    </div>
+
+    <div class="interactive-card" style="margin-bottom:1.1rem;">
+      <div class="interactive-card-bar">
+        <span class="interactive-card-title">
+          <span class="interactive-card-dot"></span>
+          GLM-5.3-Flash 动态算子流 · PCP Decode 锁步状态推进与 <code>TP &times; PCP</code> 四大常驻权重切分流水线
+        </span>
+        <div style="display:flex; gap:0.6rem;">
+          <button class="btn-code" data-code="code-glm53-kda-pcp" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
+            &lt;/&gt; kda.py 权重与状态切分
+          </button>
+        </div>
+      </div>
+      <div class="interactive-card-body" style="height:49vh;">
+        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=pcp_decode&amp;compact=1" scrolling="no" title="GLM-5.3-Flash PCP Decode 与权重切分数据流"></iframe>
+      </div>
+    </div>
+
+    <div class="template-grid-3">
+      <div class="surface-card" style="padding:0.95rem 1.4rem;">
+        <h4>1. 为什么 Decode 请求保持复制？</h4>
+        <p style="font-size:1.24rem; margin:0;">
+          34 层 KDA 的 64 个 Head 状态分散在 <code>TP&times;PCP</code> 各卡上，保持相同的 Decode 请求顺序可让所有卡免通信锁步推进本地 SSM 状态。
+        </p>
+      </div>
+      <div class="surface-card" style="padding:0.95rem 1.4rem;">
+        <h4>2. KDA 权重与状态 <code>1/(TP&times;PCP)</code></h4>
+        <p style="font-size:1.24rem; margin:0;">
+          <code>PCPGlm5NextMergedColumnParallelLinear</code> 将 34 层 KDA 的投影权重、Conv1d 状态和 Recurrent 状态全按 <code>TP&times;PCP</code> 切分。
+        </p>
+      </div>
+      <div class="surface-card" style="padding:0.95rem 1.4rem;">
+        <h4>3. Embedding / <code>o_proj</code> / LM Head</h4>
+        <p style="font-size:1.24rem; margin:0;">
+          默认开启词表 Embedding、LM Head 以及 SFA <code>ParallelOProjection</code> 的跨 PCP 权重切分，显著释放单卡 HBM 空间。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

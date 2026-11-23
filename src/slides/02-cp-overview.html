@@ -1,0 +1,74 @@
+<!-- Slide 02: CP 核心思想（两句话讲透 PCP & DCP）+ GLM-5.3-Flash 全景架构图 (Excalidraw) -->
+<section data-stage="01 总览">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>CP 特性总览：以 GLM-5.3-Flash 为锚点的算力与显存切分</strong></h3>
+        <p class="slide-subtitle">45 层混合主干（<code>mHC</code> + 34 层 <code>KDA</code> 线性注意力 + 11 层 <code>NoPE SFA / KPool</code> 稀疏注意力 + <code>288 MoE</code>）在 PCP &amp; DCP 下的协同全景</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-branch" data-branch="branch-comm-topology" type="button">
+          通信组拓扑沙盘 &#10132;
+        </button>
+        <button class="btn-branch" data-branch="branch-glm53-dataflow" type="button">
+          全屏动态算子流 &#10132;
+        </button>
+        <button class="btn-code" data-code="code-parallel-state" type="button">
+          &lt;/&gt; parallel_state.py
+        </button>
+      </div>
+    </div>
+
+    <!-- 两句话讲透 PCP & DCP -->
+    <div class="takeaway-grid">
+      <div class="takeaway-card">
+        <div class="takeaway-title">
+          <span>PCP (Prefill Context Parallel)</span>
+          <span class="takeaway-tag">算力切分 &middot; 降低 TTFT</span>
+        </div>
+        <p class="takeaway-desc">
+          将长 Prefill 按 <strong>DualChunkSwap</strong> 切为 2x 虚拟请求段：<code>KDA</code> 按 <code>TP&times;PCP</code> 切 Head 并还原因果顺序，<code>SFA+KPool</code> 异步 Gather Key 并仅对本地 <code>1/PCP</code> Query 算稀疏注意力。
+        </p>
+      </div>
+      <div class="takeaway-card accent-secondary">
+        <div class="takeaway-title">
+          <span>DCP (Decode Context Parallel)</span>
+          <span class="takeaway-tag">显存切分 &middot; 提升容量与 TPOT</span>
+        </div>
+        <p class="takeaway-desc">
+          复用 <code>PCP / TP</code> 进程组：<code>KPool Indexer (4:1)</code> 全量复制零通信直出 Top-2051，而占显存大头的 <code>SFA 512维主 KV</code> 按虚拟块跨卡交错分片（<code>1/DCP</code>），Decode 经 <code>dcp_a2a_fused</code> 归并。
+        </p>
+      </div>
+    </div>
+
+    <!-- GLM-5.3-Flash Excalidraw 全景架构图 + 悬浮微红点 -->
+    <div class="surface-card" style="padding:1rem 1.2rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/glm53-cp-overview.svg" alt="GLM-5.3-Flash PCP & DCP Excalidraw Architecture" style="width:100%; max-height:47vh; object-fit:contain;">
+
+        <button class="hotspot-pin" style="left: 21%; top: 44%;" data-go-slide="7" type="button">
+          <span class="pin-label">深入 MRV2 PCP DualChunkSwap 切分 &#10132;</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 55%; top: 24%;" data-code="code-glm53-kda-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 34 层 KDA TP&times;PCP 源码 (kda.py)</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 55%; top: 58%;" data-go-slide="3" type="button">
+          <span class="pin-label">深入 11 层 SFA+KPool 的 DCP 显存分片 &#10132;</span>
+        </button>
+
+        <button class="hotspot-pin" style="left: 88%; top: 82%;" data-branch="branch-comm-topology" type="button">
+          <span class="pin-label">交互演示：TP &times; PCP &times; DCP 通信组排布 &#10132;</span>
+        </button>
+
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大 Excalidraw 架构图">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

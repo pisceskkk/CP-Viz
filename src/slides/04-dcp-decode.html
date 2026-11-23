@@ -1,0 +1,61 @@
+<!-- Slide 04: DCP 核心机制二：GLM-5.3-Flash Decode 阶段的 sparse_index_remap 与 dcp_a2a_fused 归并 -->
+<section data-stage="02 深入 DCP">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>DCP 核心机制 ②：GLM-5.3-Flash Decode 局部稀疏注意力与 <code>dcp_a2a_fused</code></strong></h3>
+        <p class="slide-subtitle">Decode 绝不跨卡搬运 KV Cache：<code>sparse_index_remap</code> 映射本地 Top-K &#8594; 本地 <code>1/DCP</code> KV 计算 &#8594; Triton 打包 <code>(O_j, FP32 LSE_j)</code> 归并</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-code" data-code="code-dcp-impl-mixin" type="button">
+          &lt;/&gt; DCPImplMixin
+        </button>
+        <button class="btn-code" data-code="code-dcp-a2a-fused" type="button">
+          &lt;/&gt; dcp_a2a_fused
+        </button>
+      </div>
+    </div>
+
+    <div class="interactive-card" style="margin-bottom:1.1rem;">
+      <div class="interactive-card-bar">
+        <span class="interactive-card-title">
+          <span class="interactive-card-dot"></span>
+          GLM-5.3-Flash 动态算子流 · DCP Decode (MTP=5) 从 KPool 全局 Top-2051 到 <code>sparse_index_remap</code> 与 <code>dcp_a2a_fused</code>
+        </span>
+        <div style="display:flex; gap:0.6rem;">
+          <button class="btn-code" data-code="code-sfa-dcp-impl" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
+            &lt;/&gt; sparse_index_remap
+          </button>
+          <button class="btn-code" data-code="code-dcp-a2a-fused" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
+            &lt;/&gt; dcp_a2a_fused
+          </button>
+        </div>
+      </div>
+      <div class="interactive-card-body" style="height:49vh;">
+        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=dcp_decode&amp;compact=1" scrolling="no" title="GLM-5.3-Flash DCP Decode 数据流"></iframe>
+      </div>
+    </div>
+
+    <div class="template-grid-3">
+      <div class="surface-card" style="padding:0.95rem 1.4rem;">
+        <h4>1. <code>sparse_index_remap</code> 过滤</h4>
+        <p style="font-size:1.25rem; margin:0;">
+          Replicated KPool 选出全局 Top-2051 后，Triton Kernel 将其过滤并重映射为属于本 DCP Rank 的物理 KV Slot 及可见长度。
+        </p>
+      </div>
+      <div class="surface-card" style="padding:0.95rem 1.4rem;">
+        <h4>2. 无损 LSE 打包 All-to-All</h4>
+        <p style="font-size:1.25rem; margin:0;">
+          Triton 将局部 <code>O_j [6B, 64, 512]</code> 与 FP32 <code>LSE_j</code>（INT32 位保留或 Base-256 编码）打包为单次 <code>all_to_all_single</code>。
+        </p>
+      </div>
+      <div class="surface-card" style="padding:0.95rem 1.4rem;">
+        <h4>3. 数值稳定 LSE 加权归并</h4>
+        <p style="font-size:1.25rem; margin:0; font-family:ui-monospace, monospace;">
+          m = max_j(L_j), &nbsp; w_j = exp(L_j - m)<br>
+          <strong>O = &Sigma;(w_j &middot; O_j) / &Sigma; w_j</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

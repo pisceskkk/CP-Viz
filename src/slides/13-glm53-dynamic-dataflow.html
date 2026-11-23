@@ -1,0 +1,39 @@
+<!-- Slide 13: GLM-5.3-Flash 算子级动态 Tensor 数据流与代码走读地图 -->
+<section data-stage="04 PCP+DCP &amp; GLM-5.3">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>GLM-5.3-Flash 全景动态 Tensor 数据流与源码走读</strong></h3>
+        <p class="slide-subtitle">顶部工具栏支持一键切换 <strong>9 大 CP 核心场景</strong>（DCP 3 大阶段 / PCP 3 大阶段 / PCP+DCP 叠加 / 34层 KDA 深潜 / 11层 SFA+KPool 深潜）</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-branch" data-branch="branch-glm53-dataflow" type="button">
+          全屏展开数据流画布 &#10132;
+        </button>
+      </div>
+    </div>
+
+    <div class="interactive-card">
+      <div class="interactive-card-bar">
+        <span class="interactive-card-title">
+          <span class="interactive-card-dot"></span>
+          交互式算子级 Tensor 数据流：点击任意算子框或彩色连线高亮上下游依赖，底部面板点击「查看对应 vllm-ascend 源码」直接唤起代码抽屉
+        </span>
+        <div style="display:flex; gap:0.6rem;">
+          <button class="btn-code" data-code="code-glm53-kda-pcp" type="button" style="padding:0.2rem 0.7rem; font-size:1.12rem;">
+            &lt;/&gt; kda.py
+          </button>
+          <button class="btn-code" data-code="code-glm53-kpool-pcp" type="button" style="padding:0.2rem 0.7rem; font-size:1.12rem;">
+            &lt;/&gt; indexer_kpool.py
+          </button>
+          <button class="btn-code" data-code="code-pcp-dcp-stacked" type="button" style="padding:0.2rem 0.7rem; font-size:1.12rem;">
+            &lt;/&gt; sfa_cp.py
+          </button>
+        </div>
+      </div>
+      <div class="interactive-card-body" style="height:64vh;">
+        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=pcp_dcp_stacked" scrolling="no" title="GLM-5.3-Flash CP 动态数据流"></iframe>
+      </div>
+    </div>
+  </div>
+</section>

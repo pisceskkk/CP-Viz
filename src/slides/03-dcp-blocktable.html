@@ -1,0 +1,56 @@
+<!-- Slide 03: DCP 核心机制一：GLM-5.3-Flash 的 Virtual Block 与 5 组异构 Cache 交错 Slot Mapping -->
+<section data-stage="02 深入 DCP">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>DCP 核心机制 ①：GLM-5.3-Flash 虚拟块与异构 Cache 交错落盘</strong></h3>
+        <p class="slide-subtitle">通过 <code>dcp_sharded: list[bool]</code> 区分 5 个 Cache Group：仅 <code>Group 0 SFA 主 KV</code> 按 DCP 交错切分，非归属 Rank 写 <code>PAD_SLOT_ID (-1)</code></p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-branch" data-branch="branch-dcp-detail" data-anchor="branch-dcp-blocktable" type="button">
+          BlockTable 交互沙盘 &#10132;
+        </button>
+        <button class="btn-code" data-code="code-slot-mapping-kernel" type="button">
+          &lt;/&gt; compute_slot_mappings.py
+        </button>
+      </div>
+    </div>
+
+    <div class="template-grid-2" style="margin-bottom:1.1rem;">
+      <div class="surface-card" style="padding:1rem 1.5rem;">
+        <h4>交错映射公式（SFA+DCP: <code>I == block_size == 128</code>）</h4>
+        <p style="font-size:1.28rem; line-height:1.55; margin:0; font-family:ui-monospace, monospace;">
+          virtual_block_size = 128 &times; DCP &nbsp;&nbsp;|&nbsp;&nbsp; vblock_offset = pos % virtual_block_size<br>
+          <strong>target_dcp_rank = (vblock_offset // 128) % DCP</strong> &nbsp;（非 Owner 写入 <code>-1</code> 跳过落盘）
+        </p>
+      </div>
+      <div class="surface-card" style="padding:1rem 1.5rem;">
+        <h4>GLM-5.3-Flash 的 <code>dcp_sharded</code> 异构分片契约</h4>
+        <p style="font-size:1.28rem; line-height:1.55; margin:0;">
+          &bull; <strong>Group 0 (SFA 512维主 KV)</strong>：<code>dcp_sharded=True</code>，单卡显存降至 <code>1/DCP</code>。<br>
+          &bull; <strong>Group 0/1 (KPool 4:1 + Tail) &amp; Group 2~4 (KDA SSM)</strong>：<code>dcp_sharded=False</code>。
+        </p>
+      </div>
+    </div>
+
+    <div class="interactive-card">
+      <div class="interactive-card-bar">
+        <span class="interactive-card-title">
+          <span class="interactive-card-dot"></span>
+          GLM-5.3-Flash 动态算子流 · DCP Prefill 异构 Slot Mapping 与紧凑 KV Gather（点击节点追踪上下游 Tensor &amp; 源码）
+        </span>
+        <div style="display:flex; gap:0.6rem;">
+          <button class="btn-branch" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
+            Token -1 掩码沙盘 &#10132;
+          </button>
+          <button class="btn-code" data-code="code-sfa-dcp-impl" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
+            &lt;/&gt; sfa_cp.py
+          </button>
+        </div>
+      </div>
+      <div class="interactive-card-body" style="height:49vh;">
+        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=dcp_prefill&amp;compact=1" scrolling="no" title="GLM-5.3-Flash DCP Prefill 数据流"></iframe>
+      </div>
+    </div>
+  </div>
+</section>

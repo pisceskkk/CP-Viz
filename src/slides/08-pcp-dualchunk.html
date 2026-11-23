@@ -1,0 +1,54 @@
+<!-- Slide 08: PCP 核心机制二：GLM-5.3-Flash 在 MRV2 下的 DualChunkSwap 头尾切分与双向映射表 -->
+<section data-stage="03 深入 PCP">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>PCP 核心机制 ②：DualChunkSwap 切分与 GLM-5.3-Flash 双向映射契约</strong></h3>
+        <p class="slide-subtitle">将长度为 <code>L</code> 的请求拆为 <code>2P</code> 个 Chunk，Rank <code>r</code> 展开为 <code>Head(r)</code> 与 <code>Tail(2P-1-r)</code> 两条独立虚拟请求段（<code>RankSegment</code>）</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-branch" data-branch="branch-pcp-layout" type="button">
+          请求切分交互沙盘 &#10132;
+        </button>
+        <button class="btn-code" data-code="code-pcp-dualchunk" type="button">
+          &lt;/&gt; pcp_manager.py
+        </button>
+      </div>
+    </div>
+
+    <div class="interactive-card" style="margin-bottom:1.1rem;">
+      <div class="interactive-card-bar">
+        <span class="interactive-card-title">
+          <span class="interactive-card-dot"></span>
+          GLM-5.3-Flash 动态算子流 · 从 2x 虚拟请求展开到双向映射表（<code>padded_gather_idx</code> &#8644; <code>hidden_restore_idx</code>）如何驱动 KDA 与 SFA
+        </span>
+        <div style="display:flex; gap:0.6rem;">
+          <button class="btn-branch" data-branch="branch-pcp-layout" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
+            打开 PCP 切分模拟器 &#10132;
+          </button>
+          <button class="btn-code" data-code="code-pcp-restore-map" type="button" style="padding:0.18rem 0.7rem; font-size:1.1rem;">
+            &lt;/&gt; _build_batch_layout
+          </button>
+        </div>
+      </div>
+      <div class="interactive-card-body" style="height:49vh;">
+        <iframe src="src/dynamics/glm53_cp_dataflow.html?scene=pcp_dualchunk&amp;compact=1" scrolling="no" title="GLM-5.3-Flash PCP DualChunkSwap 数据流"></iframe>
+      </div>
+    </div>
+
+    <div class="template-grid-2">
+      <div class="surface-card" style="padding:0.95rem 1.5rem;">
+        <h4>MRV2 核心演进：2x 独立虚拟请求行（<code>RankSegment</code>）</h4>
+        <p style="font-size:1.26rem; margin:0;">
+          Head 与 Tail 直接展开为 2 条独立虚拟请求行（Buffer 容量 <code>2 * max_num_reqs</code>），各自携带真实 <code>positions</code> 与 <code>num_computed_tokens</code>。
+        </p>
+      </div>
+      <div class="surface-card" style="padding:0.95rem 1.5rem;">
+        <h4>短请求自动复制保护（<code>replicated_requests</code>）</h4>
+        <p style="font-size:1.26rem; margin:0;">
+          在 <code>PCP + DCP</code> 模式下，若请求过短不够分满 <code>2P</code> 个 Chunk（<code>(2P - 1) * chunk_size &gt;= L</code>），自动在全卡完整复制，防止集合通信死锁。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

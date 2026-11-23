@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GLM-5.3-Flash · PCP &amp; DCP 动态算子 Tensor 数据流</title>
+  <style>
+    :root {
+      --bg: #061019;
+      --panel: #0b1824;
+      --stroke: #264258;
+      --text: #eef7fc;
+      --muted: #8aa4b7;
+      --cyan: #36d8d2;
+      --blue: #58aaff;
+      --violet: #b388ff;
+      --amber: #ffc066;
+      --green: #62d993;
+      --pink: #ff73aa;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Inter, "Microsoft YaHei", sans-serif;
+    }
+    .shell {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+    .toolbar {
+      height: 42px;
+      flex: 0 0 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--stroke);
+      gap: 8px;
+      overflow-x: auto;
+    }
+    .shell.compact-mode .toolbar {
+      height: 36px;
+      flex: 0 0 36px;
+      padding: 0 10px;
+    }
+    .btn-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .group-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-right: 2px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .toolbar button {
+      font: 600 11.5px/1.2 "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: #102230;
+      color: #b5cfdf;
+      border: 1px solid #335267;
+      border-radius: 5px;
+      padding: 4px 9px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.14s;
+    }
+    .toolbar button:hover {
+      border-color: var(--cyan);
+      color: #fff;
+    }
+    .toolbar button[aria-pressed="true"] {
+      background: #10323c;
+      border-color: var(--cyan);
+      color: #5ef0e6;
+      box-shadow: 0 0 10px rgba(54, 216, 210, 0.22);
+    }
+    .stage-wrap {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 1fr 148px;
+      gap: 6px;
+      padding: 6px 8px 7px;
+    }
+    .shell.compact-mode .stage-wrap {
+      grid-template-rows: 1fr 118px;
+      gap: 5px;
+      padding: 5px 7px 6px;
+    }
+    .canvas-box {
+      position: relative;
+      background:
+        radial-gradient(circle at 14% 0%, #102a3d 0%, transparent 38%),
+        radial-gradient(circle at 86% 100%, #122338 0%, transparent 38%),
+        var(--bg);
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .df-zone {
+      fill: rgba(16, 36, 52, 0.42);
+      stroke: #294860;
+      stroke-width: 1.2;
+      stroke-dasharray: 5 4;
+      rx: 10;
+    }
+    .df-zone-label {
+      font: 700 10.5px "Segoe UI", "Microsoft YaHei", sans-serif;
+      fill: #78a3c0;
+      letter-spacing: 0.6px;
+    }
+    .df-node { cursor: pointer; }
+    .df-node > rect.node-box {
+      fill: #102437;
+      stroke: #497293;
+      stroke-width: 1.5;
+      transition: stroke 0.14s, fill 0.14s;
+    }
+    .df-node.collective > rect.node-box {
+      fill: #0d2821;
+      stroke: var(--green);
+      stroke-width: 1.85;
+    }
+    .df-node.cache > rect.node-box {
+      fill: #1f1b34;
+      stroke: var(--violet);
+      stroke-width: 1.75;
+    }
+    .df-node.boundary > rect.node-box {
+      fill: #0d2930;
+      stroke: var(--cyan);
+      stroke-width: 1.75;
+    }
+    .df-node.index > rect.node-box {
+      fill: #2a2114;
+      stroke: var(--amber);
+      stroke-width: 1.75;
+    }
+    .df-node:hover > rect.node-box,
+    .df-node.selected > rect.node-box {
+      stroke: #ffe0a0;
+      stroke-width: 2.5;
+      fill: #19364d;
+    }
+    .df-port {
+      stroke: #061019;
+      stroke-width: 1.3;
+      pointer-events: none;
+    }
+    .df-body {
+      height: 100%;
+      padding: 4px 7px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      color: #e4f3fa;
+      pointer-events: none;
+    }
+    .df-body .role-tag {
+      font-size: 8.8px;
+      font-weight: 800;
+      letter-spacing: 0.45px;
+      color: #84e6e0;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .df-body strong {
+      font-size: 12.2px;
+      line-height: 1.15;
+      color: #ffffff;
+    }
+    .df-body code {
+      font: 10.2px/1.18 Consolas, monospace;
+      color: #a4cae4;
+      margin-top: 3px;
+    }
+    .df-halo {
+      fill: none;
+      stroke: var(--bg);
+      stroke-width: 5.5;
+      pointer-events: none;
+    }
+    .df-wire {
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linejoin: round;
+      cursor: pointer;
+    }
+    .df-flow-anim {
+      fill: none;
+      stroke-width: 2.2;
+      stroke-dasharray: 6 14;
+      animation: flowDash 1.15s linear infinite;
+      pointer-events: none;
+      opacity: 0.88;
+    }
+    @keyframes flowDash {
+      to { stroke-dashoffset: -20; }
+    }
+    .df-label { cursor: pointer; }
+    .df-label rect {
+      fill: #081520;
+      stroke: #38586e;
+      stroke-width: 0.95;
+      rx: 4;
+    }
+    .df-label text {
+      font: 600 10.2px Consolas, "Microsoft YaHei", monospace;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .df-label:hover rect,
+    .df-label.selected rect {
+      stroke: #ffe0a0;
+      stroke-width: 1.65;
+      fill: #142d40;
+    }
+    .df-muted { opacity: 0.16 !important; }
+    .df-node.df-muted { opacity: 0.28 !important; }
+
+    /* Bottom Inspector Panel */
+    .df-detail {
+      border: 1px solid #325065;
+      border-radius: 8px;
+      background: #0a1925;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-height: 0;
+    }
+    .df-detail-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid #1d3547;
+      padding-bottom: 4px;
+    }
+    .df-detail-head strong {
+      font-size: 13px;
+      color: #ffe0a0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .df-detail-head .code-jump-btn {
+      background: #133540;
+      border: 1px solid #36d8d2;
+      color: #72f2eb;
+      border-radius: 4px;
+      padding: 2px 9px;
+      font: 600 11px Consolas, monospace;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .df-detail-head .code-jump-btn:hover {
+      background: #1b4b5a;
+      color: #fff;
+    }
+    .df-cols {
+      display: grid;
+      grid-template-columns: 1.1fr 1.15fr 1.15fr 1.55fr;
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+      font-size: 11px;
+    }
+    .df-col {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-right: 1px solid #1a3142;
+      padding-right: 8px;
+    }
+    .df-col:last-child {
+      border-right: none;
+      padding-right: 0;
+    }
+    .df-col b {
+      color: #72e5d9;
+      font-size: 10.2px;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .df-col-body {
+      overflow-y: auto;
+      font: 10.6px/1.38 Consolas, "Microsoft YaHei", monospace;
+      color: #c5dbe9;
+    }
+    .df-item { margin-bottom: 2px; }
+    .df-item span { color: #ffe0a0; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="shell" id="app-shell">
+    <nav class="toolbar" aria-label="GLM-5.3-Flash CP 场景与算子流切换栏">
+      <div class="btn-group">
+        <span class="group-label">CP 核心流程图 (GLM-5.3-Flash)：</span>
+        <button type="button" data-scene="dcp_prefill">DCP ① Prefill &amp; SlotMapping</button>
+        <button type="button" data-scene="dcp_decode">DCP ② Decode &amp; a2a_fused</button>
+        <button type="button" data-scene="dcp_chunked">DCP ③ Chunked &amp; SFA 双模式</button>
+        <button type="button" data-scene="pcp_dualchunk">PCP ① DualChunkSwap 切分</button>
+        <button type="button" data-scene="pcp_prefill">PCP ② Prefill (KDA + SFA/KPool)</button>
+        <button type="button" data-scene="pcp_decode">PCP ③ Decode &amp; TP×PCP 权重切分</button>
+        <button type="button" data-scene="pcp_dcp_stacked">PCP+DCP 叠加全景</button>
+      </div>
+      <div class="btn-group">
+        <span class="group-label">单层深潜：</span>
+        <button type="button" data-scene="kda_layer">KDA 34层</button>
+        <button type="button" data-scene="sfa_layer">SFA+KPool 11层</button>
+        <button type="button" id="btn-reset" style="margin-left:3px;">全部连线</button>
+      </div>
+    </nav>
+
+    <div class="stage-wrap">
+      <div class="canvas-box">
+        <svg id="flow-svg" viewBox="0 0 1560 540" role="img" aria-label="GLM-5.3-Flash 动态算子数据流">
+          <defs>
+            <marker id="arrow-act" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 0L10 5L0 10Z" fill="#58aaff"/>
+            </marker>
+            <marker id="arrow-comm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 0L10 5L0 10Z" fill="#62d993"/>
+            </marker>
+            <marker id="arrow-cache" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 0L10 5L0 10Z" fill="#b388ff"/>
+            </marker>
+            <marker id="arrow-index" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 0L10 5L0 10Z" fill="#ffc066"/>
+            </marker>
+            <marker id="arrow-meta" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 0L10 5L0 10Z" fill="#ff73aa"/>
+            </marker>
+          </defs>
+          <text id="svg-title" x="20" y="26" fill="#edf6fb" font-size="16.5" font-weight="800"></text>
+          <text id="svg-sub" x="20" y="45" fill="#8ea7b9" font-size="11.3"></text>
+          <text x="1540" y="26" text-anchor="end" fill="#9bb4c6" font-size="10.8" font-weight="600">
+            🔵 Activation 激活流 &nbsp;&nbsp; 🟢 HCCL 集合通信 &nbsp;&nbsp; 🟣 KV / KPool / SSM State &nbsp;&nbsp; 🟠 Top-K 稀疏索引 / Gate &nbsp;&nbsp; 🩷 Slot / BlockTable 元数据
+          </text>
+          <g id="g-zones"></g>
+          <g id="g-wires"></g>
+          <g id="g-labels"></g>
+          <g id="g-nodes"></g>
+        </svg>
+      </div>
+
+      <div class="df-detail">
+        <div class="df-detail-head">
+          <strong id="det-title">点击任意算子模块或彩色 Tensor 标签高亮上下游数据流</strong>
+          <span id="det-note" style="font-size:11px; color:#9fb5c4; flex:1; margin-left:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></span>
+          <button type="button" class="code-jump-btn" id="det-code-btn">查看对应 vllm-ascend 源码 &#8599;</button>
+        </div>
+        <div class="df-cols">
+          <div class="df-col">
+            <b>权重 / Cache 规格 &amp; 分片</b>
+            <div class="df-col-body" id="col-weights"></div>
+          </div>
+          <div class="df-col">
+            <b>输入 Tensor 端口 (In)</b>
+            <div class="df-col-body" id="col-inputs"></div>
+          </div>
+          <div class="df-col">
+            <b>输出 Tensor 端口 (Out)</b>
+            <div class="df-col-body" id="col-outputs"></div>
+          </div>
+          <div class="df-col">
+            <b>GLM-5.3-Flash 算子机制 &amp; 数学契约</b>
+            <div class="df-col-body" id="col-math"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const NS = "http://www.w3.org/2000/svg";
+    const KIND_COLOR = {
+      act: "#58aaff",
+      comm: "#62d993",
+      cache: "#b388ff",
+      index: "#ffc066",
+      meta: "#ff73aa"
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("compact") === "1") {
+      document.getElementById("app-shell").classList.add("compact-mode");
+    }
+
+    let currentScene = params.get("scene") || "pcp_prefill";
+    let currentSnippet = "code-glm53-kda-pcp";
+
+    function svgEl(tag, attrs = {}, text) {
+      const el = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+      if (text !== undefined) el.textContent = text;
+      return el;
+    }
+
+    function buildSceneGraph(scene) {
+      switch (scene) {
+        /* =====================================================================
+         * 1. DCP ①: GLM-5.3-Flash DCP Prefill & Virtual Block Interleave Slot Mapping
+         * ===================================================================== */
+        case "dcp_prefill":
+          return {
+            title: "GLM-5.3-Flash · DCP Prefill 异构 Cache 映射与交错落盘 (DCP=4, I=block_size=128)",
+            subtitle: "同一套 MultiGroupBlockTable 按 dcp_sharded: list[bool] 驱动 5 个异构 Cache Group：只有 Group 0 SFA 主 KV 按 DCP 交错切分",
+            snippet: "code-slot-mapping-kernel",
+            zones: [
+              { x: 20, y: 65, w: 460, h: 455, label: "STAGE 1 · MRV2 虚拟块表与 GLM-5.3 入口" },
+              { x: 500, y: 65, w: 505, h: 455, label: "STAGE 2 · 34层 KDA 状态 vs 11层 KPool 复制落盘 (dcp_sharded=False)" },
+              { x: 1025, y: 65, w: 515, h: 455, label: "STAGE 3 · 11层 NoPE SFA 交错切分与 Prefill 注意力 (dcp_sharded=True)" }
+            ],
+            nodes: [
+              { id: "dp_in", x: 38, y: 120, w: 200, h: 86, kind: "boundary", role: "GLM-5.3 BACKBONE IN", title: "Replicated Prefill Batch", kernel: "hidden [T, 4096], pos [T]", weight: "hc_expand → [T, 4, 4096] 4条残差流", math: "纯 DCP (PCP=1) 下，每个 Rank 接收相同 Prefill Token 序列 [T, 4096]，由 DCP 负责切分 KV Cache 显存。", snippet: "code-slot-mapping-kernel" },
+              { id: "dp_bt", x: 38, y: 310, w: 200, h: 92, kind: "index", role: "MULTI-GROUP BLOCK TABLE", title: "Virtual Block Allocator", kernel: "VBlock = 128 × DCP4 = 512", weight: "dcp_sharded = [True, False, False, False, False]", math: "Scheduler 按 virtual_block_size=512 分配逻辑块；Worker 侧 compute_slot_mappings_kernel 按 Group 独立生成物理 Slot。", snippet: "code-slot-mapping-kernel" },
+              { id: "dp_qkv", x: 268, y: 120, w: 195, h: 86, kind: "normal", role: "SFA L0-44 ENTRY", title: "fused_qkv_a_proj", kernel: "q_c [1536] + kv_a [512]", weight: "fused_qkv_a_proj [2048, 4096] (RoPE=0)", math: "GLM-5.3-Flash 采用 NoPE SFA (rope_dim=0)，一次投影产出 q_c [T, 1536] 与 Latent KV [T, 512]。", snippet: "code-sfa-dcp-impl" },
+              { id: "dp_slot_k", x: 268, y: 310, w: 195, h: 92, kind: "collective", role: "TRITON SLOT KERNEL", title: "compute_slot_mappings", kernel: "owner = (pos // 128) % 4", weight: "PAD_SLOT_ID = -1 (非 Owner 掩码)", math: "target_dcp_rank = ((pos % 512) // 128) % 4。属于本 Rank 的 Token 获得物理 Slot，其余位置写 -1 跳过落盘！", snippet: "code-slot-mapping-kernel" },
+              { id: "dp_kda", x: 525, y: 105, w: 220, h: 88, kind: "cache", role: "GROUP 2~4 (34 LAYERS)", title: "KDA Conv & SSM State", kernel: "dcp_sharded = False", weight: "Conv [B, 3, 3*n*128], SSM [B, n, 128, 128]", math: "34 层 KDA 线性注意力状态按 请求槽位 (Request Slot) 索引，不随 Token 长度增长，按 TP×PCP 切分 Heads。", snippet: "code-glm53-kda-pcp" },
+              { id: "dp_kpool", x: 525, y: 235, w: 220, h: 88, kind: "cache", role: "GROUP 0/1 (11 LAYERS)", title: "KPool (4:1) & Tail Ring", kernel: "Replicated Indexer Cache", weight: "KPool [Pools, 128], Tail [2, Ring, 128] FP32", math: "wk_weights_proj 产出 Key [T, 128] 与 32 头权重，经 cann.key_pool 4:1 压缩后在所有 DCP Rank 全量复制写入。", snippet: "code-glm53-kpool-pcp" },
+              { id: "dp_topk", x: 768, y: 235, w: 215, h: 88, kind: "index", role: "SPARSE INDEXER", title: "pool_key_indexer", kernel: "Top-2048 + Causal Tail(3)", weight: "wq_b [4096, 1536] (32 heads × 128)", math: "因 Replicated Indexer Cache 拥有完整序列视图，各 DCP Rank 独立打分选出完全一致的全局 Top-2051 稀疏索引！", snippet: "code-glm53-kpool-pcp" },
+              { id: "dp_sfa_w", x: 768, y: 390, w: 215, h: 88, kind: "cache", role: "GROUP 0 SFA MAIN KV", title: "reshape_and_cache_sfa", kernel: "Write Owned 1/4 Tokens", weight: "SFA Cache [num_blocks, 128, 1, 512]", math: "仅 slot_mapping >= 0 的 1/4 Token 真正写入本卡 HBM，单卡主 KV 显存占用直接降至 1/DCP (25%)！", snippet: "code-sfa-dcp-impl" },
+              { id: "dp_gather", x: 1050, y: 390, w: 225, h: 88, kind: "collective", role: "ON_KV_CACHE_WRITTEN", title: "_record_dcp_kv_gather", kernel: "Compact Block AllGather", weight: "kv_gather_block_ids [num_compact_blocks]", math: "写完本层 KV 后，按紧凑 Block Table 将本步被引用的虚拟块跨 DCP AllGather 还原为连续 Latent KV 供 Prefill 消费。", snippet: "code-sfa-dcp-impl" },
+              { id: "dp_attn", x: 1050, y: 205, w: 225, h: 90, kind: "cache", role: "CANN SPARSE ATTN", title: "npu_sparse_flash_attn", kernel: "Q [T, 64/TP, 512] × Top2051", weight: "q_b_proj + W_UK_T 吸收 → D=512", math: "Query 吸收 W_UK_T 至 512 维 Latent 空间，根据 Top-2051 索引从聚合后的紧凑 KV 中读取对应 Token 完成注意力。", snippet: "code-sfa-dcp-impl" },
+              { id: "dp_out", x: 1300, y: 205, w: 220, h: 90, kind: "boundary", role: "SFA OUTPUT & MOE", title: "W_UV + o_proj + MoE", kernel: "out [T, 4096] → HC_post", weight: "W_UV [64/TP, 512, 256], o_proj [4096, 16384]", math: "乘 W_UV 投影回 v_head_dim=256，经 o_proj 写回 4 条 mHC 残差流，随后进入 288 专家 EP MoE。", snippet: "code-sfa-dcp-impl" }
+            ],
+            edges: [
+              { id: "e1", src: "dp_in", dst: "dp_qkv", kind: "act", text: "normed [T, 4096]", path: [[238,163],[268,163]], lx: 253, ly: 140, detail: "HC_pre 归一化后的层输入" },
+              { id: "e2", src: "dp_in", dst: "dp_kda", kind: "act", text: "34层 KDA: [T, 4096]", path: [[138,120],[138,90],[635,90],[635,105]], lx: 385, ly: 82, detail: "34 层 KDA 直接在完整序列上推进 SSM 状态" },
+              { id: "e3", src: "dp_bt", dst: "dp_slot_k", kind: "meta", text: "vblock_table + pos [T]", path: [[238,356],[268,356]], lx: 253, ly: 334, detail: "逻辑块表与 Token 位置送入 Triton Slot Mapping Kernel" },
+              { id: "e4", src: "dp_slot_k", dst: "dp_kpool", kind: "meta", text: "full_slots [T] (Replicated)", path: [[463,335],[495,335],[495,279],[525,279]], lx: 495, ly: 310, detail: "dcp_sharded=False: 所有 Rank 生成完整有效 Slot" },
+              { id: "e5", src: "dp_slot_k", dst: "dp_sfa_w", kind: "meta", text: "dcp_slots [T] (3/4 为 -1)", path: [[463,375],[495,375],[495,434],[768,434]], lx: 615, ly: 452, detail: "dcp_sharded=True: 仅 (pos//128)%4 == rank 保留物理 Slot" },
+              { id: "e6", src: "dp_qkv", dst: "dp_kpool", kind: "act", text: "k_hidden [T, 4096]", path: [[463,163],[495,163],[495,260],[525,260]], lx: 492, ly: 205, detail: "送入 wk_weights_proj 压缩写入 KPool" },
+              { id: "e7", src: "dp_kpool", dst: "dp_topk", kind: "cache", text: "KPool + Tail Cache", path: [[745,279],[768,279]], lx: 756, ly: 256, detail: "全量复制的 4:1 压缩索引缓存" },
+              { id: "e8", src: "dp_qkv", dst: "dp_topk", kind: "act", text: "q_c [T, 1536] → wq_b", path: [[463,145],[875,145],[875,235]], lx: 685, ly: 132, detail: "Query 低秩激活投影为 [T, 32, 128] 参与 KPool 打分" },
+              { id: "e9", src: "dp_qkv", dst: "dp_sfa_w", kind: "cache", text: "kv_latent [T, 512]", path: [[365,206],[365,415],[768,415]], lx: 585, ly: 398, detail: "512 维 NoPE Latent KV 按 dcp_slots 交错写入" },
+              { id: "e10", src: "dp_sfa_w", dst: "dp_gather", kind: "comm", text: "local_kv [Blocks/4, 128, 512]", path: [[983,434],[1050,434]], lx: 1016, ly: 412, detail: "触发 _on_kv_cache_written 回调" },
+              { id: "e11", src: "dp_gather", dst: "dp_attn", kind: "comm", text: "gathered_kv [Compact, 128, 512]", path: [[1162,390],[1162,295]], lx: 1162, ly: 342, detail: "跨 DCP AllGather 还原后的紧凑 KV 缓存块" },
+              { id: "e12", src: "dp_topk", dst: "dp_attn", kind: "index", text: "topk_idx [T, 1, 2051]", path: [[983,265],[1050,265]], lx: 1016, ly: 242, detail: "选出的 Top-2048 池化 Token + 3 个 Tail Token" },
+              { id: "e13", src: "dp_attn", dst: "dp_out", kind: "act", text: "attn_out [T, 64/TP, 512]", path: [[1275,250],[1300,250]], lx: 1288, ly: 226, detail: "送入 W_UV 与 o_proj" }
+            ]
+          };
+
+        /* =====================================================================
+         * 2. DCP ②: GLM-5.3-Flash DCP Decode + sparse_index_remap + dcp_a2a_fused
+         * ===================================================================== */
+        case "dcp_decode":
+          return {
+            title: "GLM-5.3-Flash · DCP Decode 局部稀疏注意力与 dcp_a2a_fused 归并 (DCP=4, MTP=5)",
+            subtitle: "Decode 阶段绝不跨卡搬运庞大 KV Cache！通过 sparse_index_remap 过滤本地 Top-K + All-to-All 交换 (O_j, FP32 LSE_j)",
+            snippet: "code-dcp-a2a-fused",
+            zones: [
+              { x: 20, y: 65, w: 390, h: 455, label: "STAGE 1 · MTP Decode 输入 & KDA 状态步进" },
+              { x: 425, y: 65, w: 530, h: 455, label: "STAGE 2 · KPool 全局 Top-K → Triton 本地 DCP 索引重映射" },
+              { x: 970, y: 65, w: 570, h: 455, label: "STAGE 3 · 本地 1/DCP KV 稀疏注意力 & dcp_a2a_fused 无损归并" }
+            ],
+            nodes: [
+              { id: "dd_in", x: 35, y: 215, w: 170, h: 88, kind: "boundary", role: "DECODE / MTP VERIFY", title: "Decode Query Tokens", kernel: "T_mtp = 6B (1+5 draft)", weight: "每个请求携带 6 个因果验证 Token", math: "GLM-5.3-Flash 开启 MTP=5 时，Decode 步每个请求输入 T_mtp=6 个 Token [6B, 4096]。", snippet: "code-dcp-impl-mixin" },
+              { id: "dd_kda", x: 225, y: 105, w: 170, h: 86, kind: "cache", role: "34 LAYERS KDA", title: "recurrent_kda", kernel: "Step / ReplaySSM", weight: "Recurrent State [B, n, 128, 128]", math: "34 层 KDA 直接在本地 Head 分片上推进单步或 MTP 验证树状态，支持 ReplaySSM 按 accepted 索引回滚。", snippet: "code-glm53-kda-pcp" },
+              { id: "dd_qkv", x: 225, y: 285, w: 170, h: 88, kind: "normal", role: "11 LAYERS SFA ENTRY", title: "fused_qkv_a_proj", kernel: "q_c [1536] + kv [512]", weight: "fused_qkv_a_proj [2048, 4096]", math: "产出当前步新 Token 的 q_c [6B, 1536] 与新 Latent KV [6B, 512]（新 KV 按 (pos//128)%4 写入对应 Owner 卡）。", snippet: "code-sfa-dcp-impl" },
+              { id: "dd_kpool", x: 445, y: 110, w: 235, h: 88, kind: "cache", role: "REPLICATED INDEXER", title: "pool_key_indexer", kernel: "Global TopK [6B, 1, 2051]", weight: "Replicated KPool + Tail Cache", math: "各 DCP Rank 更新复制的 KPool/Tail Cache，并对全部历史序列打分选出全局 Top-2051 Token 逻辑位置。", snippet: "code-glm53-kpool-pcp" },
+              { id: "dd_remap", x: 705, y: 110, w: 235, h: 88, kind: "index", role: "TRITON INDEX REMAP", title: "sparse_index_remap", kernel: "Global Pos → Local DCP Slot", weight: "key_lengths & visible_lengths", math: "核心桥梁！将全局 Top-2051 索引过滤并重映射为属于本 DCP Rank 的本地 KV 页槽位，同时计算本卡可见历史长度。", snippet: "code-sfa-dcp-impl" },
+              { id: "dd_q_ag", x: 445, y: 335, w: 235, h: 88, kind: "collective", role: "DCP QUERY GATHER", title: "_start_dcp_query_gather", kernel: "Q [6B, 16→64, 512]", weight: "q_b_proj + W_UK_T 吸收 (D=512)", math: "在吸收 W_UK_T 后，跨 DCP 组 AllGather Query Heads（注：当 DCP==PCP 或开启 Q Replicate 时免通信！）。", snippet: "code-dcp-impl-mixin" },
+              { id: "dd_kv_loc", x: 705, y: 335, w: 235, h: 88, kind: "cache", role: "LOCAL 1/DCP KV SHARD", title: "Local SFA KV Cache", kernel: "仅存 1/4 历史 KV 块", weight: "SFA Cache [Blocks/4, 128, 1, 512]", math: "历史 KV Cache 静止在各卡 HBM 中绝不通信！每张卡仅对落在本卡的 Top-K 子集计算局部注意力。", snippet: "code-sfa-dcp-impl" },
+              { id: "dd_sfa", x: 990, y: 220, w: 235, h: 92, kind: "cache", role: "LOCAL SPARSE ATTN", title: "npu_sparse_flash_attn", kernel: "产出 (O_j, FP32 LSE_j)", weight: "O_j [6B, 64, 512], LSE_j [6B, 64, 1]", math: "全量 64 个 Q Heads 对本卡持有的 1/4 历史 KV 稀疏子集计算局部输出 O_j 与对数配分函数 LSE_j (FP32)。", snippet: "code-sfa-dcp-impl" },
+              { id: "dd_a2a", x: 1280, y: 120, w: 245, h: 96, kind: "collective", role: "TRITON PACK + ALL2ALL", title: "dcp_a2a_fused", kernel: "INT32 Pack + LSE Combine", weight: "w_j = exp(L_j - max_k L_k)", math: "Triton 将 O_j 与 FP32 LSE_j 无损打包至单块连续 Buffer → 单次 all_to_all_single 按 Head 切回 16 Heads → 按 LSE 精确加权归并！", snippet: "code-dcp-a2a-fused" },
+              { id: "dd_out", x: 1280, y: 335, w: 245, h: 88, kind: "boundary", role: "UP-PROJ & O_PROJ", title: "W_UV + ParallelOProj", kernel: "[6B, 16, 256] → [6B, 4096]", weight: "W_UV [16, 512, 256], o_proj [4096, 4096]", math: "归并后的精确 Latent 输出乘 W_UV 恢复 v_head_dim=256，再经 o_proj 投影回 4096 维写回残差流。", snippet: "code-dcp-impl-mixin" }
+            ],
+            edges: [
+              { id: "d1", src: "dd_in", dst: "dd_kda", kind: "act", text: "hidden [6B, 4096]", path: [[120,215],[120,148],[225,148]], lx: 170, ly: 130, detail: "进入 34 层 KDA 状态步进" },
+              { id: "d2", src: "dd_in", dst: "dd_qkv", kind: "act", text: "hidden [6B, 4096]", path: [[120,303],[120,329],[225,329]], lx: 170, ly: 348, detail: "进入 11 层 SFA+KPool" },
+              { id: "d3", src: "dd_qkv", dst: "dd_kpool", kind: "act", text: "q_c [1536] + k_hidden", path: [[395,305],[415,305],[415,154],[445,154]], lx: 415, ly: 225, detail: "更新 KPool 并对本地 Query 打分" },
+              { id: "d4", src: "dd_kpool", dst: "dd_remap", kind: "index", text: "global_topk [6B, 1, 2051]", path: [[680,154],[705,154]], lx: 692, ly: 130, detail: "全局 Top-2051 逻辑位置索引" },
+              { id: "d5", src: "dd_qkv", dst: "dd_q_ag", kind: "comm", text: "Q_local [6B, 16, 512]", path: [[395,355],[445,355]], lx: 420, ly: 392, detail: "吸收 W_UK_T 后的本地 Query Heads" },
+              { id: "d6", src: "dd_q_ag", dst: "dd_sfa", kind: "comm", text: "Q_full [6B, 64, 512]", path: [[680,360],[700,360],[700,266],[990,266]], lx: 845, ly: 250, detail: "跨 DCP Gather 后的完整 64 个 Q Heads" },
+              { id: "d7", src: "dd_remap", dst: "dd_sfa", kind: "index", text: "local_topk + key_lengths", path: [[940,154],[965,154],[965,245],[990,245]], lx: 965, ly: 195, detail: "重映射后的本卡物理 Slot 索引与可见长度" },
+              { id: "d8", src: "dd_kv_loc", dst: "dd_sfa", kind: "cache", text: "1/4 KV Shard (免通信)", path: [[940,379],[965,379],[965,288],[990,288]], lx: 965, ly: 340, detail: "直接读取本卡 HBM 中的 1/4 KV 分片" },
+              { id: "d9", src: "dd_sfa", dst: "dd_a2a", kind: "comm", text: "O_j [64, 512] + LSE_j [64, 1]", path: [[1225,245],[1252,245],[1252,168],[1280,168]], lx: 1252, ly: 198, detail: "局部注意力输出与 FP32 LSE 送入 Triton Pack" },
+              { id: "d10", src: "dd_a2a", dst: "dd_out", kind: "act", text: "O_merged [6B, 16, 512]", path: [[1402,216],[1402,335]], lx: 1402, ly: 275, detail: "All2All 切回本卡 16 Heads 并完成 LSE 精确加权" }
+            ]
+          };
+
+        /* =====================================================================
+         * 3. DCP ③: GLM-5.3-Flash Chunked Prefill & SFA Dual Indexer Mode
+         * ===================================================================== */
+        case "dcp_chunked":
+          return {
+            title: "GLM-5.3-Flash · DCP Chunked Prefill 紧凑 KV Gather 与 SFA Indexer 双模式",
+            subtitle: "对比 Replicated KPool Indexer (默认免通信选 Top-K) 与 Sharded Indexer (跨卡 Radix Sort 归并) + 紧凑块表 KV AllGather",
+            snippet: "code-sfa-dcp-impl",
+            zones: [
+              { x: 20, y: 65, w: 725, h: 455, label: "PATH A · Replicated KPool Indexer (GLM-5.3-Flash 默认模式)" },
+              { x: 765, y: 65, w: 775, h: 455, label: "PATH B · Compact KV Block AllGather (Prefill/Mixed) & Sharded Indexer 可选优化" }
+            ],
+            nodes: [
+              { id: "dc_in", x: 40, y: 220, w: 185, h: 88, kind: "boundary", role: "MIXED / CHUNKED BATCH", title: "Chunked Prefill Input", kernel: "Hit Prefix + New Chunk", weight: "cached_tokens + new_tokens", math: "当长请求分块 Prefill 或命中 Prefix Cache 时，历史 KV 已按 DCP 分散存储在 4 张卡的物理块中。", snippet: "code-sfa-dcp-impl" },
+              { id: "dc_rep_w", x: 265, y: 115, w: 215, h: 88, kind: "cache", role: "MODE A: REPLICATED", title: "KPool 4:1 全量复制缓存", kernel: "dcp_sharded = False", weight: "单 Token 仅占 128/4 = 32 Elements!", math: "为什么 KPool 默认复制？因为 4:1 池化压缩后 Indexer Cache 体积仅为主 KV 的 ~1/16，复制开销极小且省去 Top-K 通信！", snippet: "code-glm53-kpool-pcp" },
+              { id: "dc_rep_k", x: 510, y: 115, w: 215, h: 88, kind: "index", role: "ZERO-COMM TOP-K", title: "Local pool_key_indexer", kernel: "直接产出 Global Top-2051", weight: "无需跨 DCP 交换 Candidate Indices", math: "每张卡直接从本地复制的 KPool Cache 中选出一致的全局 Top-2051 索引。", snippet: "code-glm53-kpool-pcp" },
+              { id: "dc_shd_w", x: 265, y: 330, w: 215, h: 88, kind: "cache", role: "MODE B: SHARDED (可选)", title: "DCP 分片 Indexer Cache", kernel: "每卡仅存 1/DCP Indexer", weight: "选出本地候选 [T, 1, K_local]", math: "若开启 Sharded Indexer，Indexer Cache 同样按 DCP 交错切分，各卡先选出本地候选 Top-K 与打分。", snippet: "code-sfa-dcp-impl" },
+              { id: "dc_shd_m", x: 510, y: 330, w: 215, h: 88, kind: "collective", role: "RADIX SORT MERGE", title: "AllGather + Radix Sort", kernel: "跨 DCP 归并全局 Top-K", weight: "Triton Stable Radix Sort Kernel", math: "跨 DCP AllGather 各卡的 (scores, indices)，通过 Triton 稳定基数排序合并出全局 Top-K 或 Owner-local Top-K。", snippet: "code-sfa-dcp-impl" },
+              { id: "dc_sfa_w", x: 790, y: 115, w: 225, h: 88, kind: "cache", role: "STEP 1: WRITE NEW KV", title: "Write Owned New Slots", kernel: "reshape_and_cache_sfa", weight: "SFA Main KV [Blocks/DCP, 128, 512]", math: "先将当前 Chunk 新增的 Latent KV [T_new, 512] 按 DCP Owner Slot 写入本卡物理块。", snippet: "code-sfa-dcp-impl" },
+              { id: "dc_compact", x: 1045, y: 115, w: 235, h: 88, kind: "collective", role: "STEP 2: COMPACT GATHER", title: "_record_dcp_kv_gather", kernel: "AllGather Referenced Blocks", weight: "compact_block_table [Reqs, MaxBlocks]", math: "在 _on_kv_cache_written 中，提取本步所有请求引用到的唯一物理块 ID (kv_gather_block_ids)，跨 DCP AllGather 拼成紧凑 KV 缓冲区。", snippet: "code-sfa-dcp-impl" },
+              { id: "dc_attn", x: 1045, y: 330, w: 235, h: 88, kind: "cache", role: "STEP 3: SPARSE ATTN", title: "npu_sparse_flash_attn", kernel: "Compact Block Table 寻址", weight: "直接索引 Compact KV Buffer", math: "Prefill Query 使用重映射后的 Compact Block Table 与全局 Top-2051 索引计算精确稀疏注意力。", snippet: "code-sfa-dcp-impl" },
+              { id: "dc_split", x: 1305, y: 220, w: 215, h: 92, kind: "collective", role: "MTP DECODE OVERLAP", title: "History / Current 拆流", kernel: "defer_combine + comm_stream", weight: "fused_dcp_lse_combine", math: "在多 Token 因果 Decode 下，将 DCP 分片的历史 KV (走 cp_decode_comm_stream 异步 All2All) 与本地当前步 KV 拆流并行，单次 LSE 归一化合并！", snippet: "code-dcp-a2a-fused" }
+            ],
+            edges: [
+              { id: "c1", src: "dc_in", dst: "dc_rep_w", kind: "act", text: "默认路径: Replicated", path: [[225,240],[245,240],[245,159],[265,159]], lx: 245, ly: 130, detail: "GLM-5.3-Flash KPool 默认全量复制" },
+              { id: "c2", src: "dc_rep_w", dst: "dc_rep_k", kind: "cache", text: "完整 KPool 视图", path: [[480,159],[510,159]], lx: 495, ly: 135, detail: "免通信选出全局 Top-2051" },
+              { id: "c3", src: "dc_in", dst: "dc_shd_w", kind: "act", text: "可选路径: Sharded", path: [[225,285],[245,285],[245,374],[265,374]], lx: 245, ly: 400, detail: "Sharded Indexer 模式" },
+              { id: "c4", src: "dc_shd_w", dst: "dc_shd_m", kind: "comm", text: "local (scores, idx)", path: [[480,374],[510,374]], lx: 495, ly: 350, detail: "跨 DCP AllGather 候选并排序" },
+              { id: "c5", src: "dc_in", dst: "dc_sfa_w", kind: "cache", text: "new kv_latent [512]", path: [[132,220],[132,85],[902,85],[902,115]], lx: 520, ly: 78, detail: "新 Token Latent KV 按 Owner 落盘" },
+              { id: "c6", src: "dc_sfa_w", dst: "dc_compact", kind: "comm", text: "kv_gather_block_ids", path: [[1015,159],[1045,159]], lx: 1030, ly: 135, detail: "仅收集本步引用的活跃 KV 块" },
+              { id: "c7", src: "dc_compact", dst: "dc_attn", kind: "comm", text: "Compact Gathered KV", path: [[1162,203],[1162,330]], lx: 1162, ly: 266, detail: "紧凑拼接的历史+当前 KV 块" },
+              { id: "c8", src: "dc_rep_k", dst: "dc_attn", kind: "index", text: "topk_indices [T, 1, 2051]", path: [[725,159],[750,159],[750,374],[1045,374]], lx: 890, ly: 355, detail: "全局 Top-2051 稀疏索引" },
+              { id: "c9", src: "dc_attn", dst: "dc_split", kind: "comm", text: "History All2All || Current", path: [[1280,374],[1412,374],[1412,312]], lx: 1365, ly: 392, detail: "多 Token 因果 Decode 下的双流重叠归并" }
+            ]
+          };
+
+        /* =====================================================================
+         * 4. PCP ①: GLM-5.3-Flash MRV2 DualChunkSwap & Bidirectional Index Maps
+         * ===================================================================== */
+        case "pcp_dualchunk":
+          return {
+            title: "GLM-5.3-Flash · MRV2 PCP DualChunkSwap 头尾切分与双向映射表 (PCP=4)",
+            subtitle: "将长度 L 的请求切为 2P=8 个 Chunk，Rank r 拆为 Head(r) 与 Tail(7-r) 两条独立虚拟请求段 (RankSegment)，驱动 KDA 与 SFA 协同",
+            snippet: "code-pcp-dualchunk",
+            zones: [
+              { x: 20, y: 65, w: 485, h: 455, label: "STAGE 1 · Global Batch → 2x Virtual RankSegments" },
+              { x: 525, y: 65, w: 515, h: 455, label: "STAGE 2 · 双向互逆映射表 (_build_batch_layout)" },
+              { x: 1060, y: 65, w: 480, h: 455, label: "STAGE 3 · GLM-5.3-Flash 异构层消费契约" }
+            ],
+            nodes: [
+              { id: "pd_glb", x: 38, y: 125, w: 205, h: 88, kind: "boundary", role: "SCHEDULER GLOBAL BATCH", title: "Global Prefill Request", kernel: "SeqLen L → 2P=8 Chunks", weight: "Chunk 0..7, chunk_size = L / 8", math: "Scheduler 对 PCP 无感知，下发完整请求 [T_global]。Worker 入口由 PCPManager.partition_batch 接管。", snippet: "code-pcp-dualchunk" },
+              { id: "pd_short", x: 38, y: 320, w: 205, h: 88, kind: "index", role: "SHORT REQ GUARD", title: "replicated_requests", kernel: "(2P-1)*chunk >= L 自动复制", weight: "PCP+DCP 短请求保护机制", math: "在 PCP+DCP 模式下，若短 Prefill 不够分满 2P 个 Chunk，自动在所有 PCP Rank 上完整复制该请求，保证跨卡 AllGather 步调一致。", snippet: "code-pcp-dualchunk" },
+              { id: "pd_seg", x: 275, y: 215, w: 210, h: 96, kind: "boundary", role: "2X VIRTUAL REQUESTS", title: "Head & Tail RankSegments", kernel: "Rank r 取 Chunk (r, 2P-1-r)", weight: "InputBuffers 容量 = 2 * max_num_reqs", math: "MRV2 核心演进：Rank r 将 Head Chunk r 与 Tail Chunk 2P-1-r 展开为 2 条独立虚拟请求行，各自携带真实 positions 与 num_computed_tokens！", snippet: "code-pcp-dualchunk" },
+              { id: "pd_pad", x: 550, y: 120, w: 230, h: 90, kind: "index", role: "MAP 1: GLOBAL → GATHERED", title: "padded_gather_idx", kernel: "& gathered_kv_write_mask", weight: "过滤 Padded Tokens 与重复行", math: "将 Global Token 顺序映射到 PCP AllGather 接收缓冲区偏移；配合 gathered_kv_write_mask 屏蔽 Padding 写入。", snippet: "code-pcp-restore-map" },
+              { id: "pd_rest", x: 550, y: 320, w: 230, h: 90, kind: "index", role: "MAP 2: GATHERED → GLOBAL", title: "hidden_restore_idx", kernel: "gathered[restore_idx] == global", weight: "与 padded_gather_idx 严格互逆", math: "逆向索引表！从 AllGather 后的交错 Buffer 中一键索引出严格按全局因果顺序排列的序列 [T_global, 4096]。", snippet: "code-pcp-restore-map" },
+              { id: "pd_ctx", x: 805, y: 220, w: 215, h: 90, kind: "collective", role: "DUAL-VIEW CONTEXT", title: "AscendPCPAttnContext", kernel: "Local Query + Global Cache", weight: "注入 common_attention_metadata", math: "同时向 GLM-5.3 各层提供本地虚拟请求 Query 视图 [T_local] 与全局 Cache 写入/还原索引视图 [T_global]。", snippet: "code-ascend-pcp-manager" },
+              { id: "pd_kda", x: 1085, y: 105, w: 215, h: 88, kind: "collective", role: "34 LAYERS KDA 消费", title: "KDA 因果还原与切回", kernel: "restore_idx → padded_idx", weight: "kda.py: AllGather → ReduceScatter", math: "KDA 层入口用 hidden_restore_idx 还原因果顺序推进 SSM 状态；出口用 padded_gather_idx 执行 ReduceScatter 切回本地！", snippet: "code-glm53-kda-pcp" },
+              { id: "pd_sfa", x: 1085, y: 235, w: 215, h: 88, kind: "cache", role: "11 LAYERS SFA/KPOOL 消费", title: "异步 KPool + 主 KV 落盘", kernel: "all_gather_async + slot_map", weight: "indexer_kpool.py & sfa_cp.py", math: "KPool 用 restore_idx 还原顺序做 4:1 池化；SFA 主 KV 用 gathered_kv_slot_mappings 写入缓存，仅对本地 Query [T_local] 算 Attention。", snippet: "code-glm53-kpool-pcp" },
+              { id: "pd_end", x: 1320, y: 220, w: 205, h: 90, kind: "boundary", role: "RUNNER EXIT BOUNDARY", title: "restore_for_sampling", kernel: "恢复 [T_global, 4096]", weight: "供 LM Head 采样与 MTP Draft 使用", math: "在 L44 末层结束后，调用 restore_for_sampling 按 hidden_restore_idx 恢复全局顺序，对接 Sampler 与 Eagle/MTP Proposer。", snippet: "code-pcp-restore-map" }
+            ],
+            edges: [
+              { id: "p1", src: "pd_glb", dst: "pd_seg", kind: "act", text: "长请求拆为 Head + Tail", path: [[243,169],[258,169],[258,245],[275,245]], lx: 258, ly: 138, detail: "因果负载均衡：浅三角 + 深梯形 = 恒定计算量" },
+              { id: "p2", src: "pd_short", dst: "pd_seg", kind: "meta", text: "短请求全卡复制", path: [[243,364],[258,364],[258,280],[275,280]], lx: 258, ly: 392, detail: "避免短请求出现空 Rank" },
+              { id: "p3", src: "pd_seg", dst: "pd_pad", kind: "meta", text: "segments 布局", path: [[485,240],[515,240],[515,165],[550,165]], lx: 515, ly: 138, detail: "构建 Global → Gathered 映射" },
+              { id: "p4", src: "pd_seg", dst: "pd_rest", kind: "meta", text: "segments 布局", path: [[485,280],[515,280],[515,365],[550,365]], lx: 515, ly: 392, detail: "构建 Gathered → Global 逆映射" },
+              { id: "p5", src: "pd_pad", dst: "pd_ctx", kind: "meta", text: "padded_gather_idx", path: [[780,165],[792,165],[792,245],[805,245]], lx: 792, ly: 138, detail: "注入 AscendPCPAttentionContext" },
+              { id: "p6", src: "pd_rest", dst: "pd_ctx", kind: "meta", text: "hidden_restore_idx", path: [[780,365],[792,365],[792,285],[805,285]], lx: 792, ly: 392, detail: "注入 AscendPCPAttentionContext" },
+              { id: "p7", src: "pd_ctx", dst: "pd_kda", kind: "comm", text: "因果还原 & ReduceScatter", path: [[1020,245],[1050,245],[1050,149],[1085,149]], lx: 1050, ly: 120, detail: "驱动 34 层 KDA 线性注意力" },
+              { id: "p8", src: "pd_ctx", dst: "pd_sfa", kind: "cache", text: "KPool & SFA KV 落盘", path: [[1020,275],[1085,275]], lx: 1052, ly: 302, detail: "驱动 11 层 NoPE SFA + KPool" },
+              { id: "p9", src: "pd_sfa", dst: "pd_end", kind: "comm", text: "L44 出栈 → 全局还原", path: [[1300,275],[1320,275]], lx: 1310, ly: 345, detail: "Runner 出口恢复全局顺序" }
+            ]
+          };
+
+        /* =====================================================================
+         * 5. PCP ②: GLM-5.3-Flash PCP Prefill & Chunked Prefill (KDA + SFA/KPool)
+         * ===================================================================== */
+        case "pcp_prefill":
+          return {
+            title: "GLM-5.3-Flash · PCP Prefill / Chunked Prefill 异构算子数据流 (PCP=8, TP=1)",
+            subtitle: "上支路：34 层 KDA (TP×PCP 切 Head + AllGather 还原因果顺序) · 下支路：11 层 SFA+KPool (all_gather_async 重叠 + 本地 Query 稀疏注意力)",
+            snippet: "code-glm53-kda-pcp",
+            zones: [
+              { x: 18, y: 65, w: 225, h: 455, label: "PCP 本地视图 [T_pcp]" },
+              { x: 255, y: 65, w: 1020, h: 210, label: "BRANCH A · 34 层 KDA 线性注意力 (vllm_ascend/models/glm5next/kda.py)" },
+              { x: 255, y: 290, w: 1020, h: 230, label: "BRANCH B · 11 层 NoPE SFA + KPool 稀疏注意力 (indexer_kpool.py & sfa_cp.py)" },
+              { x: 1290, y: 65, w: 252, h: 455, label: "mHC + EP MoE [T_pcp]" }
+            ],
+            nodes: [
+              { id: "pp_in", x: 32, y: 215, w: 195, h: 92, kind: "boundary", role: "PCP LOCAL TOKENS", title: "HC_pre + RMSNorm", kernel: "in: [T_pcp (T/8), 4096]", weight: "4 条 mHC 残差流保持在 PCP 本地视图", math: "每个 PCP Rank 仅持有 T_pcp = T_global / 8 个本地 Token（Head Segment + Tail Segment）。", snippet: "code-ascend-pcp-manager" },
+              /* Upper branch: 34x KDA */
+              { id: "pp_k_ag", x: 275, y: 110, w: 225, h: 86, kind: "collective", role: "KDA STEP 1: RESTORE", title: "PCP AllGather + Restore", kernel: "all_gather()[hidden_restore_idx]", weight: "[T_pcp, 4096] → [T_global, 4096]", math: "KDA 递归状态依赖严格因果顺序：先跨 PCP AllGather 收集全序列，并用 hidden_restore_idx 恢复 [T_global, 4096]。", snippet: "code-glm53-kda-pcp" },
+              { id: "pp_k_prj", x: 530, y: 110, w: 225, h: 86, kind: "normal", role: "KDA STEP 2: TP×PCP HEADS", title: "in_proj_qkvbfg_a + Conv1d", kernel: "n = 64/(TP×PCP) = 8 Heads", weight: "PCPGlm5NextMergedColumnParallel", math: "64 个 KDA Heads 按 TP×PCP 联合切分！每卡仅投影并卷积自己负责的 8 个 Head [T_global, 3×8×128]。", snippet: "code-glm53-kda-pcp" },
+              { id: "pp_k_ssm", x: 785, y: 110, w: 225, h: 86, kind: "cache", role: "KDA STEP 3: CAUSAL SSM", title: "chunk_kda + o_norm", kernel: "推进 8 Heads SSM State", weight: "State [B, 8, 128, 128] (Group 2~4)", math: "在完整因果序列 T_global 上推进本卡 8 个 Head 的线性注意力状态，经 gated RMSNorm (o_norm) 输出 [T_global, 8×128]。", snippet: "code-glm53-kda-pcp" },
+              { id: "pp_k_rs", x: 1040, y: 110, w: 220, h: 86, kind: "collective", role: "KDA STEP 4: REDUCE BACK", title: "PCPRowParallelLinear", kernel: "reduce_scatter(out[padded_idx])", weight: "o_proj [4096, 8×128]", math: "点睛之笔！先按 padded_gather_idx 重排，再调 pcp_group.reduce_scatter 一步完成跨 Head 求和与切回 [T_pcp, 4096]！", snippet: "code-glm53-kda-pcp" },
+              /* Lower branch: 11x NoPE SFA + KPool */
+              { id: "pp_s_ag", x: 275, y: 315, w: 225, h: 84, kind: "collective", role: "SFA STEP 1A: ASYNC KEY", title: "prepare_pcp_hidden", kernel: "all_gather_async(k_hidden)", weight: "与下方本地 wq_b / q_b_proj 完全重叠", math: "异步发起 k_hidden_states 的跨 PCP AllGather，通信期间 NPU 主流并发执行本地 Query 的 wq_b 与 q_b_proj 投影！", snippet: "code-glm53-kpool-pcp" },
+              { id: "pp_s_kp", x: 530, y: 315, w: 225, h: 84, kind: "cache", role: "SFA STEP 2A: KPOOL + TOPK", title: "key_pool(4:1) & indexer", kernel: "Global KPool → Local Top2051", weight: "输出 topk_indices [T_pcp, 1, 2051]", math: "等待异步 Gather 完成后按 restore_indices 还原全局顺序更新 KPool/Tail Cache，仅对本卡 T_pcp 个 Query 选出 Top-2051！", snippet: "code-glm53-kpool-pcp" },
+              { id: "pp_s_kv", x: 530, y: 425, w: 225, h: 82, kind: "collective", role: "SFA STEP 2B: KV SYNC", title: "PCP Gather Latent KV", kernel: "Write gathered_kv_slot_mappings", weight: "kv_no_split [T_pcp→T_pad, 512]", math: "将本地计算的 512 维 Latent KV 跨 PCP AllGather，通过 gathered_kv_slot_mappings (带 write_mask) 写入 SFA KV Cache。", snippet: "code-pcp-restore-map" },
+              { id: "pp_s_att", x: 785, y: 365, w: 225, h: 90, kind: "cache", role: "SFA STEP 3: LOCAL QUERY", title: "npu_sparse_flash_attn", kernel: "Q [T_pcp, 64, 512] × KV_full", weight: "Prefix Cache + 当前步完整 KV", math: "本卡仅计算 T_pcp (1/8) 个 Query Token 的稀疏注意力！若命中 Prefix Cache (Chunked Prefill)，直接读取历史+新写入的完整 KV。", snippet: "code-pcp-dcp-stacked" },
+              { id: "pp_s_op", x: 1040, y: 365, w: 220, h: 90, kind: "normal", role: "SFA STEP 4: O_PROJ", title: "W_UV + ParallelOProj", kernel: "PCP Weight Sharding", weight: "out [T_pcp, 4096]", math: "乘 W_UV 恢复 256 维，再通过支持 PCP 权重切分的 ParallelOProjection 直接产出本地 [T_pcp, 4096]。", snippet: "code-pcp-dcp-stacked" },
+              /* Right exit: mHC + MoE */
+              { id: "pp_moe", x: 1308, y: 215, w: 218, h: 92, kind: "boundary", role: "LOCAL TOKEN VIEW", title: "HC_post + EP MoE (288)", kernel: "保持 [T_pcp, 4096] 进下一层", weight: "L44 结束后调 restore_for_sampling", math: "无论是 KDA 层还是 SFA 层，输出均完美回到 [T_pcp, 4096] 本地视图，直接进入 mHC 残差混合与 EP MoE！", snippet: "code-ascend-pcp-manager" }
+            ],
+            edges: [
+              { id: "pf1", src: "pp_in", dst: "pp_k_ag", kind: "comm", text: "34层 KDA: [T_pcp, 4096]", path: [[227,238],[248,238],[248,153],[275,153]], lx: 248, ly: 100, detail: "进入 KDA 线性注意力支路" },
+              { id: "pf2", src: "pp_k_ag", dst: "pp_k_prj", kind: "act", text: "causal [T_global, 4096]", path: [[500,153],[530,153]], lx: 515, ly: 130, detail: "恢复严格因果顺序后的全局序列" },
+              { id: "pf3", src: "pp_k_prj", dst: "pp_k_ssm", kind: "cache", text: "qkv, g1, beta (8 Heads)", path: [[755,153],[785,153]], lx: 770, ly: 130, detail: "本卡负责的 1/(TP×PCP) Heads" },
+              { id: "pf4", src: "pp_k_ssm", dst: "pp_k_rs", kind: "comm", text: "out [T_global, 8×128]", path: [[1010,153],[1040,153]], lx: 1025, ly: 130, detail: "按 padded_gather_idx 重排并 ReduceScatter" },
+              { id: "pf5", src: "pp_k_rs", dst: "pp_moe", kind: "act", text: "kda_out [T_pcp, 4096]", path: [[1260,153],[1282,153],[1282,245],[1308,245]], lx: 1282, ly: 130, detail: "切回 PCP 本地 Token 视图" },
+              { id: "pf6", src: "pp_in", dst: "pp_s_ag", kind: "comm", text: "11层 SFA: k_hidden [T_pcp]", path: [[227,275],[248,275],[248,357],[275,357]], lx: 248, ly: 315, detail: "异步 AllGather Key Hidden" },
+              { id: "pf7", src: "pp_s_ag", dst: "pp_s_kp", kind: "cache", text: "restored [T_global, 4096]", path: [[500,357],[530,357]], lx: 515, ly: 334, detail: "还原全局顺序更新 KPool 4:1 与 Tail Ring" },
+              { id: "pf8", src: "pp_in", dst: "pp_s_kv", kind: "act", text: "q_c [1536] + kv_a [512]", path: [[227,292],[240,292],[240,466],[530,466]], lx: 385, ly: 482, detail: "本地 fused_qkv_a_proj 输出（与上方异步 Gather 重叠）" },
+              { id: "pf9", src: "pp_s_kp", dst: "pp_s_att", kind: "index", text: "topk_idx [T_pcp, 1, 2051]", path: [[755,357],[770,357],[770,392],[785,392]], lx: 770, ly: 334, detail: "本地 Query 的 Top-2051 稀疏索引" },
+              { id: "pf10", src: "pp_s_kv", dst: "pp_s_att", kind: "cache", text: "Full/Prefix SFA KV [512]", path: [[755,466],[770,466],[770,430],[785,430]], lx: 770, ly: 482, detail: "跨 PCP 同步落盘后的完整 Latent KV" },
+              { id: "pf11", src: "pp_s_att", dst: "pp_s_op", kind: "act", text: "attn_out [T_pcp, 64, 512]", path: [[1010,410],[1040,410]], lx: 1025, ly: 386, detail: "仅计算 1/8 Query Token 的稀疏注意力输出" },
+              { id: "pf12", src: "pp_s_op", dst: "pp_moe", kind: "act", text: "sfa_out [T_pcp, 4096]", path: [[1260,410],[1282,410],[1282,278],[1308,278]], lx: 1282, ly: 432, detail: "SFA 输出同样保持在 [T_pcp, 4096] 本地视图" }
+            ]
+          };
+
+        /* =====================================================================
+         * 6. PCP ③: GLM-5.3-Flash PCP Decode & TP×PCP Weight Sharding
+         * ===================================================================== */
+        case "pcp_decode":
+          return {
+            title: "GLM-5.3-Flash · PCP Decode 状态同步与 TP×PCP 四大常驻权重切分",
+            subtitle: "为什么 GLM-5.3-Flash 在 PCP Decode 下保持 Replicated Query？因为 34 层 KDA 的 TP×PCP Head-Sharded 状态必须全卡同步推进！",
+            snippet: "code-glm53-kda-pcp",
+            zones: [
+              { x: 20, y: 65, w: 495, h: 455, label: "STAGE 1 · PCP Decode 调度策略 (KPool / KDA 状态约束)" },
+              { x: 535, y: 65, w: 1005, h: 455, label: "STAGE 2 · 利用 PCP Rank 联合切分四大常驻权重与状态 (TP × PCP Sharding)" }
+            ],
+            nodes: [
+              { id: "pdec_chk", x: 40, y: 120, w: 215, h: 90, kind: "index", role: "ASCEND PCP MANAGER", title: "is_pcp_decode_sharding", kernel: "KPool / KDA → Return False", weight: "Replicated Decode Requests [6B]", math: "普通 MLA 模型在 PCP>1, DCP=1 时可按 decode_ordinal % P 轮询切分请求；但含 KPool / Mamba / KDA 状态的模型保持请求复制顺序。", snippet: "code-ascend-pcp-manager" },
+              { id: "pdec_why", x: 280, y: 120, w: 215, h: 90, kind: "cache", role: "LOCKSTEP STATE UPDATE", title: "同步推进 TP×PCP 状态", kernel: "每卡持有 1/(TP×PCP) KDA Heads", weight: "加上 DCP 分片的主 SFA KV Cache", math: "每个请求在所有 PCP Rank 上以相同顺序出现，使每张卡能准确更新自己持有的那 1/(TP×PCP) 个 KDA Head 状态与 1/DCP 的 SFA KV！", snippet: "code-glm53-kda-pcp" },
+              { id: "pdec_ord", x: 40, y: 325, w: 455, h: 90, kind: "normal", role: "STANDARD MLA (对比参考)", title: "纯 MLA 模型 (PCP>1, DCP=1)：Decode 轮询切分", kernel: "target_rank = decode_ordinal % PCP", weight: "跨 PCP AllGather 新 Decode KV + ParallelOProj All2All", math: "对比：对于无 KDA/KPool 的纯 MLA 模型且 DCP=1 时，AscendPCPManager 将 Decode 请求轮询分给不同 PCP Rank 并行计算。", snippet: "code-pcp-dualchunk" },
+              { id: "pdec_w1", x: 560, y: 115, w: 225, h: 90, kind: "boundary", role: "WEIGHT SHARDING ①", title: "VocabEmbedding", kernel: "shard by TP × PCP", weight: "[154880 / (TP×PCP), 4096]", math: "enable_pcp_embedding_lmhead_weight_sharding=True（默认开启）：大词表 Embedding 沿 TP×PCP 联合切分常驻。", snippet: "code-ascend-pcp-manager" },
+              { id: "pdec_w2", x: 815, y: 115, w: 235, h: 90, kind: "collective", role: "WEIGHT & STATE SHARDING ②", title: "34层 KDA Projections & SSM", kernel: "64 Heads / (TP × PCP)", weight: "in_proj + conv1d + o_proj + SSM State", math: "PCPGlm5NextMergedColumnParallelLinear 与 PCPRowParallelLinear 将 34 层 KDA 的权重及 Recurrent State 全按 TP×PCP 切分！", snippet: "code-glm53-kda-pcp" },
+              { id: "pdec_w3", x: 815, y: 325, w: 235, h: 90, kind: "cache", role: "WEIGHT SHARDING ③", title: "11层 SFA ParallelOProj", kernel: "enable_pcp_o_proj_sharding", weight: "o_proj [4096 / PCP, 16384 / TP]", math: "SFA 主注意力的 o_proj 权重支持沿 PCP 维度额外切分，Prefill 时临时 Gather 权重或 Decode 时归约输出。", snippet: "code-pcp-dcp-stacked" },
+              { id: "pdec_w4", x: 1085, y: 220, w: 215, h: 90, kind: "normal", role: "ORTHOGONAL EP MOE", title: "42层 MoE (EP Sharded)", kernel: "288 Routed Experts / EP", weight: "w13/w2 按 EP 切分 + Shared Expert", math: "MoE 专家权重沿 EP (TP×PCP×DP) 切分，与注意力层的 PCP/DCP 切分完全正交。", snippet: "code-ascend-pcp-manager" },
+              { id: "pdec_w5", x: 1325, y: 220, w: 195, h: 90, kind: "boundary", role: "WEIGHT SHARDING ④", title: "ParallelLMHead", kernel: "shard by TP × PCP", weight: "[154880 / (TP×PCP), 4096]", math: "LM Head 同样按 TP×PCP 联合切分权重，大幅降低单卡常驻权重显存，为百万长上下文腾出 HBM 空间！", snippet: "code-ascend-pcp-manager" }
+            ],
+            edges: [
+              { id: "pd1", src: "pdec_chk", dst: "pdec_why", kind: "meta", text: "GLM-5.3-Flash 路径", path: [[255,165],[280,165]], lx: 267, ly: 140, detail: "保持 Decode 请求在各 PCP Rank 顺序一致" },
+              { id: "pd2", src: "pdec_why", dst: "pdec_w1", kind: "act", text: "input_ids [6B]", path: [[495,165],[560,165]], lx: 527, ly: 140, detail: "进入 TP×PCP 切分的 Embedding" },
+              { id: "pd3", src: "pdec_w1", dst: "pdec_w2", kind: "act", text: "34层 KDA (Heads / TP×PCP)", path: [[785,160],[815,160]], lx: 800, ly: 135, detail: "权重与 SSM 状态均按 TP×PCP 切分" },
+              { id: "pd4", src: "pdec_w1", dst: "pdec_w3", kind: "act", text: "11层 SFA (o_proj / PCP)", path: [[672,205],[672,370],[815,370]], lx: 735, ly: 392, detail: "SFA o_proj 按 PCP 切分权重 + 主 KV 按 DCP 切分" },
+              { id: "pd5", src: "pdec_w2", dst: "pdec_w4", kind: "comm", text: "all_reduce(tp×pcp)", path: [[1050,160],[1068,160],[1068,248],[1085,248]], lx: 1068, ly: 135, detail: "PCPRowParallelLinear 归约输出" },
+              { id: "pd6", src: "pdec_w3", dst: "pdec_w4", kind: "comm", text: "dcp_a2a_fused + o_proj", path: [[1050,370],[1068,370],[1068,282],[1085,282]], lx: 1068, ly: 392, detail: "DCP LSE 归并后投影输出" },
+              { id: "pd7", src: "pdec_w4", dst: "pdec_w5", kind: "act", text: "final_hidden [6B, 4096]", path: [[1300,265],[1325,265]], lx: 1312, ly: 240, detail: "送入 TP×PCP 切分的 LM Head" }
+            ]
+          };
+
+        /* =====================================================================
+         * 7. PCP+DCP Stacked: GLM-5.3-Flash Stacked Architecture (TP=2, PCP=2, DCP=4)
+         * ===================================================================== */
+        case "pcp_dcp_stacked":
+          return {
+            title: "GLM-5.3-Flash · PCP + DCP 叠加全流程协同 (示例拓扑: TP=2, PCP=2, DCP=4)",
+            subtitle: "Prefill 用 PCP 切分 Query 算力 + DCP 切分主 KV 显存；Decode 用两级 dcp_a2a_fused(tp_group, pcp_group) 归并稀疏注意力",
+            snippet: "code-pcp-dcp-stacked",
+            zones: [
+              { x: 20, y: 65, w: 355, h: 455, label: "TOPOLOGY · (PCP2, TP2) 网格与 DCP4 映射" },
+              { x: 390, y: 65, w: 575, h: 455, label: "STACKED PREFILL · 算力与显存双重切分" },
+              { x: 980, y: 65, w: 560, h: 455, label: "STACKED DECODE · 两级 All-to-All LSE 归并" }
+            ],
+            nodes: [
+              { id: "st_topo", x: 35, y: 115, w: 325, h: 120, kind: "boundary", role: "PARALLEL_STATE.PY", title: "TP=[0,1]/[2,3] · PCP=[0,2]/[1,3]", kernel: "Logical DCP = [0, 2, 1, 3] (PCP-first)", weight: "dcp_collective_rank_order 映射 HCCL 排序", math: "网格 rank = pcp_rank * TP + tp_rank。DCP 先跨 PCP 再跨 TP 组建 (flat_idx = tp_rank * PCP + pcp_rank)，完美复用现有通信组！", snippet: "code-parallel-state" },
+              { id: "st_cache", x: 35, y: 295, w: 325, h: 125, kind: "cache", role: "GLM-5.3 5-GROUP CACHE CONTRACT", title: "异构 Cache 分工契约", kernel: "SFA KV (1/4) · KDA (1/4) · KPool (1x)", weight: "SFA 按 DCP4 切序列；KDA 按 TP2×PCP2 切 Heads", math: "在 TP2×PCP2×DCP4 下：SFA 主 KV 序列切为 1/4；34 层 KDA 的 64 Heads 切为每卡 16 Heads (1/4)；KPool 4:1 压缩池全卡复制。", snippet: "code-pcp-dcp-stacked" },
+              { id: "st_pf_kda", x: 410, y: 110, w: 260, h: 90, kind: "collective", role: "PREFILL: 34× KDA LAYERS", title: "PCP Gather → 16 Heads → RS", kernel: "TP2 × PCP2 = 4 路 Head 并行", weight: "[T_pcp, 4096] → [T_glb, 16, 128] → [T_pcp, 4096]", math: "Prefill 时跨 PCP2 AllGather 还原 [T_global]，每卡计算 16 个 KDA Heads，再经 PCP2 ReduceScatter + TP2 AllReduce 回到 [T_pcp, 4096]。", snippet: "code-glm53-kda-pcp" },
+              { id: "st_pf_slot", x: 410, y: 240, w: 260, h: 90, kind: "index", role: "PREFILL: SFA KV WRITE", title: "build_pcp_ordered_slot_map", kernel: "PCP AllGather KV + DCP4 掩码落盘", weight: "仅 (pos // 128) % 4 == dcp_rank 写入", math: "各 PCP Rank Gather 完整新 KV 后，按 padded_gather_idx 重排全局 Slot，非本 DCP Rank 拥有的 Token 及 Padding 均置为 -1！", snippet: "code-pcp-dcp-stacked" },
+              { id: "st_pf_att", x: 700, y: 240, w: 245, h: 90, kind: "cache", role: "PREFILL: UNIFIED KV GATHER", title: "_get_pcp_prefill_kv_inputs", kernel: "Global Send Plan + Local Slice", weight: "解决 Head/Tail 历史长度不对称", math: "因为不同 PCP Rank 的 Head/Tail 分片历史长度不同，必须基于 global_batch 生成统一的 DCP AllGather 发送上界，接收后按本分片区间切片消费！", snippet: "code-pcp-dcp-stacked" },
+              { id: "st_dc_q", x: 1000, y: 115, w: 250, h: 90, kind: "collective", role: "DECODE STEP 1: TP Q GATHER", title: "Gather Q Across tp_group", kernel: "Q [6B, 32→64, 512]", weight: "pcp_group 内 Q 已复制，仅需跨 TP2 Gather!", math: "精妙优化：因为 Decode 请求在 PCP2 间已复制，同 TP Rank 的 PCP 伙伴持有完全相同的 32 个 Q Heads，只需在 TP2 内 AllGather 即可凑齐 64 Heads！", snippet: "code-dcp-impl-mixin" },
+              { id: "st_dc_sfa", x: 1000, y: 255, w: 250, h: 90, kind: "cache", role: "DECODE STEP 2: 1/4 KV ATTN", title: "sparse_index_remap + SFA", kernel: "对本地 1/4 (DCP4) KV 算 (O_j, LSE_j)", weight: "O_j [6B, 64, 512], LSE_j [6B, 64, 1]", math: "用 sparse_index_remap 将全局 Top-2051 映射至本卡 1/4 KV 分片，计算 64 Heads 的局部稀疏注意力输出与 FP32 LSE。", snippet: "code-sfa-dcp-impl" },
+              { id: "st_dc_a2a", x: 1275, y: 185, w: 245, h: 105, kind: "collective", role: "DECODE STEP 3: 2-LEVEL MERGE", title: "dcp_a2a_fused(tp, pcp)", kernel: "跨 TP2 Scatter Heads + 跨 PCP2 Combine", weight: "输出 [6B, 32, 512] → W_UV → o_proj", math: "调用两级融合 dcp_a2a_fused(..., tp_group, pcp_group)，一步完成跨 TP2 的 Head 切分 (64→32) 与跨 DCP4 (TP2×PCP2) 的 LSE 加权归并！", snippet: "code-dcp-a2a-fused" }
+            ],
+            edges: [
+              { id: "st1", src: "st_topo", dst: "st_pf_kda", kind: "meta", text: "TP2 × PCP2 拓扑", path: [[360,155],[410,155]], lx: 385, ly: 132, detail: "驱动 KDA 4 路 Head 切分" },
+              { id: "st2", src: "st_cache", dst: "st_pf_slot", kind: "meta", text: "pcp_prolog_global_slots", path: [[360,335],[385,335],[385,285],[410,285]], lx: 385, ly: 355, detail: "全局 DCP Slot 重排为 PCP Gather 顺序" },
+              { id: "st3", src: "st_pf_slot", dst: "st_pf_att", kind: "comm", text: "1/4 KV Written → DCP Gather", path: [[670,285],[700,285]], lx: 685, ly: 260, detail: "落盘后按统一发送计划跨 DCP4 Gather 历史+新 KV" },
+              { id: "st4", src: "st_pf_att", dst: "st_dc_q", kind: "act", text: "转入 Decode 阶段", path: [[945,285],[968,285],[968,160],[1000,160]], lx: 968, ly: 215, detail: "Prefill 完成后进入 MTP Decode" },
+              { id: "st5", src: "st_dc_q", dst: "st_dc_sfa", kind: "comm", text: "Q_full [6B, 64, 512]", path: [[1125,205],[1125,255]], lx: 1125, ly: 230, detail: "仅跨 TP2 Gather 即可获得全部 64 个 Q Heads" },
+              { id: "st6", src: "st_dc_sfa", dst: "st_dc_a2a", kind: "comm", text: "(O_j, LSE_j) 4 路分片", path: [[1250,300],[1262,300],[1262,238],[1275,238]], lx: 1262, ly: 322, detail: "送入两级 dcp_a2a_fused(tp_group, pcp_group)" }
+            ]
+          };
+
+        /* =====================================================================
+         * 8. Deep Dive: 34x KDA Linear Attention Layer
+         * ===================================================================== */
+        case "kda_layer":
+          return {
+            title: "GLM-5.3-Flash · 34层 KDA 线性注意力算子级 Tensor 数据流 (kda.py)",
+            subtitle: "64 Heads 按 TP×PCP 联合切分 (head_dim=128, conv k=4) · 必须通过 PCP AllGather + hidden_restore_idx 恢复严格因果顺序推进 SSM 状态",
+            snippet: "code-glm53-kda-pcp",
+            zones: [
+              { x: 20, y: 65, w: 435, h: 455, label: "PCP 因果顺序还原 (AllGather + hidden_restore_idx)" },
+              { x: 470, y: 65, w: 785, h: 455, label: "TP×PCP Head 分片线性注意力核心 (in_proj → conv1d → chunk/recurrent_kda)" },
+              { x: 1270, y: 65, w: 270, h: 455, label: "PCP ReduceScatter 切回本地" }
+            ],
+            nodes: [
+              { id: "k_in", x: 35, y: 215, w: 170, h: 86, kind: "boundary", role: "LOCAL INPUT", title: "PCP Local Hidden", kernel: "shape: [T_pcp, 4096]", weight: "来自 HC_pre (4 条残差流合成)", math: "PCP Prefill 下当前 Rank 持有 Head Chunk 和 Tail Chunk 两个不连续片段 [T_pcp, 4096]。", snippet: "code-glm53-kda-pcp" },
+              { id: "k_ag", x: 235, y: 215, w: 205, h: 86, kind: "collective", role: "HCCL PCP COLLECTIVE", title: "PCP AllGather + Restore", kernel: "all_gather()[hidden_restore_idx]", weight: "pcp_context.hidden_restore_idx", math: "关键步骤！因为线性注意力递归状态 S_t = α_t S_{t-1} + β_t v_t k_t^T 依赖严格因果顺序，必须先跨 PCP AllGather 并恢复 [T_global, 4096]。", snippet: "code-glm53-kda-pcp" },
+              { id: "k_proj", x: 485, y: 215, w: 220, h: 86, kind: "normal", role: "MERGED GEMM (TP×PCP)", title: "in_proj_qkvbfg_a", kernel: "PCPGlm5NextMergedColumn", weight: "Q/K/V/b 按 TP×PCP 切 (n=64/(TP×PCP))；f_a/g_a [128] 复制", math: "单次融合 GEMM 同时产出 qkv [T_global, 3*n*128]、beta_raw [T_global, n]、以及低秩门控 f_a [128]、g_a [128]。", snippet: "code-glm53-kda-pcp" },
+              { id: "k_conv", x: 750, y: 120, w: 215, h: 86, kind: "cache", role: "CONV1D + STATE", title: "Causal Conv1d (k=4)", kernel: "causal_conv1d_fn / update", weight: "conv1d.weight [4, 3*n*128]", math: "对 Q/K/V 执行短卷积并读写 Group 2~4 中的 Conv State Cache [num_blocks, 3, 3*n*128] (BF16)。", snippet: "code-glm53-kda-pcp" },
+              { id: "k_gate", x: 750, y: 305, w: 215, h: 86, kind: "index", role: "BOUNDED GATE", title: "f_b / g_b & Safe Gate", kernel: "lower_bound = -5.0", weight: "f_b / g_b [n*128, 128]", math: "将低秩 f_a, g_a 升维为 g1 (衰减门) 与 g2 (输出 RMSNorm 门控)；beta 在 Kernel 内按 FP32 Sigmoid 计算。", snippet: "code-glm53-kda-pcp" },
+              { id: "k_core", x: 1015, y: 215, w: 220, h: 86, kind: "cache", role: "SSM RECURRENT CORE", title: "chunk_kda / recurrent_kda", kernel: "Update Recurrent State", weight: "A_log [n], dt_bias [n*128] FP32", math: "在恢复后的完整因果序列上推进本 Rank 拥有的 n 个 Head 的 SSM 状态 [num_blocks, n, 128, 128]。", snippet: "code-glm53-kda-pcp" },
+              { id: "k_out", x: 1285, y: 215, w: 240, h: 86, kind: "collective", role: "O_NORM + PCP REDUCE", title: "o_norm + PCPRowParallel", kernel: "ReduceScatter (padded_idx)", weight: "o_proj [4096, n*128]", math: "纯 Prefill 下直接通过 pcp_group.reduce_scatter(output[padded_gather_idx]) 一步完成跨 Head 归约与切回 [T_pcp, 4096]！", snippet: "code-glm53-kda-pcp" }
+            ],
+            edges: [
+              { id: "k1", src: "k_in", dst: "k_ag", kind: "comm", text: "hidden [T_pcp, 4096]", path: [[205,258],[235,258]], lx: 220, ly: 235, detail: "PCP 本地输入激活" },
+              { id: "k2", src: "k_ag", dst: "k_proj", kind: "act", text: "causal [T_global, 4096]", path: [[440,258],[485,258]], lx: 462, ly: 235, detail: "按 hidden_restore_idx 恢复严格因果顺序" },
+              { id: "k3", src: "k_proj", dst: "k_conv", kind: "act", text: "qkv [T_global, 3×n×128]", path: [[705,240],[728,240],[728,163],[750,163]], lx: 725, ly: 138, detail: "TP×PCP 分片后的 QKV 通道" },
+              { id: "k4", src: "k_proj", dst: "k_gate", kind: "index", text: "beta, f_a, g_a [128]", path: [[705,275],[728,275],[728,348],[750,348]], lx: 725, ly: 372, detail: "门控低秩激活与 beta" },
+              { id: "k5", src: "k_conv", dst: "k_core", kind: "cache", text: "conv_qkv + conv_state", path: [[965,163],[990,163],[990,242],[1015,242]], lx: 990, ly: 138, detail: "卷积后 QKV 与更新后的 Conv State" },
+              { id: "k6", src: "k_gate", dst: "k_core", kind: "index", text: "g1, beta [1, T_glb, n, 128]", path: [[965,348],[990,348],[990,275],[1015,275]], lx: 990, ly: 372, detail: "展开后的衰减门 g1 与步长 beta" },
+              { id: "k7", src: "k_core", dst: "k_out", kind: "comm", text: "[T_glb, n, 128] → [T_pcp, 4096]", path: [[1235,258],[1285,258]], lx: 1260, ly: 235, detail: "经 gated RMSNorm 后由 PCPRowParallelLinear 归约并切回本地" }
+            ]
+          };
+
+        /* =====================================================================
+         * 9. Deep Dive: 11x NoPE SFA + KPool Sparse Attention Layer
+         * ===================================================================== */
+        case "sfa_layer":
+        default:
+          return {
+            title: "GLM-5.3-Flash · 11层 NoPE SFA + KPool 稀疏注意力算子级数据流 (sfa_cp.py / indexer_kpool.py)",
+            subtitle: "Replicated KPool Indexer (4:1 压缩 + FP32 Tail Ring) + DCP 交错分片 SFA 主 KV Cache (Latent 512, RoPE=0)",
+            snippet: "code-pcp-dcp-stacked",
+            zones: [
+              { x: 18, y: 65, w: 185, h: 455, label: "NoPE 融合投影" },
+              { x: 215, y: 65, w: 785, h: 215, label: "UPPER · KPool 4:1 稀疏索引器 (all_gather_async 重叠 + Top-2051)" },
+              { x: 215, y: 295, w: 785, h: 225, label: "LOWER · NoPE SFA 主注意力 (W_UK_T 吸收 + DCP KV 分片 / Index Remap)" },
+              { x: 1015, y: 65, w: 525, h: 455, label: "CANN 稀疏注意力 & dcp_a2a_fused 归并" }
+            ],
+            nodes: [
+              { id: "s_in", x: 28, y: 220, w: 165, h: 86, kind: "boundary", role: "LOCAL INPUT", title: "fused_qkv_a_proj", kernel: "in: [T_loc, 4096]", weight: "fused_qkv_a_proj [2048, 4096] (q_a 1536 + kv_a 512)", math: "在本地 Token 上一次投影产出 q_c [T_local, 1536] 和 latent kv_no_split [T_local, 512] (GLM-5.3 NoPE: rope_dim=0)。", snippet: "code-glm53-kpool-pcp" },
+              { id: "s_idx_ag", x: 230, y: 110, w: 220, h: 86, kind: "collective", role: "ASYNC OVERLAP", title: "prepare_pcp_hidden", kernel: "all_gather_async(pcp_group)", weight: "pcp_hidden_restore_indices", math: "Prefill 时异步启动 k_hidden_states 的跨 PCP AllGather，与下方本地 wq_b / q_b_proj Query 投影完全重叠！", snippet: "code-glm53-kpool-pcp" },
+              { id: "s_kpool_w", x: 485, y: 110, w: 230, h: 86, kind: "cache", role: "REPLICATED CACHE WRITE", title: "KPool & Tail Compress", kernel: "cann.key_pool + tail_ring", weight: "wk_weights_proj [128+32, 4096], compress_ape [4, 128]", math: "等待异步 Gather 完成并按 restore_indices 还原全局顺序，每 4 个 Token 压缩写入 Replicated Indexer Cache，余数写入 FP32 Tail Ring。", snippet: "code-glm53-kpool-pcp" },
+              { id: "s_topk", x: 755, y: 110, w: 230, h: 86, kind: "index", role: "SPARSE TOP-2048", title: "pool_key_indexer", kernel: "TopK=2048 + Tail(3)", weight: "wq_b [4096, 1536] (32 heads × 128)", math: "使用本地 Query [T_local, 32, 128] 对全量复制的 KPool Cache 打分，选出 Top-2048 池化 Token 并拼接未满池的 Causal Tail (共 W=2051 列)。", snippet: "code-glm53-kpool-pcp" },
+              { id: "s_qkv_b", x: 230, y: 345, w: 220, h: 86, kind: "normal", role: "MLA UP-PROJ & ABSORB", title: "q_b_proj & W_UK_T 吸收", kernel: "Q [T_loc, H, 512]", weight: "q_b [64/TP, 256, 1536], W_UK_T [64/TP, 256, 512]", math: "将 Q 投影并吸收 W_UK_T 至 512 维 Latent 空间；同时将 latent KV (512维) 按 DCP Owner Slot 写入本地 SFA KV Cache。", snippet: "code-sfa-dcp-impl" },
+              { id: "s_kv_prep", x: 485, y: 345, w: 230, h: 86, kind: "collective", role: "PREFILL GATHER / DECODE REMAP", title: "KV Gather / Index Remap", kernel: "_record_dcp_kv / sparse_remap", weight: "dcp_context.kv_gather_block_ids", math: "Prefill 阶段按紧凑 Block Table 跨 DCP AllGather 被引用的 KV 块；Decode 阶段 KV 免通信，用 sparse_index_remap 重映射 Top-K 索引。", snippet: "code-sfa-dcp-impl" },
+              { id: "s_sfa", x: 1030, y: 220, w: 225, h: 86, kind: "cache", role: "CANN SPARSE ATTN", title: "npu_sparse_flash_attn", kernel: "64 Heads, Latent D=512", weight: "SFA Main KV Cache [num_blocks, 128, 1, 512]", math: "根据选出的 Top-2051 稀疏索引读取 Latent KV (512)，计算稀疏注意力输出 partial_out 与 FP32 softmax_lse。", snippet: "code-sfa-dcp-impl" },
+              { id: "s_merge", x: 1290, y: 220, w: 235, h: 86, kind: "collective", role: "LSE COMBINE & O_PROJ", title: "dcp_a2a_fused + W_UV + o_proj", kernel: "All2All LSE Merge", weight: "W_UV [64/TP, 512, 256], o_proj [4096, 16384]", math: "Decode 下通过 dcp_a2a_fused 跨 DCP (或 TP+PCP) 交换并按 LSE 加权归并输出，再乘 W_UV 与 o_proj 回到 [T_local, 4096]。", snippet: "code-dcp-a2a-fused" }
+            ],
+            edges: [
+              { id: "s1", src: "s_in", dst: "s_idx_ag", kind: "comm", text: "k_hidden [T_loc, 4096]", path: [[193,240],[210,240],[210,153],[230,153]], lx: 210, ly: 100, detail: "异步跨 PCP Gather Key Hidden States" },
+              { id: "s2", src: "s_idx_ag", dst: "s_kpool_w", kind: "cache", text: "restored [T_glb, 4096]", path: [[450,153],[485,153]], lx: 467, ly: 130, detail: "还原全局顺序后写入 Replicated KPool & Tail Cache" },
+              { id: "s3", src: "s_kpool_w", dst: "s_topk", kind: "cache", text: "k_cache [Pools, 128]", path: [[715,153],[755,153]], lx: 735, ly: 130, detail: "4:1 压缩后的完整序列 Indexer Cache" },
+              { id: "s4", src: "s_in", dst: "s_topk", kind: "act", text: "q_c [T_loc, 1536] → wq_b", path: [[193,258],[735,258],[735,175],[755,175]], lx: 465, ly: 242, detail: "本地 Query 低秩激活直接送入 wq_b 打分（与上方 AllGather 重叠）" },
+              { id: "s5", src: "s_in", dst: "s_qkv_b", kind: "act", text: "q_c + kv_latent [512]", path: [[193,280],[210,280],[210,388],[230,388]], lx: 210, ly: 412, detail: "进入主注意力 Q 升维与 DCP KV 写入" },
+              { id: "s6", src: "s_qkv_b", dst: "s_kv_prep", kind: "comm", text: "Q_gathered & KV Written", path: [[450,388],[485,388]], lx: 467, ly: 412, detail: "Query 吸收 W_UK_T + 触发紧凑 KV Gather 或 Index Remap" },
+              { id: "s7", src: "s_topk", dst: "s_kv_prep", kind: "index", text: "topk_idx [T_loc, 1, 2051]", path: [[870,196],[870,310],[600,310],[600,345]], lx: 735, ly: 296, detail: "全局 Top-2048 + Tail 稀疏索引" },
+              { id: "s8", src: "s_kv_prep", dst: "s_sfa", kind: "cache", text: "remapped_topk + SFA KV", path: [[715,388],[995,388],[995,275],[1030,275]], lx: 860, ly: 408, detail: "重映射后的本地索引或聚合后的紧凑 KV 块" },
+              { id: "s9", src: "s_sfa", dst: "s_merge", kind: "comm", text: "(O_j, LSE_j) [T_loc, H, 512]", path: [[1255,263],[1290,263]], lx: 1272, ly: 238, detail: "局部稀疏注意力输出与 FP32 LSE 送入 dcp_a2a_fused" }
+            ]
+          };
+      }
+    }
+
+    function selectItem(graph, kind, id) {
+      const edges = kind === "node"
+        ? graph.edges.filter(e => e.src === id || e.dst === id)
+        : kind === "edge"
+          ? graph.edges.filter(e => e.id === id)
+          : graph.edges;
+      const activeEdgeIds = new Set(edges.map(e => e.id));
+      const activeNodeIds = new Set(edges.flatMap(e => [e.src, e.dst]));
+      if (kind === "node") activeNodeIds.add(id);
+
+      document.querySelectorAll("#g-wires > g").forEach(g => {
+        g.classList.toggle("df-muted", Boolean(kind) && !activeEdgeIds.has(g.dataset.edgeId));
+      });
+      document.querySelectorAll("#g-labels > g").forEach(g => {
+        const match = activeEdgeIds.has(g.dataset.edgeId);
+        g.classList.toggle("df-muted", Boolean(kind) && !match);
+        g.classList.toggle("selected", Boolean(kind) && match);
+      });
+      document.querySelectorAll("#g-nodes > g").forEach(g => {
+        g.classList.toggle("df-muted", Boolean(kind) && !activeNodeIds.has(g.dataset.nodeId));
+        g.classList.toggle("selected", kind === "node" && g.dataset.nodeId === id);
+      });
+
+      const node = kind === "node"
+        ? graph.nodes.find(n => n.id === id)
+        : kind === "edge"
+          ? graph.nodes.find(n => n.id === edges[0].src)
+          : graph.nodes[0];
+
+      currentSnippet = node?.snippet || graph.snippet;
+      document.getElementById("det-title").textContent = kind
+        ? `${node.title} · ${node.kernel}`
+        : `${graph.title}`;
+      document.getElementById("det-note").textContent = kind === "edge"
+        ? `当前连线: ${edges[0].text} — ${edges[0].detail}`
+        : "提示：点击上方任意算子框或彩色 Tensor 标签可高亮其上下游依赖并查看源码";
+
+      document.getElementById("col-weights").innerHTML = `<div class="df-item"><span>规格/契约：</span>${node.weight}</div>`;
+
+      const inEdges = graph.edges.filter(e => e.dst === node.id);
+      document.getElementById("col-inputs").innerHTML = inEdges.length
+        ? inEdges.map(e => `<div class="df-item"><span>${e.src} &#8594;</span> ${e.text}<br><small style="color:#8ea7b9">${e.detail}</small></div>`).join("")
+        : `<div class="df-item"><span>入口边界：</span>来自 Runner / 上一层 mHC 残差流</div>`;
+
+      const outEdges = graph.edges.filter(e => e.src === node.id);
+      document.getElementById("col-outputs").innerHTML = outEdges.length
+        ? outEdges.map(e => `<div class="df-item"><span>&#8594; ${e.dst}:</span> ${e.text}<br><small style="color:#8ea7b9">${e.detail}</small></div>`).join("")
+        : `<div class="df-item"><span>出口边界：</span>写回 mHC 残差流或传出至下一阶段</div>`;
+
+      document.getElementById("col-math").innerHTML = `<div class="df-item">${node.math}</div>`;
+    }
+
+    function renderGraph() {
+      const graph = buildSceneGraph(currentScene);
+      document.getElementById("svg-title").textContent = graph.title;
+      document.getElementById("svg-sub").textContent = graph.subtitle;
+
+      document.querySelectorAll("[data-scene]").forEach(b => {
+        b.setAttribute("aria-pressed", String(b.dataset.scene === currentScene));
+      });
+
+      const gZones = document.getElementById("g-zones");
+      const gWires = document.getElementById("g-wires");
+      const gLabels = document.getElementById("g-labels");
+      const gNodes = document.getElementById("g-nodes");
+      gZones.replaceChildren();
+      gWires.replaceChildren();
+      gLabels.replaceChildren();
+      gNodes.replaceChildren();
+
+      // Render background stage zones
+      (graph.zones || []).forEach(z => {
+        const zg = svgEl("g");
+        zg.append(
+          svgEl("rect", { x: z.x, y: z.y, width: z.w, height: z.h, class: "df-zone" }),
+          svgEl("text", { x: z.x + 12, y: z.y + 18, class: "df-zone-label" }, z.label)
+        );
+        gZones.append(zg);
+      });
+
+      // Render edges & port dots
+      graph.edges.forEach(e => {
+        const color = KIND_COLOR[e.kind] || "#58aaff";
+        const d = e.path.map((p, i) => (i ? "L" : "M") + p[0] + "," + p[1]).join(" ");
+        const grp = svgEl("g", { "data-edge-id": e.id });
+        const halo = svgEl("path", { d, class: "df-halo" });
+        const wire = svgEl("path", {
+          d,
+          class: "df-wire",
+          stroke: color,
+          "marker-end": `url(#arrow-${e.kind})`
+        });
+        const anim = svgEl("path", {
+          d,
+          class: "df-flow-anim",
+          stroke: "#ffffff"
+        });
+        const pStart = e.path[0];
+        const pEnd = e.path[e.path.length - 1];
+        const dotStart = svgEl("circle", { cx: pStart[0], cy: pStart[1], r: 3.6, fill: color, class: "df-port" });
+        const dotEnd = svgEl("circle", { cx: pEnd[0], cy: pEnd[1], r: 3.6, fill: color, class: "df-port" });
+
+        wire.addEventListener("click", () => selectItem(graph, "edge", e.id));
+        grp.append(halo, wire, anim, dotStart, dotEnd);
+        gWires.append(grp);
+
+        const w = Math.max(112, e.text.length * 6.9 + 16);
+        const h = 21;
+        const lbl = svgEl("g", { class: "df-label", "data-edge-id": e.id });
+        lbl.append(
+          svgEl("rect", { x: e.lx - w / 2, y: e.ly - h / 2, width: w, height: h }),
+          svgEl("text", { x: e.lx, y: e.ly, fill: color }, e.text)
+        );
+        lbl.addEventListener("click", () => selectItem(graph, "edge", e.id));
+        gLabels.append(lbl);
+      });
+
+      // Render nodes
+      graph.nodes.forEach(n => {
+        const grp = svgEl("g", { class: `df-node ${n.kind}`, "data-node-id": n.id });
+        grp.append(svgEl("rect", { x: n.x, y: n.y, width: n.w, height: n.h, rx: 8, class: "node-box" }));
+        const fo = svgEl("foreignObject", { x: n.x, y: n.y, width: n.w, height: n.h });
+        const div = document.createElement("div");
+        div.className = "df-body";
+        div.innerHTML = `<span class="role-tag">${n.role}</span><strong>${n.title}</strong><code>${n.kernel}</code>`;
+        fo.append(div);
+        grp.append(fo);
+
+        grp.addEventListener("click", () => {
+          selectItem(graph, "node", n.id);
+        });
+        gNodes.append(grp);
+      });
+
+      selectItem(graph, null, null);
+    }
+
+    document.querySelectorAll("[data-scene]").forEach(b => {
+      b.addEventListener("click", () => {
+        currentScene = b.dataset.scene;
+        renderGraph();
+      });
+    });
+    document.getElementById("btn-reset").addEventListener("click", () => {
+      const graph = buildSceneGraph(currentScene);
+      selectItem(graph, null, null);
+    });
+    document.getElementById("det-code-btn").addEventListener("click", () => {
+      if (window.parent && typeof window.parent.openCodeDrawer === "function") {
+        window.parent.openCodeDrawer(currentSnippet);
+      }
+    });
+
+    renderGraph();
+  </script>
+</body>
+</html>

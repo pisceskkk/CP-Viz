@@ -1,0 +1,46 @@
+<div id="branch-dcp-detail" class="branch-slide" data-branch-title="DCP BlockTable &amp; Slot Mapping">
+  <div class="branch-subnav">
+    <span class="branch-subnav-label">DCP 支线定位：</span>
+    <button class="btn-slide-jump" onclick="document.getElementById('branch-dcp-blocktable').scrollIntoView({behavior:'smooth'})" type="button">
+      1. Virtual Block 交错映射沙盘
+    </button>
+    <button class="btn-slide-jump" onclick="document.getElementById('branch-dcp-tokens').scrollIntoView({behavior:'smooth'})" type="button">
+      2. Token 分布与 Local Slot 统计
+    </button>
+    <button class="btn-code" data-code="code-slot-mapping-kernel" type="button" style="margin-left:auto;">
+      &lt;/&gt; 查看 Triton Slot Mapping Kernel
+    </button>
+  </div>
+
+  <div class="branch-page" id="branch-dcp-blocktable">
+    <div class="wrap">
+      <div class="interactive-card">
+        <div class="interactive-card-bar">
+          <span class="interactive-card-title">
+            <span class="interactive-card-dot"></span>
+            1. DCP Virtual Block 与 cp_kv_cache_interleave_size 交错映射
+          </span>
+        </div>
+        <div class="interactive-card-body" style="height:70vh;">
+          <iframe src="src/dynamics/BlockTable.html" scrolling="auto" title="DCP BlockTable 沙盘"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branch-page" id="branch-dcp-tokens">
+    <div class="wrap">
+      <div class="interactive-card">
+        <div class="interactive-card-bar">
+          <span class="interactive-card-title">
+            <span class="interactive-card-dot"></span>
+            2. DCP Token 归属分布与 Slot Mapping 明细
+          </span>
+        </div>
+        <div class="interactive-card-body" style="height:70vh;">
+          <iframe src="docs/html/token-distribution.html" scrolling="auto" title="DCP Token 分布沙盘"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

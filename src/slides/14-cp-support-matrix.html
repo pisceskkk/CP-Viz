@@ -1,0 +1,124 @@
+<!-- Slide 14: vLLM & vLLM-Ascend PCP / DCP 最新适配全景表 -->
+<section data-stage="05 总结与规划">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>vLLM-Ascend PCP &amp; DCP 最新特性适配全景矩阵</strong></h3>
+        <p class="slide-subtitle">基于最新 MRV2 架构实况（注：GQA 的 DCP 支持已按 <a href="https://github.com/vllm-project/vllm-ascend/issues/21305" target="_blank">RFC #21305</a> 移除，GQA 仅支持 PCP）</p>
+      </div>
+    </div>
+
+    <!-- PCP 适配矩阵 -->
+    <h4 style="margin:0 0 0.4rem; font-size:1.55rem;">1. Prefill Context Parallel (PCP) 支持矩阵</h4>
+    <table class="progress-table" style="margin-top:0; font-size:1.25rem;">
+      <thead>
+        <tr>
+          <th>Attention 后端 / 代表模型</th>
+          <th>Basic PCP</th>
+          <th>APC + Chunked</th>
+          <th>Graph Mode</th>
+          <th>Speculative Decoding</th>
+          <th>P/D 分离 (Mooncake)</th>
+          <th>KV Pool (AscendStore)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="code">MLA (DeepSeek-V3 / R1)</td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
+          <td class="status-partial" title="MTP"></td>
+          <td class="status-yes" title="Mooncake V1/V2"></td>
+          <td class="status-partial" title="non-layerwise"></td>
+        </tr>
+        <tr>
+          <td class="code">SFA (GLM-5.2)</td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
+          <td class="status-partial" title="MTP / DSpark"></td>
+          <td class="status-yes" title="Mooncake V1/V2"></td>
+          <td class="status-partial" title="non-layerwise"></td>
+        </tr>
+        <tr>
+          <td class="code">KDA + SFA/KPool (GLM-5.3-Flash / Kimi-K3.1)</td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial" title="FULL_DECODE_ONLY"></td>
+          <td class="status-partial" title="MTP / DSpark"></td>
+          <td class="status-yes" title="MooncakeConnectorV2"></td>
+          <td class="status-partial" title="non-layerwise"></td>
+        </tr>
+        <tr>
+          <td class="code">DSA &amp; DSA V4.1 (DeepSeek-V4 / V4.1)</td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
+          <td class="status-partial" title="MTP / DSpark"></td>
+          <td class="status-yes" title="MooncakeHybrid / V2"></td>
+          <td class="status-partial" title="non-layerwise"></td>
+        </tr>
+        <tr>
+          <td class="code">GQA (Qwen3 系列)</td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
+          <td class="status-partial" title="Eagle3"></td>
+          <td class="status-yes" title="Mooncake V1/V2"></td>
+          <td class="status-partial" title="non-layerwise"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- DCP 适配矩阵 -->
+    <h4 style="margin:1.4rem 0 0.4rem; font-size:1.55rem;">2. Decode Context Parallel (DCP) 支持矩阵（A2 / A3 / 950PR &amp; 950DT）</h4>
+    <table class="progress-table" style="margin-top:0; font-size:1.25rem;">
+      <thead>
+        <tr>
+          <th>Attention 后端</th>
+          <th>拓扑约束 (Standalone / Stacked)</th>
+          <th>Chunked + APC</th>
+          <th>Graph Mode</th>
+          <th>Speculative</th>
+          <th>P/D 分离 &amp; KV Pool</th>
+          <th>PCP + DCP 叠加</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="code">MLA (DeepSeek-V3 / R1)</td>
+          <td><code>TP % DCP == 0</code> 或 <code>DCP &isin; {PCP, TP&times;PCP}</code></td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-yes" title="需设 I == block_size"></td>
+          <td class="status-yes"></td>
+        </tr>
+        <tr>
+          <td class="code">SFA (GLM-5.2 / 5.3-Flash / K3.1)</td>
+          <td><code>DCP == TP</code> 或 <code>DCP &isin; {PCP, TP&times;PCP}</code></td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-yes"></td>
+          <td class="status-yes" title="需设 I == block_size"></td>
+          <td class="status-yes"></td>
+        </tr>
+        <tr>
+          <td class="code">GQA / MQA (Qwen3 等)</td>
+          <td>必须保持 <code>DCP = 1</code>（Draft 保持原生 TP）</td>
+          <td class="status-no"></td>
+          <td class="status-no"></td>
+          <td class="status-no"></td>
+          <td class="status-no"></td>
+          <td class="status-no"></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="legend-line">
+      <span class="dot green"></span> 完全支持 &nbsp;&nbsp;&nbsp;
+      <span class="dot amber"></span> 部分支持（受限于指定 Graph 模式或投机算法） &nbsp;&nbsp;&nbsp;
+      <span class="dot red"></span> 不支持
+    </p>
+  </div>
+</section>

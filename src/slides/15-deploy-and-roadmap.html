@@ -1,0 +1,51 @@
+<!-- Slide 15: 部署策略选型与未来演进规划 -->
+<section data-stage="05 总结与规划">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>部署场景选型与未来演进规划</strong></h3>
+        <p class="slide-subtitle">面向生产与超长上下文的典型配置范式，以及 vLLM-Ascend 序列并行的下一步优化方向</p>
+      </div>
+    </div>
+
+    <div class="template-grid-2" style="margin-bottom:1.8rem;">
+      <div class="surface-card">
+        <h4>1. 典型部署选型范式（以 GLM-5.3-Flash 为例）</h4>
+        <p style="font-size:1.38rem; line-height:1.65; margin:0;">
+          &bull; <strong>PD 分离部署（950DT / A3 1M 上下文推荐拓扑）</strong>：<br>
+          &nbsp;&nbsp;&ndash; <strong>Prefill 节点</strong>：<code>DP1 + TP1 + PCP8 + EP8</code>（利用 PCP8 将长 Prompt 切为 16 个 DualChunk 并行计算，并将 KDA 64 Heads 与 Embedding/LM Head 切到 8 张卡，大幅压降 TTFT）。<br>
+          &nbsp;&nbsp;&ndash; <strong>Decode 节点</strong>：<code>DP8 + TP1 + PCP1 + EP8</code>（配合 <code>FULL_DECODE_ONLY</code> 图模式 + <code>MTP5</code> + <code>ReplaySSM</code> 最大化吞吐）。<br>
+          &bull; <strong>混部 / 超长序列（128K ~ 1M+）</strong>：<br>
+          &nbsp;&nbsp;&ndash; 开启 <strong>DCP</strong>（设置 <code>--cp-kv-cache-interleave-size == block_size</code>）消减 TP/PCP 间的 KV Cache 冗余，单机即可承载百万 Token 上下文。
+        </p>
+      </div>
+
+      <div class="surface-card">
+        <h4>2. 未来规划与持续演进方向（Roadmap）</h4>
+        <p style="font-size:1.38rem; line-height:1.65; margin:0;">
+          &bull; <strong>KPool / 混合线性层下的 PCP Decode Request Sharding</strong>：<br>
+          &nbsp;&nbsp;&ndash; 目前 <code>model_uses_kpool_indexer</code> 下 Decode 保持 Replicated 以同步推进各卡 Mamba/KDA 状态（见 <code>common_cp.py</code> TODO）；后续将支持跨 PCP Rank 的 Recurrent State 归属与 Sharded Decode。<br>
+          &bull; <strong>BlockTable 架构对齐上游 <code>vLLM #57169</code></strong>：<br>
+          &nbsp;&nbsp;&ndash; 将 <code>AscendBlockTables</code> 收敛为 Manager-Block 粒度，把 Kernel-Block 展开映射下沉至 <code>AttentionGroup</code>。<br>
+          &bull; <strong>算子融合与动态 CP（Dynamic CP）</strong>：<br>
+          &nbsp;&nbsp;&ndash; 拓展 <code>dcp_q_replicate</code>（TPA）与 <code>dcp_a2a_fused</code> A3/A5 动态 Tiling；探索按请求序列长度跨 DP 动态弹性组建 CP 通信组。
+        </p>
+      </div>
+    </div>
+
+    <div class="template-grid-3">
+      <div class="surface-card" style="padding:1.3rem 1.6rem;">
+        <h4>短/中序列 (4K ~ 32K)</h4>
+        <p style="font-size:1.32rem; margin:0;">优先标准 <strong>DP / TP</strong>；DCP 在短序列下通信收益小于开销，无需开启。</p>
+      </div>
+      <div class="surface-card" style="padding:1.3rem 1.6rem;">
+        <h4>中长序列 (32K ~ 256K)</h4>
+        <p style="font-size:1.32rem; margin:0;">开启 <strong>PCP</strong> 显著降低首字时延 TTFT，吞吐优于纯 TP、时延优于纯 DP。</p>
+      </div>
+      <div class="surface-card" style="padding:1.3rem 1.6rem;">
+        <h4>超长序列 (128K ~ 1M+)</h4>
+        <p style="font-size:1.32rem; margin:0;">开启 <strong>DCP</strong> 或 <strong>PCP + DCP</strong>，释放成倍 KV 容量并降低长序列 Decode TPOT。</p>
+      </div>
+    </div>
+  </div>
+</section>
