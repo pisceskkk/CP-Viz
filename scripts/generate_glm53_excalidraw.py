@@ -1248,116 +1248,150 @@ def diag_4b_chunked_prefill_schemes() -> tuple[list[dict], int, int]:
     return els, 1400, 595
 
 
-# =============================================================================
-# 4C. DCP ④: SFA + DCP Sharded Indexer Dataflow (From sfa_dcp.excalidraw in Slide 5 style)
-# =============================================================================
-def diag_4c_dcp_sharded_indexer() -> tuple[list[dict], int, int]:
-    """Slide 05b (#slide=7): SFA + DCP Sharded Indexer operator dataflow (based on sfa_dcp.excalidraw)."""
-    els: list[dict] = []
+def render_external_excalidraw(excalidraw_path: Path, out_ex_path: Path, out_svg_path: Path) -> None:
+    """Directly copy an external .excalidraw file and render its active elements into a faithful hand-drawn SVG."""
+    data = json.loads(excalidraw_path.read_text(encoding="utf-8"))
+    active_els = [el for el in data.get("elements", []) if not el.get("isDeleted")]
 
-    ZONE_BG = "#f8fafc"
-    ZONE_STROKE = "#94a3b8"
-    OP_BG = "#e0f2fe"
-    OP_STROKE = "#0284c7"
-    ARROW_COLOR = "#0284c7"
-    TEXT_BLACK = "#0f172a"
+    # Compute exact bounding box across all active rectangles, texts, and arrow points
+    min_x, min_y = float("inf"), float("inf")
+    max_x, max_y = float("-inf"), float("-inf")
+    for el in active_els:
+        x, y = float(el.get("x", 0)), float(el.get("y", 0))
+        if el["type"] == "arrow" and "points" in el:
+            for dx, dy in el["points"]:
+                min_x = min(min_x, x + dx)
+                min_y = min(min_y, y + dy)
+                max_x = max(max_x, x + dx)
+                max_y = max(max_y, y + dy)
+        else:
+            w, h = float(el.get("width", 0)), float(el.get("height", 0))
+            min_x = min(min_x, x)
+            min_y = min(min_y, y)
+            max_x = max(max_x, x + w)
+            max_y = max(max_y, y + h)
 
-    # Upper Lane: Main SFA Attention (DCP Sharded KV + Select + SFA + All2All LSE Combine)
-    add_zone(els, "z_sfa_main", 130, 15, 1255, 205, "UPPER LANE · SFA 主注意力路径 (Save Local KV → Select Local Top-K → Sparse Flash Attn → All2All LSE 归并)", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    pad = 24.0
+    ox = -min_x + pad
+    oy = -min_y + pad
+    total_w = int(math.ceil(max_x - min_x + pad * 2))
+    total_h = int(math.ceil(max_y - min_y + pad * 2))
 
-    # Lower Lane: Sharded Indexer (LightningIndexer -> Pack(idx, score) -> AllGather -> Merge Candidates -> Remap)
-    add_zone(els, "z_sfa_idx", 130, 232, 895, 215, "LOWER LANE · Sharded Indexer 路径 (各卡选本地候选 → AllGather → Merge 全局 Top-K)", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    shifted_els = []
+    for el in active_els:
+        c = dict(el)
+        c["x"] = float(el.get("x", 0)) + ox
+        c["y"] = float(el.get("y", 0)) + oy
+        shifted_els.append(c)
 
-    # Entry HiddenStates
-    add_arrow(els, "si_in", [[12, 165], [145, 165]], ARROW_COLOR)
-    add_wire_label(els, "si_l_in", 68, 140, "HiddenStates\n[X, hs]", font_size=13)
+    out_ex_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    # Upper Lane Operators
-    add_box(els, "si_kv_down", 145, 58, 130, 52, "kv_down_proj", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
-    add_box(els, "si_save_kv", 335, 58, 130, 52, "save local\nkvcache", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
-    add_box(els, "si_select", 545, 58, 105, 52, "select\n(按本地 topk)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    # Render shifted elements directly with full support for transparent/colored text backgrounds and arrow labels
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {total_w} {total_h}" width="{total_w}" height="{total_h}" '
+        f'font-family="\'Comic Sans MS\', \'Segoe Print\', \'Bradley Hand\', \'Chalkboard SE\', \'Microsoft YaHei\', sans-serif">',
+        f'<rect x="0" y="0" width="{total_w}" height="{total_h}" fill="#ffffff" rx="12"/>',
+    ]
 
-    add_box(els, "si_q_down", 145, 145, 130, 52, "q_down_proj", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
-    add_box(els, "si_q_up", 335, 145, 130, 52, "q_up_proj\n(TP shard)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
-    add_box(els, "si_q_ag", 525, 145, 125, 52, "AllGather\nQ Head", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    by_id = {el["id"]: el for el in shifted_els}
 
-    add_box(els, "si_sfa", 715, 98, 165, 62, "sparse_flash_attn\n(Q × Local Selected KV)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
-    add_box(els, "si_a2a", 935, 98, 195, 62, "pack_output_lse\n→ all2all → update_attn", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
-    add_box(els, "si_kv_up", 1185, 98, 180, 62, "kv_up_proj → o_proj\n(输出 [X, hs])", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    # 1. Rectangles
+    for el in shifted_els:
+        if el["type"] == "rectangle":
+            x, y, w, h = el["x"], el["y"], el["width"], el["height"]
+            ss = el.get("strokeStyle", "solid")
+            is_dashed = ss in ("dashed", "dotted")
+            fill_d, stroke_ds = _rough_rect_paths(x, y, w, h, el.get("seed", 1), is_dashed)
+            bg = el.get("backgroundColor", "transparent")
+            if bg and bg != "transparent":
+                parts.append(f'<path d="{fill_d}" fill="{bg}" stroke="none"/>')
+            dash_attr = ' stroke-dasharray="4 4"' if ss == "dotted" else (' stroke-dasharray="9 6"' if ss == "dashed" else "")
+            for idx, sd in enumerate(stroke_ds):
+                sw = el.get("strokeWidth", 1) if idx == 0 else max(0.8, el.get("strokeWidth", 1) * 0.75)
+                op = "1" if idx == 0 else "0.65"
+                parts.append(
+                    f'<path d="{sd}" fill="none" stroke="{el.get("strokeColor", "#1e1e1e")}" '
+                    f'stroke-width="{sw}" stroke-linecap="round" stroke-linejoin="round" opacity="{op}"{dash_attr}/>'
+                )
 
-    # Lower Lane Operators (Sharded Indexer)
-    add_box(els, "si_wq", 145, 265, 130, 48, "Wq_up / W_proj\n(replicated)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=12)
-    add_box(els, "si_wk", 145, 345, 130, 48, "Wk (replicated)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=12)
-    add_box(els, "si_idx_kv", 305, 345, 115, 48, "save local\nindexer kv", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=12)
-    add_box(els, "si_li", 455, 295, 155, 62, "LightningIndexer\n(算本地 1/DCP 分片)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
-    add_box(els, "si_pack_ag", 665, 295, 145, 62, "pack(idx, score)\n→ DCP AllGather", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
-    add_box(els, "si_merge", 860, 295, 145, 62, "merge_candidates\n(选全局 Top-K)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    # 2. Arrows
+    for el in shifted_els:
+        if el["type"] == "arrow":
+            rng = random.Random(el.get("seed", 1))
+            x0, y0 = el["x"], el["y"]
+            pts = [[x0 + dx, y0 + dy] for dx, dy in el["points"]]
+            color = el.get("strokeColor", "#1e1e1e")
+            ss = el.get("strokeStyle", "solid")
+            dash_attr = ' stroke-dasharray="4 4"' if ss == "dotted" else (' stroke-dasharray="7 5"' if ss == "dashed" else "")
+            sw_base = el.get("strokeWidth", 1)
+            for i in range(len(pts) - 1):
+                p1, p2 = pts[i], pts[i + 1]
+                for pass_i in range(2):
+                    seg_d = _jitter_line(p1[0], p1[1], p2[0], p2[1], rng, amp=1.3 if pass_i == 0 else 0.8)
+                    sw = sw_base + 0.4 if pass_i == 0 else sw_base * 0.75
+                    parts.append(
+                        f'<path d="{seg_d}" fill="none" stroke="{color}" stroke-width="{sw:.1f}" '
+                        f'stroke-linecap="round"{dash_attr}/>'
+                    )
+            if len(pts) >= 2 and el.get("endArrowhead", "arrow") == "arrow":
+                p_prev, p_tip = pts[-2], pts[-1]
+                ang = math.atan2(p_tip[1] - p_prev[1], p_tip[0] - p_prev[0])
+                head_len = 11.5
+                for wing_sign in (-1, 1):
+                    wing_ang = ang + math.pi - wing_sign * 0.48
+                    wx = p_tip[0] + head_len * math.cos(wing_ang)
+                    wy = p_tip[1] + head_len * math.sin(wing_ang)
+                    wd = _jitter_line(p_tip[0], p_tip[1], wx, wy, rng, amp=0.5)
+                    parts.append(
+                        f'<path d="{wd}" fill="none" stroke="{color}" stroke-width="{sw_base + 0.5:.1f}" '
+                        f'stroke-linecap="round"/>'
+                    )
 
-    # Floating Callout OUTSIDE on Bottom-Right: "Remap to local top-k" (From sfa_dcp.excalidraw: 8K -> 4K/4K -> N / M)
-    els.append(make_rect("si_remap_card", 1045, 232, 340, 215, "#ffffff", "#cbd5e1", stroke_width=1, stroke_style="solid", fill_style="solid"))
-    els.append(make_text("si_remap_title", 1055, 240, 320, 20, "Remap to SFA_local top-k (全局 Top-K → 本地分片过滤)", font_size=12, color="#0f172a", align="center"))
+    # 3. Text elements (including text with background highlight or bound to rectangle/arrow)
+    for el in shifted_els:
+        if el["type"] == "text":
+            lines = el["text"].split("\n")
+            fs = el.get("fontSize", 16)
+            lh = fs * el.get("lineHeight", 1.25)
+            cid = el.get("containerId")
+            bg = el.get("backgroundColor", "transparent")
+            if bg and bg != "transparent":
+                parts.append(
+                    f'<rect x="{el["x"] - 4:.1f}" y="{el["y"] - 2:.1f}" width="{el["width"] + 8:.1f}" '
+                    f'height="{el["height"] + 4:.1f}" rx="4" fill="{bg}"/>'
+                )
+            container = by_id.get(cid) if cid else None
+            if container and container["type"] == "rectangle":
+                cx = container["x"] + container["width"] / 2
+                total_th = len(lines) * lh
+                start_y = container["y"] + (container["height"] - total_th) / 2 + fs * 0.85
+                for idx, line in enumerate(lines):
+                    parts.append(
+                        f'<text x="{cx:.1f}" y="{start_y + idx * lh:.1f}" font-size="{fs}" '
+                        f'font-weight="600" fill="{el.get("strokeColor", "#1e1e1e")}" text-anchor="middle">'
+                        f"{html.escape(line)}</text>"
+                    )
+            else:
+                # Standalone text or arrow-bound text: use its own x, y, width, height
+                if container and container["type"] == "arrow":
+                    parts.append(
+                        f'<rect x="{el["x"] - 4:.1f}" y="{el["y"] - 2:.1f}" width="{el["width"] + 8:.1f}" '
+                        f'height="{el["height"] + 4:.1f}" rx="4" fill="#ffffff" opacity="0.9"/>'
+                    )
+                align = el.get("textAlign", "left")
+                x = el["x"] + (el["width"] / 2 if align == "center" else 0)
+                anchor = "middle" if align == "center" else "start"
+                y = el["y"] + fs * 0.88
+                for idx, line in enumerate(lines):
+                    parts.append(
+                        f'<text x="{x:.1f}" y="{y + idx * lh:.1f}" font-size="{fs}" '
+                        f'font-weight="600" fill="{el.get("strokeColor", "#1e1e1e")}" text-anchor="{anchor}">'
+                        f"{html.escape(line)}</text>"
+                    )
 
-    # Left side of callout: Global 8K context vs 2K global top-k
-    add_mini_cell(els, "rm_8k", 1065, 272, 135, 30, "#e0f2fe", "#0284c7", "Global Context (8K)", font_size=10)
-    add_mini_cell(els, "rm_2k_g", 1090, 345, 85, 26, "#fef08a", "#334155", "Global TopK (2K)", font_size=9)
-    add_arrow(els, "rm_a1", [[1110, 345], [1085, 304]], "#334155", stroke_width=1)
-    add_arrow(els, "rm_a2", [[1132, 345], [1132, 304]], "#334155", stroke_width=1)
-    add_arrow(els, "rm_a3", [[1155, 345], [1180, 304]], "#334155", stroke_width=1)
-
-    add_arrow(els, "rm_mid", [[1208, 320], [1232, 320]], "#0284c7", stroke_width=2)
-
-    # Right side of callout: DCP Sharded 4K | 4K and Local Top-K split into N (rank0) | M (rank1)
-    add_mini_cell(els, "rm_4k_0", 1240, 272, 62, 30, "#e0f2fe", "#0284c7", "Rank0 (4K)", font_size=9)
-    add_mini_cell(els, "rm_4k_1", 1306, 272, 62, 30, "#f1f5f9", "#94a3b8", "Rank1 (4K)", font_size=9)
-    add_mini_cell(els, "rm_2k_l", 1262, 345, 85, 24, "#fef08a", "#334155", "Global TopK (2K)", font_size=9)
-    add_mini_cell(els, "rm_n", 1262, 372, 38, 26, "#bbf7d0", "#16a34a", "N (本地)", font_size=9)
-    add_mini_cell(els, "rm_m", 1302, 372, 45, 26, "#f1f5f9", "#94a3b8", "M (远端)", font_size=9)
-    add_arrow(els, "rm_a4", [[1280, 345], [1270, 304]], "#0284c7", stroke_width=1)
-    add_arrow(els, "rm_a5", [[1325, 345], [1335, 304]], "#94a3b8", stroke_width=1, stroke_style="dashed")
-    els.append(make_text("si_remap_cap", 1055, 410, 320, 26, "过滤出落在本卡的 N 个 local_topk 索引并重映射为本地偏移", font_size=10.5, color="#334155", align="center"))
-
-    # Upper Lane Wires & Labels
-    add_arrow(els, "si_w1", [[115, 165], [115, 84], [145, 84]], ARROW_COLOR)
-    add_arrow(els, "si_w2", [[275, 84], [335, 84]], ARROW_COLOR)
-    add_wire_label(els, "si_l1", 305, 46, "[X, hs_c]", font_size=12)
-    add_arrow(els, "si_w3", [[465, 84], [545, 84]], ARROW_COLOR)
-    add_wire_label(els, "si_l2", 505, 46, "[CTX/DCP, hs_c]", font_size=12)
-    add_arrow(els, "si_w4", [[650, 84], [685, 84], [685, 115], [715, 115]], ARROW_COLOR)
-    add_wire_label(els, "si_l3", 685, 46, "[X, local_topk, hs_c]", font_size=12)
-
-    add_arrow(els, "si_w5", [[275, 171], [335, 171]], ARROW_COLOR)
-    add_wire_label(els, "si_l4", 305, 133, "[X, hs_c]", font_size=12)
-    add_arrow(els, "si_w6", [[465, 171], [525, 171]], ARROW_COLOR)
-    add_wire_label(els, "si_l5", 495, 133, "[X, hs/TP]", font_size=12)
-    add_arrow(els, "si_w7", [[650, 171], [685, 171], [685, 142], [715, 142]], ARROW_COLOR)
-    add_wire_label(els, "si_l6", 682, 186, "Q_full [X, hs]", font_size=12)
-
-    add_arrow(els, "si_w8", [[880, 129], [935, 129]], ARROW_COLOR)
-    add_wire_label(els, "si_l7", 908, 84, "O_j, lse_j [X, hs]", font_size=12)
-    add_arrow(els, "si_w9", [[1130, 129], [1185, 129]], ARROW_COLOR)
-    add_wire_label(els, "si_l8", 1158, 84, "[X, hs/TP]", font_size=12)
-
-    # Lower Lane Wires & Labels
-    add_arrow(els, "si_w10", [[115, 165], [115, 289], [145, 289]], ARROW_COLOR)
-    add_arrow(els, "si_w11", [[115, 289], [115, 369], [145, 369]], ARROW_COLOR)
-    add_arrow(els, "si_w12", [[210, 197], [210, 265]], ARROW_COLOR)
-    add_arrow(els, "si_w13", [[275, 289], [430, 289], [430, 315], [455, 315]], ARROW_COLOR)
-    add_wire_label(els, "si_l9", 360, 274, "Q_idx, weights [X, hs]", font_size=12)
-    add_arrow(els, "si_w14", [[275, 369], [305, 369]], ARROW_COLOR)
-    add_arrow(els, "si_w15", [[420, 369], [435, 369], [435, 338], [455, 338]], ARROW_COLOR)
-    add_wire_label(els, "si_l10", 362, 410, "K_idx [CTX/DCP, hs_c]", font_size=12)
-
-    add_arrow(els, "si_w16", [[610, 326], [665, 326]], ARROW_COLOR)
-    add_wire_label(els, "si_l11", 638, 376, "LI_local (idx, score)\n[X, topk]", font_size=11)
-    add_arrow(els, "si_w17", [[810, 326], [860, 326]], ARROW_COLOR)
-    add_wire_label(els, "si_l12", 835, 376, "all local candidates\n[X, topk*dcp]", font_size=11)
-
-    # Remap arrow from merge_candidates up to select
-    add_arrow(els, "si_w_remap", [[932, 295], [932, 210], [597, 210], [597, 110]], ARROW_COLOR)
-    add_wire_label(els, "si_l_remap", 795, 196, "global top-k [X, topk] ──(Remap to SFA_local top-k)──►", font_size=12)
-    add_arrow(els, "si_ptr_rm", [[1005, 326], [1045, 326]], "#94a3b8", stroke_width=1, stroke_style="dashed")
-
-    return els, 1400, 460
+    parts.append("</svg>")
+    out_svg_path.write_text("\n".join(parts), encoding="utf-8")
+    print(f"Rendered user's original {excalidraw_path.name} -> {out_svg_path.name} ({len(shifted_els)} elements, {total_w}x{total_h})")
 
 
 # =============================================================================
@@ -1595,7 +1629,6 @@ def main() -> None:
         "glm53-dcp-decode": diag_3_dcp_decode,
         "glm53-dcp-chunked-prefill": diag_4a_dcp_chunked_prefill,
         "glm53-dcp-chunked-schemes": diag_4b_chunked_prefill_schemes,
-        "glm53-dcp-sfa-sharded-indexer": diag_4c_dcp_sharded_indexer,
         "glm53-pcp-dualchunk": diag_5_pcp_dualchunk,
         "glm53-pcp-prefill": diag_6_pcp_prefill_general,
         "glm53-pcp-decode-weights": diag_7_pcp_decode_weights,
@@ -1617,6 +1650,14 @@ def main() -> None:
         svg_path = SVG_DIR / f"{name}.svg"
         svg_path.write_text(render_handdrawn_svg(els, w, h), encoding="utf-8")
         print(f"Generated {svg_path.name} ({len(els)} elements)")
+
+    user_sfa_dcp = Path(r"d:\q00946761\projects\长序列\PCP&DCP\sfa_dcp.excalidraw")
+    if user_sfa_dcp.exists():
+        render_external_excalidraw(
+            user_sfa_dcp,
+            EXCALIDRAW_DIR / "glm53-dcp-sfa-sharded-indexer.excalidraw",
+            SVG_DIR / "glm53-dcp-sfa-sharded-indexer.svg",
+        )
 
 
 if __name__ == "__main__":
