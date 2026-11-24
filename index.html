@@ -390,8 +390,8 @@
         <button class="btn-code" data-code="code-sfa-dcp-impl" type="button">
           &lt;/&gt; sfa_cp.py
         </button>
-        <button class="btn-code" data-code="code-dcp-a2a-fused" type="button">
-          &lt;/&gt; dcp_a2a_fused
+        <button class="btn-code" data-code="code-sharded-indexer" type="button">
+          &lt;/&gt; sharded_indexer.py
         </button>
       </div>
     </div>
@@ -400,19 +400,24 @@
       <div class="img-zoom-wrap">
         <img src="static/images/CP/glm53-dcp-sfa-sharded-indexer.svg" alt="SFA DCP Sharded Indexer Dataflow">
 
-        <!-- 放置于下支路 LightningIndexer 算子框右上角 -->
-        <button class="hotspot-pin" style="left: 41.2%; top: 64.5%;" data-code="code-sfa-dcp-impl" type="button">
-          <span class="pin-label">&lt;/&gt; LightningIndexer 本地候选 Top-K</span>
-        </button>
-
-        <!-- 放置于下支路 merge_candidates 算子框右上角 -->
-        <button class="hotspot-pin" style="left: 71.0%; top: 70.5%;" data-code="code-sfa-dcp-impl" type="button">
-          <span class="pin-label">&lt;/&gt; AllGather &amp; merge_candidates 归并</span>
+        <!-- 放置于上支路 sparse_flash_attn 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 55.0%; top: 24.1%;" data-code="code-sfa-dcp-impl" type="button">
+          <span class="pin-label">&lt;/&gt; sfa_cp.py: AllGather Q &amp; Remap &amp; SFA</span>
         </button>
 
         <!-- 放置于上支路 pack_output_lse -> all2all 算子框右上角 -->
         <button class="hotspot-pin" style="left: 70.0%; top: 24.5%;" data-code="code-dcp-a2a-fused" type="button">
           <span class="pin-label">&lt;/&gt; pack_output_lse &amp; all2all 归并</span>
+        </button>
+
+        <!-- 放置于下支路 LightningIndexer 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 41.6%; top: 64.2%;" data-code="code-sharded-indexer" type="button">
+          <span class="pin-label">&lt;/&gt; indexer.py: 本地候选 Top-K 检索</span>
+        </button>
+
+        <!-- 放置于下支路 merge_candidates 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 70.7%; top: 69.8%;" data-code="code-sharded-indexer" type="button">
+          <span class="pin-label">&lt;/&gt; sharded_indexer.py: distributed_topk 归并</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -1142,9 +1147,9 @@ flowchart LR
           <td><button class="btn-code" data-code="code-dcp-a2a-fused" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
-          <td class="code">SFA / MLA CP 后端</td>
-          <td class="code">vllm_ascend/attention/context_parallel/{sfa_cp,mla_cp}.py</td>
-          <td><code>AscendSFADCPImpl</code>, <code>AscendSFAPCPDCPImpl</code></td>
+          <td class="code">SFA / Sharded Indexer</td>
+          <td class="code">vllm_ascend/attention/context_parallel/{sfa_cp,sharded_indexer}.py<br>vllm_ascend/attention/indexer.py</td>
+          <td><code>AscendSFADCPImpl</code>, <code>distributed_topk</code></td>
           <td><button class="btn-code" data-code="code-sfa-dcp-impl" type="button" style="padding:0.2rem 0.7rem; font-size:1.15rem;">&lt;/&gt; 查看</button></td>
         </tr>
         <tr>
@@ -1528,37 +1533,111 @@ flowchart LR
 </pre>
 </div>
 
-<!-- 5. SFA DCP Hooks & Chunked KV Gather -->
+<!-- 5. SFA DCP Core Execution Flow (AllGather Q -> Remap -> SFA -> All2All Merge) -->
 <div id="code-sfa-dcp-impl"
      class="code-snippet-tpl"
      data-tag="SFA + DCP"
-     data-title="AscendSFADCPImpl：Replicated Indexer 与 Compact KV Gather"
+     data-title="AscendSFADCPImpl：AllGather Q、稀疏索引重映射与 All2All LSE 归并"
      data-file="vllm_ascend/attention/context_parallel/sfa_cp.py"
-     data-lines="L587-L645"
-     data-start-line="587"
-     data-highlight="591-593,598-599,638-644"
-     data-desc="<strong>核心机制：</strong>Decode 阶段在 <code>_on_query_ready</code> 异步启动 Q AllGather；Prefill/Mixed 阶段在当前层写完本地 DCP KV Cache 后（<code>_on_kv_cache_written</code>），按紧凑 Block IDs 收集跨 DCP 节点的有效 KV 块。">
+     data-lines="L740-L1004"
+     data-start-line="740"
+     data-highlight="754,779-786,808-814,949-951,972-990,999-1003"
+     data-desc="<strong>核心机制：</strong>对应主干稀疏注意力 DCP 数据流：① <code>_start_dcp_query_gather</code> 将 <code>(ql_nope, q_pe)</code> 转为 Head-major 并异步 AllGather 全部 Q Heads；② <code>_remap_sparse_indices</code> 调用 Triton Kernel 将全局 Top-K 索引过滤转换为本卡 DCP Local KV 偏移（未命中填 <code>-1</code>）；③ <code>execute_sparse_flash_attention_process</code> 以 <code>sparse_mode=0, return_lse=True</code> 读取本卡 KV 分片返回局部输出与 <code>(softmax_max, softmax_sum)</code>；④ <code>_merge_dcp_outputs</code> 调用 <code>dcp_a2a_fused</code> 完成跨卡 All2All 与 LSE 加权归并。">
 <pre>
-    def _on_query_ready(self, ql_nope: torch.Tensor, q_pe: torch.Tensor | None, attn_metadata: M) -> None:
-        assert isinstance(attn_metadata, AscendSFADCPMetadata)
-        assert attn_metadata.dcp_context is not None
-        # PCP prefill rows differ across ranks. Gather history and keep Q local.
-        if attn_metadata.dcp_context.kv_gather_block_ids is not None:
-            return
-        attn_metadata.dcp_context.gather_context = self._start_dcp_query_gather(ql_nope, q_pe)
+    def _remap_sparse_indices(self, topk_indices: torch.Tensor) -> torch.Tensor:
+        if self.dcp_size <= 1 or topk_indices.numel() == 0:
+            return topk_indices
+        from vllm_ascend.ops.triton.sparse_index_remap import remap_sparse_indices_triton
+        return remap_sparse_indices_triton(topk_indices, self.dcp_size, self.dcp_rank, self._dcp_interleave_size)
 
-    def _on_kv_cache_written(self, kv_cache: tuple[torch.Tensor, ...], attn_metadata: M) -> None:
-        assert isinstance(attn_metadata, AscendSFADCPMetadata)
-        assert attn_metadata.dcp_context is not None
-        if attn_metadata.dcp_context.kv_gather_block_ids is not None:
-            self._record_dcp_kv_gather_context(kv_cache, attn_metadata)
+    def _merge_dcp_outputs(self, sfa_output: torch.Tensor, softmax_lse: torch.Tensor, softmax_sum: torch.Tensor | None = None) -> torch.Tensor:
         ...
-        valid_block_ids = attn_metadata.dcp_context.kv_gather_block_ids
-        cache = kv_cache[0]
-        if self.qk_rope_head_dim == 0:
-            cache = _view_cache_as_operator_pages(cache, attn_metadata.block_size)
-        kv = _index_select_kv_blocks(cache, valid_block_ids)
-        gather_input = kv.contiguous()
+        return torch.ops.vllm.dcp_a2a_fused(
+            sfa_output, softmax_lse, self.dcp_size, 1, self.dcp_group.unique_name, softmax_sum=softmax_sum,
+        )
+
+    def _start_dcp_query_gather(self, ql_nope: torch.Tensor, q_pe: torch.Tensor | None) -> DCPGatherContext:
+        from vllm_ascend.ops.triton.query_gather_prep import prep_query_head_major
+        fused_q = prep_query_head_major(ql_nope, q_pe)
+        group = get_tp_group() if get_pcp_group().world_size > 1 else self.dcp_group
+        gathered, handle = all_gather_async(fused_q, group)
+        return DCPGatherContext(gathered=gathered, handle=handle, restore_perm=(1, 0, 2), split_sizes=(ql_nope.shape[-1], q_pe.shape[-1]))
+
+    def _execute_sparse_flash_attention_process(self, ql_nope, q_pe, kv_cache, topk_indices, attn_metadata, actual_seq_lengths_query, actual_seq_lengths_key, block_table=None):
+        ...
+        gather_context = dcp_context.gather_context or self._start_dcp_query_gather(ql_nope, q_pe)
+        if not self._local_topk:
+            topk_indices = self._remap_sparse_indices(topk_indices)
+        ql_nope, q_pe = self._finish_dcp_gather(gather_context, keep_view=not enable_sfa_dcp_force_tmajor_restore())
+        sfa_output, softmax_max, softmax_sum = DeviceOperator.execute_sparse_flash_attention_process(
+            self, ql_nope, q_pe, kv_cache, topk_indices, attn_metadata,
+            actual_seq_lengths_query, dcp_context.seq_lens,
+            block_table=dcp_context.block_table, sparse_mode=0, return_lse=True,
+        )
+        sfa_output, softmax_max, softmax_sum = self._mask_nope_dcp_padding(sfa_output, actual_seq_lengths_query, softmax_max, softmax_sum)
+        sum_for_pack = softmax_sum.permute(1, 0, 2).reshape(softmax_sum.shape[1], -1, 1)
+        softmax_lse = softmax_max.permute(1, 0, 2).reshape(softmax_max.shape[1], -1, 1)
+        output = self._merge_dcp_outputs(sfa_output, softmax_lse, softmax_sum=sum_for_pack)
+        return output.to(sfa_output.dtype)
+</pre>
+</div>
+
+<!-- 5b. Sharded Indexer Candidate Selection & Distributed Top-K -->
+<div id="code-sharded-indexer"
+     class="code-snippet-tpl"
+     data-tag="SHARDED INDEXER"
+     data-title="Sharded Indexer：本地候选检索与 distributed_topk 跨卡归并"
+     data-file="vllm_ascend/attention/indexer.py &amp; context_parallel/sharded_indexer.py"
+     data-lines="indexer.py:L962-L1021 | sharded_indexer.py:L30-L65"
+     data-start-line="962"
+     data-highlight="969-981,984-990,992-1002"
+     data-desc="<strong>核心机制：</strong>对应 Sharded Indexer 下支路：① <code>indexer_select_dcp_candidates</code> 在本卡 <code>1/DCP</code> 索引缓存分片上选出本地候选 <code>(indices, scores) [X, topk]</code>；② <code>distributed_topk</code> 通过 <code>pack_local_candidates</code> 将本地候选转为 8-byte <code>(global_id, score)</code> 打包格式；③ 跨 <code>dcp_group</code> 执行 <code>all_gather</code> 收集 <code>[X, topk * dcp_size]</code>；④ <code>merge_packed_candidates</code> 归并选出全局 Top-K（当 <code>return_local=True</code> 时直接输出属于本卡的 <code>local_topk</code> 偏移）。">
+<pre>
+# 1. vllm_ascend/attention/indexer.py: 本地 1/DCP Indexer Cache 候选检索
+        if self._sharded_dcp and indexer_metadata.kv_gather_block_ids is None:
+            from vllm_ascend.attention.context_parallel.sharded_indexer import distributed_topk
+            cu_seqlens_q, seqused_k, qli_metadata = self._get_local_qli_inputs(indexer_metadata)
+            indices, scores = DeviceOperator.indexer_select_dcp_candidates(
+                q_li.view(*q_li_shape_ori),
+                weights,
+                self.k_cache.kv_cache[INDEXER_K_CACHE_SLOT],
+                self.k_cache.kv_cache[INDEXER_SCALE_CACHE_SLOT],
+                indexer_metadata.block_table,
+                cu_seqlens_q,
+                seqused_k,
+                q_li_scale,
+                global_seq_lens=indexer_metadata.seq_lens,
+                cp_world=get_dcp_group().world_size,
+                cp_rank=get_dcp_group().rank_in_group,
+                cp_interleave=self._dcp_interleave,
+                qli_metadata=qli_metadata,
+                topk=self.topk_tokens,
+            )
+            return distributed_topk(
+                indices, scores, get_dcp_group(), self.topk_tokens, self._dcp_interleave, return_local=self._local_topk,
+            )
+
+# 2. vllm_ascend/attention/context_parallel/sharded_indexer.py: Pack -> AllGather -> Merge
+def distributed_topk(indices, scores, group, topk: int, interleave: int, *, return_local: bool = False):
+    from vllm_ascend.ops.triton.sharded_indexer import MAX_FUSED_TOPK, merge_packed_candidates, pack_local_candidates
+    rows, local_k = indices.shape[0], indices.shape[-1]
+    output = torch.empty((rows, 1, topk), dtype=torch.int32, device=indices.device)
+    presorted = topk == MAX_FUSED_TOPK and local_k <= MAX_FUSED_TOPK
+    query_tile = gathered_candidate_row_tile(rows, group.world_size, local_k)
+    for start in range(0, rows, query_tile):
+        end = min(start + query_tile, rows)
+        packed = pack_local_candidates(
+            indices[start:end], scores[start:end], group.world_size, group.rank_in_group,
+            interleave, sort_candidates=presorted, fuse_sort=return_local and presorted,
+        )
+        gathered = group.all_gather(packed, dim=0)
+        merge_packed_candidates(
+            gathered, packed.shape[0], group.world_size, topk,
+            local_rank=group.rank_in_group if return_local else None,
+            interleave=interleave, out=output[start:end],
+            presorted=presorted, owner_sharded=return_local and presorted,
+        )
+    return output
 </pre>
 </div>
 

@@ -10,8 +10,8 @@
         <button class="btn-code" data-code="code-sfa-dcp-impl" type="button">
           &lt;/&gt; sfa_cp.py
         </button>
-        <button class="btn-code" data-code="code-dcp-a2a-fused" type="button">
-          &lt;/&gt; dcp_a2a_fused
+        <button class="btn-code" data-code="code-sharded-indexer" type="button">
+          &lt;/&gt; sharded_indexer.py
         </button>
       </div>
     </div>
@@ -20,19 +20,24 @@
       <div class="img-zoom-wrap">
         <img src="static/images/CP/glm53-dcp-sfa-sharded-indexer.svg" alt="SFA DCP Sharded Indexer Dataflow">
 
-        <!-- 放置于下支路 LightningIndexer 算子框右上角 -->
-        <button class="hotspot-pin" style="left: 41.2%; top: 64.5%;" data-code="code-sfa-dcp-impl" type="button">
-          <span class="pin-label">&lt;/&gt; LightningIndexer 本地候选 Top-K</span>
-        </button>
-
-        <!-- 放置于下支路 merge_candidates 算子框右上角 -->
-        <button class="hotspot-pin" style="left: 71.0%; top: 70.5%;" data-code="code-sfa-dcp-impl" type="button">
-          <span class="pin-label">&lt;/&gt; AllGather &amp; merge_candidates 归并</span>
+        <!-- 放置于上支路 sparse_flash_attn 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 55.0%; top: 24.1%;" data-code="code-sfa-dcp-impl" type="button">
+          <span class="pin-label">&lt;/&gt; sfa_cp.py: AllGather Q &amp; Remap &amp; SFA</span>
         </button>
 
         <!-- 放置于上支路 pack_output_lse -> all2all 算子框右上角 -->
         <button class="hotspot-pin" style="left: 70.0%; top: 24.5%;" data-code="code-dcp-a2a-fused" type="button">
           <span class="pin-label">&lt;/&gt; pack_output_lse &amp; all2all 归并</span>
+        </button>
+
+        <!-- 放置于下支路 LightningIndexer 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 41.6%; top: 64.2%;" data-code="code-sharded-indexer" type="button">
+          <span class="pin-label">&lt;/&gt; indexer.py: 本地候选 Top-K 检索</span>
+        </button>
+
+        <!-- 放置于下支路 merge_candidates 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 70.7%; top: 69.8%;" data-code="code-sharded-indexer" type="button">
+          <span class="pin-label">&lt;/&gt; sharded_indexer.py: distributed_topk 归并</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
