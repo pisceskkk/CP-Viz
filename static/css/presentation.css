@@ -197,12 +197,13 @@ section p {
 section:not(.aligncenter) {
   justify-content: flex-start !important;
   padding-top: 7.2rem;
-  padding-bottom: 3.2rem;
+  padding-bottom: 4.8rem;
 }
 
 @media (min-width: 1024px) {
   section:not(.aligncenter) {
-    padding-top: 7.8rem;
+    padding-top: 7.6rem;
+    padding-bottom: 5.2rem;
   }
 }
 
@@ -968,13 +969,13 @@ section:not(.aligncenter) {
 .img-zoom-wrap {
   position: relative;
   display: block;
-  width: min(100%, calc(58vh * 1400 / 440));
+  width: min(100%, calc(48vh * 1400 / 440));
   margin: 0 auto;
   line-height: 0;
 }
 
 .img-zoom-wrap.overview-zoom-wrap {
-  width: min(100%, calc(50vh * 1400 / 460));
+  width: min(100%, calc(46vh * 1400 / 460));
 }
 
 .img-zoom-wrap img {
