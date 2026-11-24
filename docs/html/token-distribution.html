@@ -80,6 +80,35 @@
       accent-color: var(--blue);
     }
 
+    .divisor-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .divisor-btn {
+      flex: 1;
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: #334155;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .divisor-btn:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    .divisor-btn.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #ffffff;
+    }
+
     .content {
       display: grid;
       grid-template-rows: auto minmax(0, 1fr);
@@ -240,8 +269,14 @@
       </label>
 
       <label>
-        <span>Interleave size <span class="value" id="interleaveValue"></span></span>
-        <input id="interleave" type="range" min="1" max="16" step="1" value="4">
+        <span>Interleave size (block_size=16 的因数) <span class="value" id="interleaveValue">4</span></span>
+        <div class="divisor-group" id="divisorGroup">
+          <button type="button" class="divisor-btn" data-val="1">1</button>
+          <button type="button" class="divisor-btn" data-val="2">2</button>
+          <button type="button" class="divisor-btn active" data-val="4">4</button>
+          <button type="button" class="divisor-btn" data-val="8">8</button>
+          <button type="button" class="divisor-btn" data-val="16">16</button>
+        </div>
       </label>
     </aside>
 
@@ -283,9 +318,10 @@
     const palette = ['#bae6fd', '#bbf7d0', '#fed7aa', '#fecaca', '#ddd6fe', '#ccfbf1', '#fde68a', '#e2e8f0'];
     const controls = {
       tokenCount: document.getElementById('tokenCount'),
-      dcpSize: document.getElementById('dcpSize'),
-      interleave: document.getElementById('interleave')
+      dcpSize: document.getElementById('dcpSize')
     };
+    const divisorBtns = document.querySelectorAll('.divisor-btn');
+    let currentInterleave = 4;
 
     function intValue(name) {
       return Number.parseInt(controls[name].value, 10);
@@ -298,7 +334,7 @@
     function render() {
       const tokenCount = intValue('tokenCount');
       const dcpSize = intValue('dcpSize');
-      const interleave = intValue('interleave');
+      const interleave = currentInterleave;
       const perRank = Array.from({ length: dcpSize }, () => []);
 
       for (let token = 0; token < tokenCount; token += 1) {
@@ -362,6 +398,13 @@
     }
 
     Object.values(controls).forEach(control => control.addEventListener('input', render));
+    divisorBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentInterleave = Number.parseInt(btn.dataset.val, 10);
+        divisorBtns.forEach(b => b.classList.toggle('active', b === btn));
+        render();
+      });
+    });
     render();
   </script>
 </body>

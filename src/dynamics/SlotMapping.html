@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DCP Slot Mapping Visualizer</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #dbe4ef;
+      --brand: #0369a1;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    .app {
+      max-width: 1220px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 310px 280px 1fr;
+      gap: 18px;
+      align-items: center;
+      padding: 14px 18px;
+    }
+
+    .control {
+      display: grid;
+      gap: 6px;
+      font-size: 12.5px;
+    }
+
+    .control label {
+      font-weight: 700;
+      color: #334155;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .value {
+      color: var(--brand);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .divisor-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .divisor-btn {
+      flex: 1;
+      height: 30px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #334155;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .divisor-btn:hover {
+      border-color: var(--brand);
+      color: var(--brand);
+    }
+
+    .divisor-btn.active {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(3, 105, 161, 0.2);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--brand);
+    }
+
+    .formula-box {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      color: #334155;
+      background: #f1f5f9;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border-left: 3px solid var(--brand);
+    }
+
+    .slot-board {
+      padding: 16px 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .board-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .board-head h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .slot-card {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 7px 10px;
+      border: 1px solid #dbe4ef;
+      border-radius: 7px;
+      background: #fbfdff;
+    }
+
+    .slot-label {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .chip {
+      width: 44px;
+      height: 24px;
+      border-radius: 5px;
+      border: 1px solid #93c5fd;
+      background: #dbeafe;
+      color: #1e3a8a;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11.5px;
+      font-variant-numeric: tabular-nums;
+      transition: transform 0.12s;
+    }
+
+    .chip.decode-tok {
+      border-color: #c084fc;
+      background: #f3e8ff;
+      color: #6b21a8;
+      font-weight: 700;
+    }
+
+    .chip.local {
+      border-color: #4ade80;
+      background: #bbf7d0;
+      color: #166534;
+      font-weight: 700;
+    }
+
+    .chip.miss {
+      border-color: #e2e8f0;
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+
+    @media (max-width: 900px) {
+      .controls {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="panel controls">
+      <div class="control">
+        <label>
+          <span>Block interleave size (block_size=16 的因数)</span>
+          <span class="value"><span id="interleaveSizeVal">4</span> tokens</span>
+        </label>
+        <div class="divisor-group">
+          <button type="button" class="divisor-btn" data-val="1">1</button>
+          <button type="button" class="divisor-btn" data-val="2">2</button>
+          <button type="button" class="divisor-btn active" data-val="4">4</button>
+          <button type="button" class="divisor-btn" data-val="8">8</button>
+          <button type="button" class="divisor-btn" data-val="16">16</button>
+        </div>
+      </div>
+
+      <div class="control">
+        <label for="pTokenCount">
+          <span>Prefill (P) Token 数量</span>
+          <span class="value" id="pTokenCountVal">24</span>
+        </label>
+        <input id="pTokenCount" type="range" min="8" max="32" step="4" value="24" />
+      </div>
+
+      <div class="formula-box">
+        owner_rank = floor(pos / interleave) % DCP<br>
+        local_offset = floor(pos / (interleave &times; DCP)) &times; interleave + (pos % interleave)<br>
+        slot_id = (owner_rank == rank) ? (block_base + local_offset) : <strong>-1 (PAD_SLOT_ID)</strong>
+      </div>
+    </section>
+
+    <section class="panel slot-board">
+      <div class="board-head">
+        <h2>混合 Batch (2 个 Decode + N 个 Prefill Token) 在各 DCP Rank 上的 Slot Mapping</h2>
+        <div class="legend">
+          <span><i class="dot" style="background:#f3e8ff;border:1px solid #c084fc;"></i>Decode Token (D20 @ base 128, D27 @ base 256)</span>
+          <span><i class="dot" style="background:#dbeafe;border:1px solid #93c5fd;"></i>Prefill Token (P0..Pn @ base 384)</span>
+          <span><i class="dot" style="background:#bbf7d0;border:1px solid #4ade80;"></i>本卡有效物理 Slot</span>
+          <span><i class="dot" style="background:#f1f5f9;border:1px solid #cbd5e1;"></i>非本卡归属 (-1)</span>
+        </div>
+      </div>
+
+      <div class="slot-card">
+        <div class="slot-label">token order</div>
+        <div class="chip-row" id="tokenOrder"></div>
+      </div>
+
+      <div id="slotRows" style="display:grid; gap:8px;"></div>
+    </section>
+  </div>
+
+  <script>
+    const CP_SIZE = 4;
+    const pTokenCountEl = document.getElementById("pTokenCount");
+    const slotRowsEl = document.getElementById("slotRows");
+    const tokenOrderEl = document.getElementById("tokenOrder");
+    const divisorBtns = document.querySelectorAll(".divisor-btn");
+
+    let currentInterleave = 4;
+
+    function makeChip(value, cls = "", title = "") {
+      const span = document.createElement("span");
+      span.className = `chip ${cls}`;
+      span.textContent = value;
+      if (title) span.title = title;
+      return span;
+    }
+
+    function buildTokenOrderExample(pTokenCount) {
+      const order = [];
+      order.push({ kind: "D", id: 20, tokenId: 20, startId: 128 });
+      order.push({ kind: "D", id: 27, tokenId: 27, startId: 256 });
+      for (let i = 0; i < pTokenCount; i++) {
+        order.push({ kind: "P", id: i, tokenId: i, startId: 384 });
+      }
+      return order;
+    }
+
+    function render() {
+      const pTokenCount = Number(pTokenCountEl.value);
+      document.getElementById("interleaveSizeVal").textContent = currentInterleave;
+      document.getElementById("pTokenCountVal").textContent = pTokenCount;
+
+      const order = buildTokenOrderExample(pTokenCount);
+      slotRowsEl.innerHTML = "";
+      tokenOrderEl.innerHTML = "";
+
+      for (const item of order) {
+        tokenOrderEl.appendChild(
+          makeChip(
+            `${item.kind}${item.id}`,
+            item.kind === "D" ? "decode-tok" : "",
+            `pos=${item.tokenId}, base_slot=${item.startId}`
+          )
+        );
+      }
+
+      for (let localDcpRank = 0; localDcpRank < CP_SIZE; localDcpRank++) {
+        const card = document.createElement("div");
+        card.className = "slot-card";
+
+        const label = document.createElement("div");
+        label.className = "slot-label";
+        label.textContent = `slot@dcp${localDcpRank}`;
+
+        const row = document.createElement("div");
+        row.className = "chip-row";
+
+        for (const item of order) {
+          const tokenId = item.tokenId;
+          const owner = Math.floor(tokenId / currentInterleave) % CP_SIZE;
+          const localIndex =
+            Math.floor(tokenId / (currentInterleave * CP_SIZE)) * currentInterleave +
+            (tokenId % currentInterleave);
+          const physicalSlot = item.startId + localIndex;
+          const isLocal = owner === localDcpRank;
+
+          row.appendChild(
+            makeChip(
+              isLocal ? physicalSlot : "-1",
+              isLocal ? "local" : "miss",
+              isLocal
+                ? `${item.kind}${item.id} (pos=${tokenId}) → DCP${localDcpRank} slot ${physicalSlot}`
+                : `${item.kind}${item.id} (pos=${tokenId}) 归属 DCP${owner}，本卡写 -1`
+            )
+          );
+        }
+
+        card.appendChild(label);
+        card.appendChild(row);
+        slotRowsEl.appendChild(card);
+      }
+    }
+
+    divisorBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentInterleave = Number(btn.dataset.val);
+        divisorBtns.forEach((b) => b.classList.toggle("active", b === btn));
+        render();
+      });
+    });
+
+    pTokenCountEl.addEventListener("input", render);
+    pTokenCountEl.addEventListener("change", render);
+
+    render();
+  </script>
+</body>
+</html>
