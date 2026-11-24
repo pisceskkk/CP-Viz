@@ -1,0 +1,28 @@
+<div id="branch-chunked-prefill" class="branch-slide" data-branch-title="Chunked Prefill 四种方案对比">
+  <div class="branch-page">
+    <div class="wrap">
+      <div class="interactive-card">
+        <div class="interactive-card-bar">
+          <span class="interactive-card-title">
+            <span class="interactive-card-dot"></span>
+            PCP &amp; DCP w/ Chunked Prefill 四种技术方案架构对比（AllGather Q / AllGather KV / Ring Attention / 先写 KV Cache 统一 Attention）
+          </span>
+          <button class="btn-code" data-code="code-dcp-impl-mixin" type="button" style="padding:0.25rem 0.8rem; font-size:1.15rem;">
+            &lt;/&gt; DCPImplMixin
+          </button>
+        </div>
+        <div class="interactive-card-body" style="height:75vh; display:flex; align-items:center; justify-content:center; padding:1.2rem; overflow:auto;">
+          <div class="img-zoom-wrap" style="width:min(100%, calc(70vh * 1400 / 595));">
+            <img src="static/images/CP/glm53-dcp-chunked-schemes.svg" alt="PCP & DCP w/ Chunked Prefill 4 Schemes">
+            <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

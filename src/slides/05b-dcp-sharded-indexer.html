@@ -1,0 +1,62 @@
+<!-- Slide 05b (#slide=7): DCP ④ Sparse Attention Sharded Indexer 数据流 -->
+<section data-stage="02 DCP">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>DCP ④：Sparse Attention 的 Sharded Indexer 数据流</strong></h3>
+        <p class="slide-subtitle">Indexer Cache 与主 KV 按相同 DCP Token Owner 切分：各卡选本地候选 Top-K &#8594; AllGather 归并全局 Top-K &#8594; Remap 本地稀疏注意力</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-code" data-code="code-sfa-dcp-impl" type="button">
+          &lt;/&gt; sfa_cp.py
+        </button>
+        <button class="btn-code" data-code="code-dcp-a2a-fused" type="button">
+          &lt;/&gt; dcp_a2a_fused
+        </button>
+      </div>
+    </div>
+
+    <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
+      <div class="img-zoom-wrap">
+        <img src="static/images/CP/glm53-dcp-sfa-sharded-indexer.svg" alt="SFA DCP Sharded Indexer Dataflow">
+
+        <!-- 放置于下支路 LightningIndexer 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 43.5%; top: 64.5%;" data-code="code-sfa-dcp-impl" type="button">
+          <span class="pin-label">&lt;/&gt; LightningIndexer 本地候选 Top-K</span>
+        </button>
+
+        <!-- 放置于下支路 merge_candidates 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 71.8%; top: 64.5%;" data-code="code-sfa-dcp-impl" type="button">
+          <span class="pin-label">&lt;/&gt; AllGather &amp; merge_candidates 归并</span>
+        </button>
+
+        <!-- 放置于上支路 pack_output_lse -> all2all 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 80.6%; top: 21.8%;" data-code="code-dcp-a2a-fused" type="button">
+          <span class="pin-label">&lt;/&gt; pack_output_lse &amp; all2all 归并</span>
+        </button>
+
+        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="template-grid-3">
+      <div class="surface-card" style="padding:1rem 1.4rem;">
+        <h4>1. 本地候选 Top-K 选择</h4>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;"><code>LightningIndexer</code> 对本卡 <code>1/DCP</code> 索引缓存选出 <code>[X, topk]</code>。</p>
+      </div>
+      <div class="surface-card" style="padding:1rem 1.4rem;">
+        <h4>2. 跨卡归并全局 Top-K</h4>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">打包 <code>(indices, score)</code> 跨 DCP AllGather 后归并出全局 <code>[X, topk]</code>。</p>
+      </div>
+      <div class="surface-card" style="padding:1rem 1.4rem;">
+        <h4>3. Remap 本地 Select &amp; All2All</h4>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">过滤出落在本卡的 <code>local_topk</code> 读取主 KV，算完经 All2All 归并。</p>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1063,77 +1063,301 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
 
 
 # =============================================================================
-# 4. DCP Prefill & Chunked Prefill (Full/Dense Attention vs Sparse Attention)
+# 4A. DCP ③: Chunked Prefill (Main Slide: AllGather KV Cache Scheme)
 # =============================================================================
-def diag_4_dcp_sfa_prefill() -> tuple[list[dict], int, int]:
-    """Slide 05: DCP Prefill & Chunked Prefill across Full Attention / MLA and SFA."""
+def diag_4a_dcp_chunked_prefill() -> tuple[list[dict], int, int]:
+    """Slide 05a (#slide=6): DCP Chunked Prefill using AllGather KV Cache (Slide 5 style)."""
     els: list[dict] = []
-    add_zone(els, "z_full", 25, 25, 650, 390, "1 · Full Attention / Dense MLA：分块 AllGather 历史 KV", "#f0f9ff", "#0284c7", "#0369a1")
-    add_box(
-        els,
-        "mla_1",
-        55,
-        80,
-        590,
-        92,
-        "Step 1: 当前 Chunk 新 KV 写入本地归属 DCP Slot\n(非归属 Token 写 -1，各卡仅存 1/DCP 历史与当前块)",
-        "#e0f2fe",
-        "#0284c7",
-        font_size=15,
-    )
-    add_box(
-        els,
-        "mla_2",
-        55,
-        192,
-        590,
-        92,
-        "Step 2: 分块 Workspace AllGather 历史 Cached KV\n按 lcm(block_size, I × DCP) 划窗，跨 DCP 收集并按 kv_rank_offsets 还原顺序",
-        "#bae6fd",
-        "#0284c7",
-        font_size=15,
-    )
-    add_box(
-        els,
-        "mla_3",
-        55,
-        304,
-        590,
-        86,
-        "Step 3: 拼接连续 KV 计算因果 Prefill Attention (或与本地 Q 做 LSE 合并)",
-        "#dcfce7",
-        "#16a34a",
-        font_size=15,
-    )
-    add_arrow(els, "a_m1", [[350, 172], [350, 192]], "#0284c7")
-    add_arrow(els, "a_m2", [[350, 284], [350, 304]], "#16a34a")
 
-    add_zone(els, "z_sfa", 715, 25, 660, 390, "2 · Sparse Attention (SFA)：主 KV 与 Indexer Cache 协同", "#faf5ff", "#7c3aed", "#6d28d9")
-    add_box(
-        els,
-        "sfa_shd",
-        745,
-        80,
-        600,
-        135,
-        "• Sharded Indexer + Sharded 主 KV (默认全切分)\n  Indexer Cache 与主 KV 均按相同 DCP Token Owner 切分 (1/DCP)\n  各卡选出本地候选 [T, 1, K_local] → Triton 基数排序跨卡归并 Top-K",
-        "#f3e8ff",
-        "#7c3aed",
-        font_size=15,
-    )
-    add_box(
-        els,
-        "sfa_rep",
-        745,
-        245,
-        600,
-        140,
-        "• Replicated Indexer + Sharded 主 KV (压缩 Indexer 优化)\n  当 Indexer 采用高倍池化压缩 (如 4:1 KPool) 时，Indexer Cache 可全卡复制\n  零通信直出全局 Top-K；Prefill 写完主 KV 后按紧凑块表 AllGather 活跃 KV 块",
-        "#fef3c7",
-        "#d97706",
-        font_size=15,
-    )
-    return els, 1400, 440
+    ZONE_BG = "#f8fafc"
+    ZONE_STROKE = "#94a3b8"
+    OP_BG = "#e0f2fe"
+    OP_STROKE = "#0284c7"
+    ARROW_COLOR = "#0284c7"
+    TEXT_BLACK = "#0f172a"
+
+    add_zone(els, "z_cp1", 95, 25, 390, 390, "STAGE 1 · 当前步新 KV 落盘与历史 KV 收集", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_cp2", 505, 25, 425, 390, "STAGE 2 · 分块迭代计算 Current & Context Attention", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_cp3", 950, 25, 420, 390, "STAGE 3 · LSE 修正合并 (correct_attn) 与输出", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+
+    # Stage 1 operators
+    add_box(els, "cp_qkv", 115, 115, 145, 84, "QKV Linear\n(当前步 Chunk)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
+    add_box(els, "cp_cache", 115, 275, 145, 84, "Local KV Cache\n(1/DCP 历史块)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
+    add_box(els, "cp_ag_kv", 315, 275, 150, 84, "AllGather KV\n(跨 DCP 收集历史块\n还原连续顺序)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
+
+    # Stage 2 operators
+    add_box(els, "cp_cur_attn", 545, 95, 185, 84, "Current Attention\n(Q_cur × KV_cur)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
+    add_box(els, "cp_ctx_attn", 545, 265, 185, 96, "Context Attention\n(Q_cur × Full Context KV)\n按 Workspace 分块迭代", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
+
+    # Floating iterative box inside Stage 2
+    els.append(make_rect("cp_iter_box", 748, 252, 166, 120, "#ffffff", "#64748b", stroke_width=1, stroke_style="dashed", fill_style="solid"))
+    els.append(make_text("cp_iter_txt", 754, 260, 154, 104, "分块 Workspace 循环:\nfor chunk_i in ctx_kv:\n  AllGather(chunk_i)\n  O_i, lse_i = Attn(Q, chunk_i)\n  O_ctx = correct_attn(...)", font_size=11, color="#334155", align="left"))
+
+    # Stage 3 operators
+    add_box(els, "cp_correct", 985, 175, 175, 90, "correct_attn\n合并 Current 与 Context\n(LSE 加权归一化)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
+    add_box(els, "cp_oproj", 1200, 175, 150, 90, "o_proj\n(TP AllReduce)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
+
+    # Arrows & Blue Tensor Labels
+    add_arrow(els, "w_cp_in", [[16, 157], [115, 157]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_in", 60, 132, "hidden\n[T, H]", font_size=13)
+
+    add_arrow(els, "w_cp_q1", [[260, 137], [545, 137]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_q1", 395, 120, "Q_cur [T, N_h/TP, D]")
+
+    add_arrow(els, "w_cp_q2", [[260, 175], [490, 175], [490, 295], [545, 295]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_q2", 385, 192, "KV_cur [T, N_h/TP, D]")
+
+    add_arrow(els, "w_cp_k1", [[187, 199], [187, 275]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_k1", 232, 236, "写归属 Slot")
+
+    add_arrow(els, "w_cp_k2", [[260, 317], [315, 317]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_k2", 285, 374, "local_ctx [S/DCP, H/TP]")
+
+    add_arrow(els, "w_cp_k3", [[465, 317], [545, 317]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_k3", 505, 374, "full_ctx [S, H/TP]")
+
+    add_arrow(els, "w_cp_o1", [[730, 137], [935, 137], [935, 200], [985, 200]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_o1", 835, 120, "cur O / lse [T, N_h/TP, D]")
+
+    add_arrow(els, "w_cp_o2", [[730, 295], [748, 295]], "#64748b", stroke_style="dashed")
+    add_arrow(els, "w_cp_o3", [[730, 330], [935, 330], [935, 242], [985, 242]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_o3", 835, 346, "ctx O / lse [T, N_h/TP, D]")
+
+    add_arrow(els, "w_cp_m", [[1160, 220], [1200, 220]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_m", 1180, 156, "full O [T, N_h/TP, D]")
+
+    add_arrow(els, "w_cp_out", [[1350, 220], [1392, 220]], ARROW_COLOR)
+
+    return els, 1400, 435
+
+
+# =============================================================================
+# 4B. Branch Detail: PCP & DCP w/ Chunked Prefill 4 Schemes Comparison
+# (Replicating user's uploaded 4-quadrant diagram in Excalidraw style)
+# =============================================================================
+def diag_4b_chunked_prefill_schemes() -> tuple[list[dict], int, int]:
+    """Branch diagram: 4 schemes of PCP&DCP w/ chunked prefill (AllGather Q, AllGather KV, Ring Attention, Save-KV-First)."""
+    els: list[dict] = []
+
+    ZONE_BG = "#f8fafc"
+    ZONE_STROKE = "#94a3b8"
+    OP_BG = "#e0f2fe"
+    OP_STROKE = "#0284c7"
+    COMM_BG = "#ffffff"
+    COMM_STROKE = "#334155"
+    KV_BG = "#ffedd5"
+    KV_STROKE = "#d97706"
+    ARROW_COLOR = "#0284c7"
+    TEXT_BLACK = "#0f172a"
+
+    # Quadrant 1 (Top-Left): AllGather Q
+    add_zone(els, "q1_zone", 15, 15, 670, 275, "方案 A · AllGather Q (收集 Query 对本地 Partial KV 计算)", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_box(els, "q1_pcp_ag", 150, 58, 105, 44, "PCP Group\nAllGather", COMM_BG, COMM_STROKE, text_color="#dc2626", font_size=12)
+    add_box(els, "q1_att1", 375, 72, 90, 44, "Attention", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "q1_dcp_ag", 150, 165, 105, 48, "DCP AG dim1\nPCP AG dim0", COMM_BG, COMM_STROKE, text_color="#dc2626", font_size=12)
+    add_box(els, "q1_kv", 40, 225, 90, 42, "KV Cache", KV_BG, KV_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "q1_att2", 375, 195, 90, 44, "Attention", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "q1_rs", 478, 145, 118, 42, "cp_lse_ag_out_rs(dcp)\nscatter(pcp)", COMM_BG, COMM_STROKE, text_color="#dc2626", font_size=10)
+    add_box(els, "q1_corr", 545, 82, 88, 44, "correct_attn", COMM_BG, COMM_STROKE, text_color="#dc2626", font_size=12)
+
+    add_wire_label(els, "q1_l1", 82, 78, "cur partial KV\n(seq/pcp, h/tp)", font_size=11)
+    add_arrow(els, "q1_a1", [[132, 80], [150, 80]], ARROW_COLOR)
+    add_arrow(els, "q1_a2", [[255, 80], [375, 85]], ARROW_COLOR)
+    add_wire_label(els, "q1_l2", 315, 65, "cur full KV (seq, h/tp)", font_size=11)
+    add_wire_label(els, "q1_l3", 82, 130, "partial Q\n(seq/pcp, h/tp)", font_size=11)
+    add_arrow(els, "q1_a3", [[135, 125], [375, 105]], ARROW_COLOR)
+    add_arrow(els, "q1_a4", [[115, 148], [150, 185]], ARROW_COLOR)
+    add_arrow(els, "q1_a5", [[255, 189], [375, 205]], ARROW_COLOR)
+    add_wire_label(els, "q1_l4", 315, 175, "full Q (seq, h*dcp/tp)", font_size=11)
+    add_arrow(els, "q1_a6", [[130, 246], [375, 230]], ARROW_COLOR)
+    add_wire_label(els, "q1_l5", 255, 255, "ctx partial KV (local_ctx, h*dcp/tp)", font_size=11)
+    add_arrow(els, "q1_a7", [[465, 94], [545, 94]], ARROW_COLOR)
+    add_wire_label(els, "q1_l6", 505, 76, "cur full O/lse", font_size=11)
+    add_arrow(els, "q1_a8", [[465, 217], [537, 217], [537, 187]], ARROW_COLOR)
+    add_arrow(els, "q1_a9", [[537, 145], [537, 115], [545, 115]], ARROW_COLOR)
+    add_arrow(els, "q1_a10", [[633, 104], [672, 104]], ARROW_COLOR)
+    add_wire_label(els, "q1_l7", 650, 136, "full O/lse\n(seq/pcp, h/tp)", font_size=11)
+
+    # Quadrant 2 (Top-Right): AllGather KV (Selected Main Scheme)
+    add_zone(els, "q2_zone", 715, 15, 670, 275, "方案 B · AllGather KV (分块收集 Context KV + 迭代 correct_attn)", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_box(els, "q2_pcp_ag", 845, 55, 105, 42, "PCP Group\nAllGather", COMM_BG, COMM_STROKE, text_color="#dc2626", font_size=12)
+    add_box(els, "q2_att1", 1065, 68, 90, 42, "Attention", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "q2_kv", 735, 175, 85, 40, "KV Cache", KV_BG, KV_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "q2_dcp_ag", 845, 172, 105, 46, "DCP AG dim0\nPCP AG dim0", COMM_BG, COMM_STROKE, text_color="#dc2626", font_size=12)
+    add_box(els, "q2_att2", 1065, 155, 90, 42, "Attention", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "q2_corr", 1235, 85, 88, 42, "correct_attn", COMM_BG, COMM_STROKE, text_color="#dc2626", font_size=12)
+
+    # Iterative sub-box inside Q2
+    els.append(make_rect("q2_iter", 865, 226, 495, 54, "#ffffff", "#0284c7", stroke_width=1, stroke_style="solid", fill_style="solid"))
+    els.append(make_text("q2_iter_t", 875, 234, 475, 38, "iteratively compute context KV:  partial Q × context chunked KV (chunk_i)\n→ Attention → O/lse (chunk_i) + O/lse (chunk_0..i-1) → correct_attn → O/lse (chunk_0..i)", font_size=11, color="#0f172a", align="center"))
+
+    add_wire_label(els, "q2_l1", 780, 74, "cur partial KV", font_size=11)
+    add_arrow(els, "q2_a1", [[825, 75], [845, 75]], ARROW_COLOR)
+    add_arrow(els, "q2_a2", [[950, 75], [1065, 80]], ARROW_COLOR)
+    add_wire_label(els, "q2_l2", 1005, 62, "cur full KV", font_size=11)
+    add_wire_label(els, "q2_l3", 780, 125, "partial Q\n(seq/pcp, h/tp)", font_size=11)
+    add_arrow(els, "q2_a3", [[830, 118], [1065, 100]], ARROW_COLOR)
+    add_arrow(els, "q2_a4", [[830, 130], [1065, 165]], ARROW_COLOR)
+    add_arrow(els, "q2_a5", [[820, 195], [845, 195]], ARROW_COLOR)
+    add_arrow(els, "q2_a6", [[950, 195], [1065, 185]], ARROW_COLOR)
+    add_wire_label(els, "q2_l4", 1008, 206, "ctx full KV (global_ctx, h/tp)", font_size=10)
+    add_arrow(els, "q2_a7", [[1155, 88], [1235, 96]], ARROW_COLOR)
+    add_arrow(els, "q2_a8", [[1155, 176], [1215, 176], [1215, 115], [1235, 115]], ARROW_COLOR)
+    add_arrow(els, "q2_a9", [[1110, 197], [1110, 226]], "#334155", stroke_style="dashed")
+    add_arrow(els, "q2_a10", [[1323, 106], [1370, 106]], ARROW_COLOR)
+    add_wire_label(els, "q2_l5", 1345, 140, "full O/lse", font_size=11)
+
+    # Quadrant 3 (Bottom-Left): Ring Attention
+    add_zone(els, "q3_zone", 15, 305, 670, 275, "方案 C · Ring Attention (环形传递 Context Partial KV 块)", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_box(els, "q3_pcp_ag", 150, 350, 105, 44, "PCP Group\nAllGather", COMM_BG, COMM_STROKE, text_color="#dc2626", font_size=12)
+    add_box(els, "q3_att1", 375, 365, 90, 44, "Attention", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "q3_kv", 40, 505, 90, 42, "KV Cache", KV_BG, KV_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "q3_ring", 365, 490, 110, 44, "Ring Attention", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "q3_corr", 545, 380, 88, 44, "correct_attn", COMM_BG, COMM_STROKE, text_color="#dc2626", font_size=12)
+
+    add_wire_label(els, "q3_l1", 82, 370, "cur partial KV", font_size=11)
+    add_arrow(els, "q3_a1", [[132, 372], [150, 372]], ARROW_COLOR)
+    add_arrow(els, "q3_a2", [[255, 372], [375, 378]], ARROW_COLOR)
+    add_wire_label(els, "q3_l2", 315, 358, "cur full KV", font_size=11)
+    add_wire_label(els, "q3_l3", 82, 425, "partial Q\n(seq/pcp, h/tp)", font_size=11)
+    add_arrow(els, "q3_a3", [[135, 420], [375, 396]], ARROW_COLOR)
+    add_arrow(els, "q3_a4", [[135, 435], [365, 502]], ARROW_COLOR)
+    add_arrow(els, "q3_a5", [[130, 526], [365, 520]], ARROW_COLOR)
+    add_wire_label(els, "q3_l4", 248, 542, "context partial KV (ring pass)", font_size=11)
+    add_arrow(els, "q3_a6", [[465, 387], [545, 392]], ARROW_COLOR)
+    add_arrow(els, "q3_a7", [[475, 512], [520, 512], [520, 412], [545, 412]], ARROW_COLOR)
+    add_wire_label(els, "q3_l5", 495, 460, "ctx full O/lse", font_size=11)
+    add_arrow(els, "q3_a8", [[633, 402], [672, 402]], ARROW_COLOR)
+
+    # Quadrant 4 (Bottom-Right): Save KV Cache First & Unified Attention
+    add_zone(els, "q4_zone", 715, 305, 670, 275, "方案 D · 先写 KV Cache + 统一 Attention (Custom Mask / Head-Tail Dual-Attn)", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_box(els, "q4_kv", 760, 385, 95, 46, "KV Cache\n(先写入新 KV)", KV_BG, KV_STROKE, text_color=TEXT_BLACK, font_size=12)
+    add_box(els, "q4_ag", 895, 385, 115, 46, "DCP AG dim0\nPCP AG dim0", COMM_BG, COMM_STROKE, text_color="#dc2626", font_size=12)
+    add_box(els, "q4_att", 1125, 420, 105, 52, "Attention\n(迭代分块 KV)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+
+    add_arrow(els, "q4_a1", [[855, 408], [895, 408]], ARROW_COLOR)
+    add_arrow(els, "q4_a2", [[1010, 408], [1125, 435]], ARROW_COLOR)
+    add_wire_label(els, "q4_l1", 1068, 392, "full KV (seq, h/tp)", font_size=11)
+    add_wire_label(els, "q4_l2", 810, 495, "partial Q\n(seq/pcp, h/tp)", font_size=12)
+    add_arrow(els, "q4_a3", [[870, 495], [1125, 458]], ARROW_COLOR)
+    add_arrow(els, "q4_a4", [[1230, 446], [1345, 446]], ARROW_COLOR)
+    add_wire_label(els, "q4_l3", 1290, 425, "full O/lse\n(seq/pcp, h/tp)", font_size=11)
+    add_arrow(els, "q4_a5", [[1177, 472], [1177, 528]], "#334155", stroke_style="dashed")
+    add_wire_label(els, "q4_l4", 1177, 545, "iteratively compute KV (配合 custom_mask / head-tail dual-attn)", font_size=11)
+
+    return els, 1400, 595
+
+
+# =============================================================================
+# 4C. DCP ④: SFA + DCP Sharded Indexer Dataflow (From sfa_dcp.excalidraw in Slide 5 style)
+# =============================================================================
+def diag_4c_dcp_sharded_indexer() -> tuple[list[dict], int, int]:
+    """Slide 05b (#slide=7): SFA + DCP Sharded Indexer operator dataflow (based on sfa_dcp.excalidraw)."""
+    els: list[dict] = []
+
+    ZONE_BG = "#f8fafc"
+    ZONE_STROKE = "#94a3b8"
+    OP_BG = "#e0f2fe"
+    OP_STROKE = "#0284c7"
+    ARROW_COLOR = "#0284c7"
+    TEXT_BLACK = "#0f172a"
+
+    # Upper Lane: Main SFA Attention (DCP Sharded KV + Select + SFA + All2All LSE Combine)
+    add_zone(els, "z_sfa_main", 130, 15, 1255, 205, "UPPER LANE · SFA 主注意力路径 (Save Local KV → Select Local Top-K → Sparse Flash Attn → All2All LSE 归并)", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+
+    # Lower Lane: Sharded Indexer (LightningIndexer -> Pack(idx, score) -> AllGather -> Merge Candidates -> Remap)
+    add_zone(els, "z_sfa_idx", 130, 232, 895, 215, "LOWER LANE · Sharded Indexer 路径 (各卡选本地候选 → AllGather → Merge 全局 Top-K)", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+
+    # Entry HiddenStates
+    add_arrow(els, "si_in", [[12, 165], [145, 165]], ARROW_COLOR)
+    add_wire_label(els, "si_l_in", 68, 140, "HiddenStates\n[X, hs]", font_size=13)
+
+    # Upper Lane Operators
+    add_box(els, "si_kv_down", 145, 58, 130, 52, "kv_down_proj", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
+    add_box(els, "si_save_kv", 335, 58, 130, 52, "save local\nkvcache", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "si_select", 545, 58, 105, 52, "select\n(按本地 topk)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+
+    add_box(els, "si_q_down", 145, 145, 130, 52, "q_down_proj", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
+    add_box(els, "si_q_up", 335, 145, 130, 52, "q_up_proj\n(TP shard)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "si_q_ag", 525, 145, 125, 52, "AllGather\nQ Head", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+
+    add_box(els, "si_sfa", 715, 98, 165, 62, "sparse_flash_attn\n(Q × Local Selected KV)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "si_a2a", 935, 98, 195, 62, "pack_output_lse\n→ all2all → update_attn", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "si_kv_up", 1185, 98, 180, 62, "kv_up_proj → o_proj\n(输出 [X, hs])", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+
+    # Lower Lane Operators (Sharded Indexer)
+    add_box(els, "si_wq", 145, 265, 130, 48, "Wq_up / W_proj\n(replicated)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=12)
+    add_box(els, "si_wk", 145, 345, 130, 48, "Wk (replicated)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=12)
+    add_box(els, "si_idx_kv", 305, 345, 115, 48, "save local\nindexer kv", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=12)
+    add_box(els, "si_li", 455, 295, 155, 62, "LightningIndexer\n(算本地 1/DCP 分片)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "si_pack_ag", 665, 295, 145, 62, "pack(idx, score)\n→ DCP AllGather", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+    add_box(els, "si_merge", 860, 295, 145, 62, "merge_candidates\n(选全局 Top-K)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=13)
+
+    # Floating Callout OUTSIDE on Bottom-Right: "Remap to local top-k" (From sfa_dcp.excalidraw: 8K -> 4K/4K -> N / M)
+    els.append(make_rect("si_remap_card", 1045, 232, 340, 215, "#ffffff", "#cbd5e1", stroke_width=1, stroke_style="solid", fill_style="solid"))
+    els.append(make_text("si_remap_title", 1055, 240, 320, 20, "Remap to SFA_local top-k (全局 Top-K → 本地分片过滤)", font_size=12, color="#0f172a", align="center"))
+
+    # Left side of callout: Global 8K context vs 2K global top-k
+    add_mini_cell(els, "rm_8k", 1065, 272, 135, 30, "#e0f2fe", "#0284c7", "Global Context (8K)", font_size=10)
+    add_mini_cell(els, "rm_2k_g", 1090, 345, 85, 26, "#fef08a", "#334155", "Global TopK (2K)", font_size=9)
+    add_arrow(els, "rm_a1", [[1110, 345], [1085, 304]], "#334155", stroke_width=1)
+    add_arrow(els, "rm_a2", [[1132, 345], [1132, 304]], "#334155", stroke_width=1)
+    add_arrow(els, "rm_a3", [[1155, 345], [1180, 304]], "#334155", stroke_width=1)
+
+    add_arrow(els, "rm_mid", [[1208, 320], [1232, 320]], "#0284c7", stroke_width=2)
+
+    # Right side of callout: DCP Sharded 4K | 4K and Local Top-K split into N (rank0) | M (rank1)
+    add_mini_cell(els, "rm_4k_0", 1240, 272, 62, 30, "#e0f2fe", "#0284c7", "Rank0 (4K)", font_size=9)
+    add_mini_cell(els, "rm_4k_1", 1306, 272, 62, 30, "#f1f5f9", "#94a3b8", "Rank1 (4K)", font_size=9)
+    add_mini_cell(els, "rm_2k_l", 1262, 345, 85, 24, "#fef08a", "#334155", "Global TopK (2K)", font_size=9)
+    add_mini_cell(els, "rm_n", 1262, 372, 38, 26, "#bbf7d0", "#16a34a", "N (本地)", font_size=9)
+    add_mini_cell(els, "rm_m", 1302, 372, 45, 26, "#f1f5f9", "#94a3b8", "M (远端)", font_size=9)
+    add_arrow(els, "rm_a4", [[1280, 345], [1270, 304]], "#0284c7", stroke_width=1)
+    add_arrow(els, "rm_a5", [[1325, 345], [1335, 304]], "#94a3b8", stroke_width=1, stroke_style="dashed")
+    els.append(make_text("si_remap_cap", 1055, 410, 320, 26, "过滤出落在本卡的 N 个 local_topk 索引并重映射为本地偏移", font_size=10.5, color="#334155", align="center"))
+
+    # Upper Lane Wires & Labels
+    add_arrow(els, "si_w1", [[115, 165], [115, 84], [145, 84]], ARROW_COLOR)
+    add_arrow(els, "si_w2", [[275, 84], [335, 84]], ARROW_COLOR)
+    add_wire_label(els, "si_l1", 305, 46, "[X, hs_c]", font_size=12)
+    add_arrow(els, "si_w3", [[465, 84], [545, 84]], ARROW_COLOR)
+    add_wire_label(els, "si_l2", 505, 46, "[CTX/DCP, hs_c]", font_size=12)
+    add_arrow(els, "si_w4", [[650, 84], [685, 84], [685, 115], [715, 115]], ARROW_COLOR)
+    add_wire_label(els, "si_l3", 685, 46, "[X, local_topk, hs_c]", font_size=12)
+
+    add_arrow(els, "si_w5", [[275, 171], [335, 171]], ARROW_COLOR)
+    add_wire_label(els, "si_l4", 305, 133, "[X, hs_c]", font_size=12)
+    add_arrow(els, "si_w6", [[465, 171], [525, 171]], ARROW_COLOR)
+    add_wire_label(els, "si_l5", 495, 133, "[X, hs/TP]", font_size=12)
+    add_arrow(els, "si_w7", [[650, 171], [685, 171], [685, 142], [715, 142]], ARROW_COLOR)
+    add_wire_label(els, "si_l6", 682, 186, "Q_full [X, hs]", font_size=12)
+
+    add_arrow(els, "si_w8", [[880, 129], [935, 129]], ARROW_COLOR)
+    add_wire_label(els, "si_l7", 908, 84, "O_j, lse_j [X, hs]", font_size=12)
+    add_arrow(els, "si_w9", [[1130, 129], [1185, 129]], ARROW_COLOR)
+    add_wire_label(els, "si_l8", 1158, 84, "[X, hs/TP]", font_size=12)
+
+    # Lower Lane Wires & Labels
+    add_arrow(els, "si_w10", [[115, 165], [115, 289], [145, 289]], ARROW_COLOR)
+    add_arrow(els, "si_w11", [[115, 289], [115, 369], [145, 369]], ARROW_COLOR)
+    add_arrow(els, "si_w12", [[210, 197], [210, 265]], ARROW_COLOR)
+    add_arrow(els, "si_w13", [[275, 289], [430, 289], [430, 315], [455, 315]], ARROW_COLOR)
+    add_wire_label(els, "si_l9", 360, 274, "Q_idx, weights [X, hs]", font_size=12)
+    add_arrow(els, "si_w14", [[275, 369], [305, 369]], ARROW_COLOR)
+    add_arrow(els, "si_w15", [[420, 369], [435, 369], [435, 338], [455, 338]], ARROW_COLOR)
+    add_wire_label(els, "si_l10", 362, 410, "K_idx [CTX/DCP, hs_c]", font_size=12)
+
+    add_arrow(els, "si_w16", [[610, 326], [665, 326]], ARROW_COLOR)
+    add_wire_label(els, "si_l11", 638, 376, "LI_local (idx, score)\n[X, topk]", font_size=11)
+    add_arrow(els, "si_w17", [[810, 326], [860, 326]], ARROW_COLOR)
+    add_wire_label(els, "si_l12", 835, 376, "all local candidates\n[X, topk*dcp]", font_size=11)
+
+    # Remap arrow from merge_candidates up to select
+    add_arrow(els, "si_w_remap", [[932, 295], [932, 210], [597, 210], [597, 110]], ARROW_COLOR)
+    add_wire_label(els, "si_l_remap", 795, 196, "global top-k [X, topk] ──(Remap to SFA_local top-k)──►", font_size=12)
+    add_arrow(els, "si_ptr_rm", [[1005, 326], [1045, 326]], "#94a3b8", stroke_width=1, stroke_style="dashed")
+
+    return els, 1400, 460
 
 
 # =============================================================================
@@ -1369,7 +1593,9 @@ def main() -> None:
         "glm53-cp-overview": diag_1_overview,
         "glm53-dcp-slot-mapping": diag_2_dcp_slot_mapping,
         "glm53-dcp-decode": diag_3_dcp_decode,
-        "glm53-dcp-sfa-prefill": diag_4_dcp_sfa_prefill,
+        "glm53-dcp-chunked-prefill": diag_4a_dcp_chunked_prefill,
+        "glm53-dcp-chunked-schemes": diag_4b_chunked_prefill_schemes,
+        "glm53-dcp-sfa-sharded-indexer": diag_4c_dcp_sharded_indexer,
         "glm53-pcp-dualchunk": diag_5_pcp_dualchunk,
         "glm53-pcp-prefill": diag_6_pcp_prefill_general,
         "glm53-pcp-decode-weights": diag_7_pcp_decode_weights,
