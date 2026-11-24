@@ -194,6 +194,8 @@
 <path d="M 2693.3 318.1 Q 2715.5 318.7 2739.4 318.2" fill="none" stroke="#1e1e1e" stroke-width="0.8" stroke-linecap="round"/>
 <path d="M 2739.0 318.2 Q 2734.3 315.3 2728.8 312.6" fill="none" stroke="#1e1e1e" stroke-width="1.5" stroke-linecap="round"/>
 <path d="M 2739.1 318.0 Q 2734.2 320.3 2728.8 323.3" fill="none" stroke="#1e1e1e" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M 2153.9 736.5 Q 2416.4 735.1 2679.4 735.5" fill="none" stroke="#1e1e1e" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="7 5"/>
+<path d="M 2153.4 736.7 Q 2416.9 735.6 2679.2 735.9" fill="none" stroke="#1e1e1e" stroke-width="0.8" stroke-linecap="round" stroke-dasharray="7 5"/>
 <path d="M 2131.2 605.1 Q 2168.6 604.4 2204.1 605.4" fill="none" stroke="#1e1e1e" stroke-width="1.4" stroke-linecap="round"/>
 <path d="M 2131.3 605.8 Q 2166.9 605.6 2204.1 605.3" fill="none" stroke="#1e1e1e" stroke-width="0.8" stroke-linecap="round"/>
 <path d="M 2203.8 605.0 Q 2199.3 602.8 2193.7 599.8" fill="none" stroke="#1e1e1e" stroke-width="1.5" stroke-linecap="round"/>

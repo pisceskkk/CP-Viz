@@ -1248,17 +1248,24 @@ def diag_4b_chunked_prefill_schemes() -> tuple[list[dict], int, int]:
     return els, 1400, 595
 
 
-def render_external_excalidraw(excalidraw_path: Path, out_ex_path: Path, out_svg_path: Path) -> None:
+def render_external_excalidraw(
+    excalidraw_path: Path,
+    out_ex_path: Path,
+    out_svg_path: Path,
+    filter_fn: Any = None,
+) -> None:
     """Directly copy an external .excalidraw file and render its active elements into a faithful hand-drawn SVG."""
     data = json.loads(excalidraw_path.read_text(encoding="utf-8"))
     active_els = [el for el in data.get("elements", []) if not el.get("isDeleted")]
+    if filter_fn is not None:
+        active_els = [el for el in active_els if filter_fn(el)]
 
-    # Compute exact bounding box across all active rectangles, texts, and arrow points
+    # Compute exact bounding box across all active rectangles, texts, lines, and arrow points
     min_x, min_y = float("inf"), float("inf")
     max_x, max_y = float("-inf"), float("-inf")
     for el in active_els:
         x, y = float(el.get("x", 0)), float(el.get("y", 0))
-        if el["type"] == "arrow" and "points" in el:
+        if el["type"] in ("arrow", "line") and "points" in el:
             for dx, dy in el["points"]:
                 min_x = min(min_x, x + dx)
                 min_y = min(min_y, y + dy)
@@ -1284,7 +1291,12 @@ def render_external_excalidraw(excalidraw_path: Path, out_ex_path: Path, out_svg
         c["y"] = float(el.get("y", 0)) + oy
         shifted_els.append(c)
 
-    out_ex_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    if filter_fn is None:
+        out_ex_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    else:
+        sub_doc = dict(data)
+        sub_doc["elements"] = active_els
+        out_ex_path.write_text(json.dumps(sub_doc, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # Render shifted elements directly with full support for transparent/colored text backgrounds and arrow labels
     parts = [
@@ -1314,9 +1326,9 @@ def render_external_excalidraw(excalidraw_path: Path, out_ex_path: Path, out_svg
                     f'stroke-width="{sw}" stroke-linecap="round" stroke-linejoin="round" opacity="{op}"{dash_attr}/>'
                 )
 
-    # 2. Arrows
+    # 2. Arrows & Lines
     for el in shifted_els:
-        if el["type"] == "arrow":
+        if el["type"] in ("arrow", "line") and "points" in el:
             rng = random.Random(el.get("seed", 1))
             x0, y0 = el["x"], el["y"]
             pts = [[x0 + dx, y0 + dy] for dx, dy in el["points"]]
@@ -1333,7 +1345,7 @@ def render_external_excalidraw(excalidraw_path: Path, out_ex_path: Path, out_svg
                         f'<path d="{seg_d}" fill="none" stroke="{color}" stroke-width="{sw:.1f}" '
                         f'stroke-linecap="round"{dash_attr}/>'
                     )
-            if len(pts) >= 2 and el.get("endArrowhead", "arrow") == "arrow":
+            if el["type"] == "arrow" and len(pts) >= 2 and el.get("endArrowhead", "arrow") == "arrow":
                 p_prev, p_tip = pts[-2], pts[-1]
                 ang = math.atan2(p_tip[1] - p_prev[1], p_tip[0] - p_prev[0])
                 head_len = 11.5
@@ -1670,6 +1682,12 @@ def main() -> None:
                 cand,
                 EXCALIDRAW_DIR / "glm53-pcp-prefill.excalidraw",
                 SVG_DIR / "glm53-pcp-prefill.svg",
+            )
+            render_external_excalidraw(
+                cand,
+                EXCALIDRAW_DIR / "glm53-pcp-oproj-sharding.excalidraw",
+                SVG_DIR / "glm53-pcp-oproj-sharding.svg",
+                filter_fn=lambda el: float(el.get("x", 0)) >= 880 and float(el.get("y", 0)) >= 1900,
             )
             break
 
