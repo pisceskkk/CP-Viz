@@ -1076,57 +1076,57 @@ def diag_4a_dcp_chunked_prefill() -> tuple[list[dict], int, int]:
     ARROW_COLOR = "#0284c7"
     TEXT_BLACK = "#0f172a"
 
-    add_zone(els, "z_cp1", 95, 25, 390, 390, "STAGE 1 · 当前步新 KV 落盘与历史 KV 收集", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
-    add_zone(els, "z_cp2", 505, 25, 425, 390, "STAGE 2 · 分块迭代计算 Current & Context Attention", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
-    add_zone(els, "z_cp3", 950, 25, 420, 390, "STAGE 3 · LSE 修正合并 (correct_attn) 与输出", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_cp1", 95, 20, 390, 295, "STAGE 1 · 当前步新 KV 落盘与历史 KV 收集", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_cp2", 505, 20, 415, 295, "STAGE 2 · 计算 Current & Context Attention", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_cp3", 940, 20, 430, 295, "STAGE 3 · LSE 修正合并 (correct_attn) 与输出", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
 
     # Stage 1 operators
-    add_box(els, "cp_qkv", 115, 115, 145, 84, "QKV Linear\n(当前步 Chunk)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
-    add_box(els, "cp_cache", 115, 275, 145, 84, "Local KV Cache\n(1/DCP 历史块)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
-    add_box(els, "cp_ag_kv", 315, 275, 150, 84, "AllGather KV\n(跨 DCP 收集历史块\n还原连续顺序)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
+    add_box(els, "cp_qkv", 115, 78, 145, 78, "QKV Linear\n(当前步 Chunk)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
+    add_box(els, "cp_cache", 115, 210, 145, 78, "Local KV Cache\n(1/DCP 历史块)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
+    add_box(els, "cp_ag_kv", 315, 210, 150, 78, "AllGather KV\n(跨 DCP 收集历史块\n还原连续顺序)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
 
     # Stage 2 operators
-    add_box(els, "cp_cur_attn", 545, 95, 185, 84, "Current Attention\n(Q_cur × KV_cur)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
-    add_box(els, "cp_ctx_attn", 545, 265, 185, 96, "Context Attention\n(Q_cur × Full Context KV)\n按 Workspace 分块迭代", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
+    add_box(els, "cp_cur_attn", 585, 78, 195, 78, "Current Attention\n(Q_cur × KV_cur)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
+    add_box(els, "cp_ctx_attn", 585, 206, 195, 86, "Context Attention\n(Q_cur × Full Context KV)\n按 Workspace 分块迭代", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
 
-    # Floating iterative box inside Stage 2
-    els.append(make_rect("cp_iter_box", 748, 252, 166, 120, "#ffffff", "#64748b", stroke_width=1, stroke_style="dashed", fill_style="solid"))
-    els.append(make_text("cp_iter_txt", 754, 260, 154, 104, "分块 Workspace 循环:\nfor chunk_i in ctx_kv:\n  AllGather(chunk_i)\n  O_i, lse_i = Attn(Q, chunk_i)\n  O_ctx = correct_attn(...)", font_size=11, color="#334155", align="left"))
+    # Floating iterative callout card OUTSIDE below Stage 2 (Zero overlap with main wires!)
+    els.append(make_rect("cp_iter_box", 505, 336, 415, 84, "#ffffff", "#cbd5e1", stroke_width=1, stroke_style="solid", fill_style="solid"))
+    els.append(make_text("cp_iter_txt", 518, 344, 390, 68, "分块 Workspace 迭代计算 Context KV:\nfor chunk_i in context_kv_chunks:\n  full_chunk_i = dcp_group.all_gather(local_chunk_i)\n  O_i, lse_i = Attention(Q_cur, full_chunk_i)  →  correct_attn(O_ctx, O_i)", font_size=11.5, color="#0f172a", align="center"))
+    add_arrow(els, "cp_ptr_iter", [[682, 292], [682, 334]], "#94a3b8", stroke_width=1, stroke_style="dashed")
 
     # Stage 3 operators
-    add_box(els, "cp_correct", 985, 175, 175, 90, "correct_attn\n合并 Current 与 Context\n(LSE 加权归一化)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
-    add_box(els, "cp_oproj", 1200, 175, 150, 90, "o_proj\n(TP AllReduce)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
+    add_box(els, "cp_correct", 975, 138, 175, 86, "correct_attn\n合并 Current 与 Context\n(LSE 加权归一化)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=14)
+    add_box(els, "cp_oproj", 1195, 138, 150, 86, "o_proj\n(TP AllReduce)", OP_BG, OP_STROKE, text_color=TEXT_BLACK, font_size=15)
 
-    # Arrows & Blue Tensor Labels
-    add_arrow(els, "w_cp_in", [[16, 157], [115, 157]], ARROW_COLOR)
-    add_wire_label(els, "l_cp_in", 60, 132, "hidden\n[T, H]", font_size=13)
+    # Arrows & Blue Tensor Labels (Clean horizontal/orthogonal paths with zero overlap)
+    add_arrow(els, "w_cp_in", [[16, 117], [115, 117]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_in", 60, 92, "hidden\n[T, H]", font_size=13)
 
-    add_arrow(els, "w_cp_q1", [[260, 137], [545, 137]], ARROW_COLOR)
-    add_wire_label(els, "l_cp_q1", 395, 120, "Q_cur [T, N_h/TP, D]")
+    add_arrow(els, "w_cp_q1", [[260, 102], [585, 102]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_q1", 405, 86, "Q_cur, KV_cur [T, N_h/TP, D]")
 
-    add_arrow(els, "w_cp_q2", [[260, 175], [490, 175], [490, 295], [545, 295]], ARROW_COLOR)
-    add_wire_label(els, "l_cp_q2", 385, 192, "KV_cur [T, N_h/TP, D]")
+    add_arrow(els, "w_cp_q2", [[260, 134], [525, 134], [525, 232], [585, 232]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_q2", 395, 148, "Q_cur [T, N_h/TP, D]")
 
-    add_arrow(els, "w_cp_k1", [[187, 199], [187, 275]], ARROW_COLOR)
-    add_wire_label(els, "l_cp_k1", 232, 236, "写归属 Slot")
+    add_arrow(els, "w_cp_k1", [[187, 156], [187, 210]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_k1", 232, 182, "写归属 Slot")
 
-    add_arrow(els, "w_cp_k2", [[260, 317], [315, 317]], ARROW_COLOR)
-    add_wire_label(els, "l_cp_k2", 285, 374, "local_ctx [S/DCP, H/TP]")
+    add_arrow(els, "w_cp_k2", [[260, 249], [315, 249]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_k2", 285, 300, "local_ctx [S/DCP, D]")
 
-    add_arrow(els, "w_cp_k3", [[465, 317], [545, 317]], ARROW_COLOR)
-    add_wire_label(els, "l_cp_k3", 505, 374, "full_ctx [S, H/TP]")
+    add_arrow(els, "w_cp_k3", [[465, 265], [585, 265]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_k3", 525, 300, "full_ctx [S, D]")
 
-    add_arrow(els, "w_cp_o1", [[730, 137], [935, 137], [935, 200], [985, 200]], ARROW_COLOR)
-    add_wire_label(els, "l_cp_o1", 835, 120, "cur O / lse [T, N_h/TP, D]")
+    add_arrow(els, "w_cp_o1", [[780, 117], [905, 117], [905, 162], [975, 162]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_o1", 855, 100, "cur O, lse [T, N_h/TP, D]")
 
-    add_arrow(els, "w_cp_o2", [[730, 295], [748, 295]], "#64748b", stroke_style="dashed")
-    add_arrow(els, "w_cp_o3", [[730, 330], [935, 330], [935, 242], [985, 242]], ARROW_COLOR)
-    add_wire_label(els, "l_cp_o3", 835, 346, "ctx O / lse [T, N_h/TP, D]")
+    add_arrow(els, "w_cp_o3", [[780, 249], [905, 249], [905, 202], [975, 202]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_o3", 855, 264, "ctx O, lse [T, N_h/TP, D]")
 
-    add_arrow(els, "w_cp_m", [[1160, 220], [1200, 220]], ARROW_COLOR)
-    add_wire_label(els, "l_cp_m", 1180, 156, "full O [T, N_h/TP, D]")
+    add_arrow(els, "w_cp_m", [[1150, 181], [1195, 181]], ARROW_COLOR)
+    add_wire_label(els, "l_cp_m", 1172, 120, "full O [T, N_h/TP, D]")
 
-    add_arrow(els, "w_cp_out", [[1350, 220], [1392, 220]], ARROW_COLOR)
+    add_arrow(els, "w_cp_out", [[1345, 181], [1392, 181]], ARROW_COLOR)
 
     return els, 1400, 435
 
