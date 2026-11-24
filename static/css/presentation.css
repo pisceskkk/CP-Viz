@@ -1154,6 +1154,16 @@ section:not(.aligncenter) {
   font-size: 1.3rem;
 }
 
+.progress-table tbody tr > td,
+.progress-table tbody tr > td:hover {
+  background: #ffffff;
+}
+
+.progress-table tbody tr:nth-child(even) > td,
+.progress-table tbody tr:nth-child(even) > td:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
 .progress-table tbody td.code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-weight: 600;
