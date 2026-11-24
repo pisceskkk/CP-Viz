@@ -517,178 +517,177 @@ def diag_2_dcp_slot_mapping() -> tuple[list[dict], int, int]:
     return els, 1400, 440
 
 
-def add_wire_badge(
+def add_wire_label(
     els: list[dict],
-    badge_id: str,
+    lbl_id: str,
     cx: int,
     cy: int,
     text: str,
-    stroke: str = "#0284c7",
-    bg: str = "#ffffff",
+    font_size: int = 14,
 ) -> None:
-    """Add a compact pill badge on an arrow wire showing tensor name and shape."""
-    w = max(110, int(len(text) * 8.4) + 18)
-    h = 26
-    x = cx - w // 2
-    y = cy - h // 2
-    tid = f"{badge_id}_t"
-    els.append(
-        make_rect(
-            badge_id,
-            x,
-            y,
-            w,
-            h,
-            bg,
-            stroke,
-            stroke_width=1,
-            stroke_style="solid",
-            fill_style="solid",
-            bound_text_id=tid,
-        )
-    )
+    """Add plain black text label for tensor name and shape along an arrow (no border or background)."""
+    w = max(110, int(len(text) * 8.5) + 12)
+    h = 22
     els.append(
         make_text(
-            tid,
-            x + 4,
-            y + 3,
-            w - 8,
-            h - 6,
+            lbl_id,
+            cx - w // 2,
+            cy - h // 2,
+            w,
+            h,
             text,
-            font_size=13,
-            color=stroke,
-            container_id=badge_id,
+            font_size=font_size,
+            color="#0f172a",
+            align="center",
+            v_align="middle",
         )
     )
 
 
 # =============================================================================
-# 3. DCP Decode (Slide 5: Operator Block Dataflow with Tensor Shapes on Arrows)
+# 3. DCP Decode (Slide 5: Clean DCP+TP Operator Dataflow, Unified Palette)
 # =============================================================================
 def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
-    """Slide 04 (#slide=5): Operator-block tensor dataflow for DCP Decode."""
+    """Slide 04 (#slide=5): DCP+TP Decode operator dataflow with unified gray/blue/black palette."""
     els: list[dict] = []
 
-    # Subtle Stage Background Zones
-    add_zone(els, "z_op1", 20, 20, 465, 400, "STAGE 1 · Query 投影与跨 DCP Head 收集", "#f8fafc", "#94a3b8")
-    add_zone(els, "z_op2", 505, 20, 415, 400, "STAGE 2 · 本地 1/DCP KV 分片局部注意力", "#faf5ff", "#7c3aed", "#6d28d9")
-    add_zone(els, "z_op3", 940, 20, 440, 400, "STAGE 3 · 融合 All2All LSE 归并与输出投影", "#f0fdf4", "#16a34a", "#15803d")
+    ZONE_BG = "#f8fafc"
+    ZONE_STROKE = "#94a3b8"
+    OP_BG = "#e0f2fe"
+    OP_STROKE = "#0284c7"
+    ARROW_COLOR = "#0284c7"
+    TEXT_BLACK = "#0f172a"
 
-    # Operator 1: QKV Projection
+    # 3 Unified Gray Stage Zones
+    add_zone(els, "z_op1", 120, 20, 445, 400, "STAGE 1 · TP 投影与 DCP Query 收集", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_op2", 585, 20, 325, 400, "STAGE 2 · 本地 1/DCP KV 局部注意力", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_op3", 930, 20, 360, 400, "STAGE 3 · All2All LSE 归并与 TP 输出", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+
+    # Operator 1: QKV Projection (TP Sharded)
     add_box(
         els,
         "op_qkv_proj",
-        38,
-        110,
-        180,
-        92,
-        "QKV Linear Proj\n(q_proj / kv_proj)\n输入: hidden [B, H]",
-        "#e0f2fe",
-        "#0284c7",
-        font_size=15,
+        142,
+        175,
+        155,
+        90,
+        "QKV Linear\n(TP 列切分)",
+        OP_BG,
+        OP_STROKE,
+        text_color=TEXT_BLACK,
+        font_size=16,
     )
 
-    # Operator 2A: AllGather Query Heads
+    # Operator 2A: AllGather Q Heads across DCP
     add_box(
         els,
         "op_q_gather",
-        285,
-        75,
-        185,
-        88,
-        "AllGather Q Heads\n(_dcp_all_gather)\n跨 DCP 收集 Q 分片",
-        "#dcfce7",
-        "#16a34a",
-        font_size=15,
+        382,
+        85,
+        165,
+        86,
+        "AllGather Q\n(跨 DCP 组)",
+        OP_BG,
+        OP_STROKE,
+        text_color=TEXT_BLACK,
+        font_size=16,
     )
 
-    # Operator 2B: Reshape & Cache New KV
+    # Operator 2B: Reshape & Cache (Write local DCP slot)
     add_box(
         els,
         "op_kv_cache",
-        285,
-        265,
-        185,
-        88,
-        "Reshape & Cache\n(Owner Slot 落盘)\n非归属 Rank 写 -1",
-        "#f3e8ff",
-        "#7c3aed",
-        font_size=15,
+        382,
+        270,
+        165,
+        86,
+        "Reshape & Cache\n(按 DCP 交错落盘)",
+        OP_BG,
+        OP_STROKE,
+        text_color=TEXT_BLACK,
+        font_size=16,
     )
 
-    # Operator 3: Local FlashAttention / MLA / SFA Kernel
+    # Operator 3: Local Attention Kernel
     add_box(
         els,
         "op_local_attn",
-        635,
-        155,
-        235,
-        110,
-        "Local Attention Kernel\n(FIA / MLA / SFA)\n全量 Q × 本地 1/DCP KV\n(历史 KV 免跨卡通信!)",
-        "#ede9fe",
-        "#6d28d9",
-        font_size=15,
+        652,
+        170,
+        195,
+        100,
+        "Local Attention\n(全量 Q × 1/DCP KV)\n历史 KV 免通信",
+        OP_BG,
+        OP_STROKE,
+        text_color=TEXT_BLACK,
+        font_size=16,
     )
 
-    # Operator 4: dcp_a2a_fused (Pack + All2All + LSE Combine)
+    # Operator 4: dcp_a2a_fused
     add_box(
         els,
         "op_a2a_lse",
-        1025,
-        75,
-        225,
-        105,
-        "dcp_a2a_fused\n1. Triton Pack (O_j, LSE_j)\n2. all_to_all_single (切 Head)\n3. LSE 加权: ∑w_j·O_j / ∑w_j",
-        "#dcfce7",
-        "#16a34a",
-        font_size=14,
+        1015,
+        80,
+        195,
+        96,
+        "dcp_a2a_fused\nPack + All2All\n+ LSE 加权归并",
+        OP_BG,
+        OP_STROKE,
+        text_color=TEXT_BLACK,
+        font_size=16,
     )
 
-    # Operator 5: O-Projection
+    # Operator 5: RowParallel o_proj
     add_box(
         els,
         "op_o_proj",
-        1025,
-        275,
-        225,
-        88,
-        "RowParallel o_proj\n([B, N_h/TP, D] → [B, H])\n输出写回残差流",
-        "#ccfbf1",
-        "#0d9488",
-        font_size=15,
+        1015,
+        270,
+        195,
+        86,
+        "o_proj\n(TP 行切分 AllReduce)",
+        OP_BG,
+        OP_STROKE,
+        text_color=TEXT_BLACK,
+        font_size=16,
     )
 
-    # Wires & Tensor Shape Badges (glm53_prefill_decode_operator_block_diagram style)
+    # Arrows (Unified Blue) & Plain Black Tensor Labels (Spaced cleanly with zero overlap)
+    # 0) Initial input arrow -> op_qkv_proj
+    add_arrow(els, "w_in", [[18, 220], [142, 220]], ARROW_COLOR)
+    add_wire_label(els, "l_in", 75, 185, "hidden\n[B, H]", font_size=14)
+
     # 1) op_qkv_proj -> op_q_gather
-    add_arrow(els, "w_q_loc", [[218, 136], [250, 136], [250, 119], [285, 119]], "#0284c7")
-    add_wire_badge(els, "b_q_loc", 232, 60, "Q_local [B, N_h/DCP, D]", "#0284c7", "#f0f9ff")
+    add_arrow(els, "w_q_loc", [[297, 198], [335, 198], [335, 128], [382, 128]], ARROW_COLOR)
+    add_wire_label(els, "l_q_loc", 275, 92, "Q_local [B, N_h/TP, D]")
 
     # 2) op_qkv_proj -> op_kv_cache
-    add_arrow(els, "w_kv_new", [[218, 178], [250, 178], [250, 309], [285, 309]], "#7c3aed")
-    add_wire_badge(els, "b_kv_new", 155, 309, "KV_new [B, D_kv]", "#7c3aed", "#faf5ff")
+    add_arrow(els, "w_kv_new", [[297, 242], [335, 242], [335, 313], [382, 313]], ARROW_COLOR)
+    add_wire_label(els, "l_kv_new", 268, 345, "KV_new [B, D_kv]")
 
     # 3) op_q_gather -> op_local_attn
-    add_arrow(els, "w_q_full", [[470, 119], [555, 119], [555, 190], [635, 190]], "#16a34a")
-    add_wire_badge(els, "b_q_full", 565, 100, "Q_full [B, N_h, D]", "#15803d", "#f0fdf4")
+    add_arrow(els, "w_q_full", [[547, 128], [610, 128], [610, 198], [652, 198]], ARROW_COLOR)
+    add_wire_label(els, "l_q_full", 645, 96, "Q_full [B, N_h, D]")
 
     # 4) op_kv_cache -> op_local_attn
-    add_arrow(els, "w_kv_shard", [[470, 309], [555, 309], [555, 232], [635, 232]], "#7c3aed")
-    add_wire_badge(els, "b_kv_shard", 575, 330, "KV_local [S/DCP, D_kv]", "#6d28d9", "#faf5ff")
+    add_arrow(els, "w_kv_shard", [[547, 313], [610, 313], [610, 242], [652, 242]], ARROW_COLOR)
+    add_wire_label(els, "l_kv_shard", 655, 345, "KV_local [S/DCP, D_kv]")
 
-    # 5) op_local_attn -> op_a2a_lse (Two parallel tensor wires: O_j and LSE_j)
-    add_arrow(els, "w_oj", [[870, 185], [955, 185], [955, 112], [1025, 112]], "#0284c7")
-    add_wire_badge(els, "b_oj", 915, 82, "O_j [B, N_h, D] (BF16)", "#0284c7", "#f0f9ff")
+    # 5) op_local_attn -> op_a2a_lse (Two clean parallel horizontal lanes)
+    add_arrow(els, "w_oj", [[847, 196], [955, 196], [955, 112], [1015, 112]], ARROW_COLOR)
+    add_wire_label(els, "l_oj", 885, 95, "O_j [B, N_h, D]")
 
-    add_arrow(els, "w_lse", [[870, 235], [975, 235], [975, 152], [1025, 152]], "#d97706")
-    add_wire_badge(els, "b_lse", 915, 262, "LSE_j [B, N_h, 1] (FP32)", "#b45309", "#fffbeb")
+    add_arrow(els, "w_lse", [[847, 244], [975, 244], [975, 146], [1015, 146]], ARROW_COLOR)
+    add_wire_label(els, "l_lse", 885, 272, "LSE_j [B, N_h, 1]")
 
     # 6) op_a2a_lse -> op_o_proj
-    add_arrow(els, "w_omerged", [[1138, 180], [1138, 275]], "#16a34a")
-    add_wire_badge(els, "b_omerged", 1138, 228, "O_merged [B, N_h/DCP, D]", "#15803d", "#f0fdf4")
+    add_arrow(els, "w_omerged", [[1112, 176], [1112, 270]], ARROW_COLOR)
+    add_wire_label(els, "l_omerged", 1200, 222, "O_merged\n[B, N_h/TP, D]")
 
-    # 7) op_o_proj -> output
-    add_arrow(els, "w_out", [[1250, 319], [1355, 319]], "#0d9488")
-    add_wire_badge(els, "b_out", 1300, 368, "attn_out [B, H]", "#0f766e", "#f0fdfa")
+    # 7) op_o_proj -> final output
+    add_arrow(els, "w_out", [[1210, 313], [1375, 313]], ARROW_COLOR)
+    add_wire_label(els, "l_out", 1335, 278, "output\n[B, H]")
 
     return els, 1400, 440
 
