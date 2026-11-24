@@ -21,17 +21,17 @@
         <img src="static/images/CP/glm53-dcp-decode.svg" alt="DCP Decode">
 
         <!-- 放置于左区 AllGather Q 算子框右上角 -->
-        <button class="hotspot-pin" style="left: 38.8%; top: 19.8%;" data-code="code-dcp-impl-mixin" type="button">
+        <button class="hotspot-pin" style="left: 33.2%; top: 19.8%;" data-code="code-dcp-impl-mixin" type="button">
           <span class="pin-label">&lt;/&gt; _dcp_all_gather_fragments</span>
         </button>
 
         <!-- 放置于中区 Local Attention 算子框右上角 -->
-        <button class="hotspot-pin" style="left: 60.2%; top: 39.2%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
+        <button class="hotspot-pin" style="left: 52.4%; top: 39.2%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
           <span class="pin-label">本地 1/DCP KV 分片 &#10132;</span>
         </button>
 
         <!-- 放置于右区 dcp_a2a_fused 算子框右上角 -->
-        <button class="hotspot-pin pin-left" style="right: 13.8%; left: auto; top: 18.8%;" data-code="code-dcp-a2a-fused" type="button">
+        <button class="hotspot-pin" style="left: 72.8%; top: 18.8%;" data-code="code-dcp-a2a-fused" type="button">
           <span class="pin-label">&lt;/&gt; dcp_a2a_fused 打包与归并</span>
         </button>
 

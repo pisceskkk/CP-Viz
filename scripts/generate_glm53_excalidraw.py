@@ -544,11 +544,71 @@ def add_wire_label(
     )
 
 
+def add_mini_cell(
+    els: list[dict],
+    cell_id: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    bg: str,
+    stroke: str = "#475569",
+    label: str | None = None,
+    font_size: int = 10,
+) -> None:
+    """Draw a crisp mini tensor-grid cell for the All2All transpose callout."""
+    tid = f"{cell_id}_t" if label else None
+    els.append(
+        {
+            "type": "rectangle",
+            "id": cell_id,
+            "x": x,
+            "y": y,
+            "width": w,
+            "height": h,
+            "angle": 0,
+            "strokeColor": stroke,
+            "backgroundColor": bg,
+            "fillStyle": "solid",
+            "strokeWidth": 1.3,
+            "strokeStyle": "solid",
+            "roughness": 0,
+            "opacity": 100,
+            "groupIds": [],
+            "frameId": None,
+            "index": f"a{next_seed()}",
+            "roundness": None,
+            "seed": next_seed(),
+            "version": 1,
+            "versionNonce": next_seed(),
+            "isDeleted": False,
+            "boundElements": [{"id": tid, "type": "text"}] if tid else [],
+            "updated": 1732360000000,
+            "link": None,
+            "locked": False,
+        }
+    )
+    if label and tid:
+        els.append(
+            make_text(
+                tid,
+                x + 1,
+                y + 1,
+                w - 2,
+                h - 2,
+                label,
+                font_size=font_size,
+                color="#0f172a",
+                container_id=cell_id,
+            )
+        )
+
+
 # =============================================================================
-# 3. DCP Decode (Slide 5: Clean DCP+TP Operator Dataflow, Unified Palette)
+# 3. DCP Decode (Slide 5: Clean DCP+TP Operator Dataflow + All2All Transpose Callout)
 # =============================================================================
 def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
-    """Slide 04 (#slide=5): DCP+TP Decode operator dataflow with unified gray/blue/black palette."""
+    """Slide 04 (#slide=5): DCP+TP Decode operator dataflow with Stage 3 All2All transpose diagram."""
     els: list[dict] = []
 
     ZONE_BG = "#f8fafc"
@@ -558,136 +618,280 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     ARROW_COLOR = "#0284c7"
     TEXT_BLACK = "#0f172a"
 
-    # 3 Unified Gray Stage Zones
-    add_zone(els, "z_op1", 120, 20, 445, 400, "STAGE 1 · TP 投影与 DCP Query 收集", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
-    add_zone(els, "z_op2", 585, 20, 325, 400, "STAGE 2 · 本地 1/DCP KV 局部注意力", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
-    add_zone(els, "z_op3", 930, 20, 360, 400, "STAGE 3 · All2All LSE 归并与 TP 输出", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    # 3 Unified Gray Stage Zones (expanded slightly to fit the All2All transpose callout on the right)
+    add_zone(els, "z_op1", 95, 20, 390, 400, "STAGE 1 · TP 投影与 DCP Query 收集", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_op2", 500, 20, 290, 400, "STAGE 2 · 本地 1/DCP KV 局部注意力", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_op3", 805, 20, 575, 400, "STAGE 3 · All2All LSE 归并与 TP 输出", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
 
     # Operator 1: QKV Projection (TP Sharded)
     add_box(
         els,
         "op_qkv_proj",
-        142,
+        112,
         175,
-        155,
+        142,
         90,
         "QKV Linear\n(TP 列切分)",
         OP_BG,
         OP_STROKE,
         text_color=TEXT_BLACK,
-        font_size=16,
+        font_size=15,
     )
 
     # Operator 2A: AllGather Q Heads across DCP
     add_box(
         els,
         "op_q_gather",
-        382,
+        318,
         85,
-        165,
+        150,
         86,
         "AllGather Q\n(跨 DCP 组)",
         OP_BG,
         OP_STROKE,
         text_color=TEXT_BLACK,
-        font_size=16,
+        font_size=15,
     )
 
     # Operator 2B: Reshape & Cache (Write local DCP slot)
     add_box(
         els,
         "op_kv_cache",
-        382,
+        318,
         270,
-        165,
+        150,
         86,
         "Reshape & Cache\n(按 DCP 交错落盘)",
         OP_BG,
         OP_STROKE,
         text_color=TEXT_BLACK,
-        font_size=16,
+        font_size=15,
     )
 
     # Operator 3: Local Attention Kernel
     add_box(
         els,
         "op_local_attn",
-        652,
+        552,
         170,
-        195,
+        185,
         100,
         "Local Attention\n(全量 Q × 1/DCP KV)\n历史 KV 免通信",
         OP_BG,
         OP_STROKE,
         text_color=TEXT_BLACK,
-        font_size=16,
+        font_size=15,
     )
 
     # Operator 4: dcp_a2a_fused
     add_box(
         els,
         "op_a2a_lse",
-        1015,
+        845,
         80,
-        195,
+        178,
         96,
         "dcp_a2a_fused\nPack + All2All\n+ LSE 加权归并",
         OP_BG,
         OP_STROKE,
         text_color=TEXT_BLACK,
-        font_size=16,
+        font_size=15,
     )
 
     # Operator 5: RowParallel o_proj
     add_box(
         els,
         "op_o_proj",
-        1015,
+        845,
         270,
-        195,
+        178,
         86,
         "o_proj\n(TP 行切分 AllReduce)",
         OP_BG,
         OP_STROKE,
         text_color=TEXT_BLACK,
-        font_size=16,
+        font_size=15,
     )
 
-    # Arrows (Unified Blue) & Blue Tensor Labels (Snugly positioned right along arrow segments)
+    # =========================================================================
+    # Independent All2All Transpose Mini-Diagram Card next to dcp_a2a_fused
+    # (Replicating the draw.io O'(1, h*dcp/tp) -> DCP Group All2All -> O''(dcp, h/tp) matrix)
+    # =========================================================================
+    els.append(
+        make_rect(
+            "a2a_card",
+            1042,
+            60,
+            322,
+            195,
+            "#ffffff",
+            "#cbd5e1",
+            stroke_width=1,
+            stroke_style="solid",
+            fill_style="solid",
+        )
+    )
+
+    # Left Matrix: O' (1, h*dcp/tp) + lse (before All2All: 1 KV shard x all Q heads)
+    # Top 3 rows (Rank 0: cols 0..2 yellow, cols 3..5 white)
+    cw, ch = 15, 13
+    lx0, ly0 = 1055, 76
+    for r in range(3):
+        ry = ly0 + r * (ch + 2) + (4 if r == 1 else (6 if r == 2 else 0))
+        for c in range(6):
+            cx = lx0 + c * cw
+            is_active = c < 3
+            lbl = f"h{c+1}" if (r == 0 and c < 3) else None
+            add_mini_cell(
+                els,
+                f"m1_t_{r}_{c}",
+                cx,
+                ry,
+                cw,
+                ch,
+                "#fef08a" if is_active else "#ffffff",
+                "#334155",
+                label=lbl,
+                font_size=9,
+            )
+    # Bottom 3 rows (Rank 1: cols 0..2 white, cols 3..5 yellow)
+    ly1 = ly0 + 58
+    for r in range(3):
+        ry = ly1 + r * (ch + 2) + (4 if r == 1 else (6 if r == 2 else 0))
+        for c in range(6):
+            cx = lx0 + c * cw
+            is_active = c >= 3
+            add_mini_cell(
+                els,
+                f"m1_b_{r}_{c}",
+                cx,
+                ry,
+                cw,
+                ch,
+                "#fef08a" if is_active else "#ffffff",
+                "#334155",
+            )
+    els.append(
+        make_text(
+            "m1_cap",
+            1048,
+            196,
+            110,
+            34,
+            "O' (1, h*dcp/tp)\nlse",
+            font_size=11,
+            color="#0f172a",
+            align="center",
+        )
+    )
+
+    # Center Pill: DCP Group All2All with arrows
+    add_arrow(els, "m_arr1", [[1150, 132], [1168, 132]], "#334155", stroke_width=1)
+    add_box(
+        els,
+        "m_a2a_pill",
+        1170,
+        112,
+        66,
+        40,
+        "DCP Group\nAll2All",
+        "#fff1f2",
+        "#e11d48",
+        text_color="#be123c",
+        font_size=10,
+        stroke_width=1,
+    )
+    add_arrow(els, "m_arr2", [[1238, 132], [1256, 132]], "#334155", stroke_width=1)
+
+    # Right Matrix: O'' (dcp, h/tp) + lse (after All2All: all DCP KV shards x local Q heads)
+    # Upper-left staggered 3 columns (h1, h2, h3 across DCP shards)
+    rx0, ry0 = 1262, 74
+    for c in range(3):
+        cx = rx0 + c * (cw + 3)
+        cy_base = ry0 + c * 6
+        for r in range(3):
+            ry = cy_base + r * ch
+            lbl = f"h{c+1}" if r == 0 else None
+            add_mini_cell(
+                els,
+                f"m2_t_{r}_{c}",
+                cx,
+                ry,
+                cw,
+                ch,
+                "#fef08a",
+                "#334155",
+                label=lbl,
+                font_size=9,
+            )
+    # Lower-right staggered 3 columns
+    rx1, ry1 = 1304, 136
+    for c in range(3):
+        cx = rx1 + c * (cw + 3)
+        cy_base = ry1 + c * 6
+        for r in range(3):
+            ry = cy_base + r * ch
+            add_mini_cell(
+                els,
+                f"m2_b_{r}_{c}",
+                cx,
+                ry,
+                cw,
+                ch,
+                "#fef08a",
+                "#334155",
+            )
+    els.append(
+        make_text(
+            "m2_cap",
+            1252,
+            196,
+            106,
+            34,
+            "O'' (dcp, h/tp)\nlse",
+            font_size=11,
+            color="#0f172a",
+            align="center",
+        )
+    )
+
+    # =========================================================================
+    # Arrows (Unified Blue) & Blue Tensor Labels (Snugly hugging arrow wires)
+    # =========================================================================
     # 0) Initial input arrow -> op_qkv_proj
-    add_arrow(els, "w_in", [[18, 220], [142, 220]], ARROW_COLOR)
-    add_wire_label(els, "l_in", 76, 194, "hidden\n[B, H]", font_size=13)
+    add_arrow(els, "w_in", [[14, 220], [112, 220]], ARROW_COLOR)
+    add_wire_label(els, "l_in", 58, 194, "hidden\n[B, H]", font_size=13)
 
     # 1) op_qkv_proj -> op_q_gather
-    add_arrow(els, "w_q_loc", [[297, 198], [335, 198], [335, 128], [382, 128]], ARROW_COLOR)
-    add_wire_label(els, "l_q_loc", 310, 113, "Q_local [B, N_h/TP, D]")
+    add_arrow(els, "w_q_loc", [[254, 198], [282, 198], [282, 128], [318, 128]], ARROW_COLOR)
+    add_wire_label(els, "l_q_loc", 242, 113, "Q_local [B, N_h/TP, D]")
 
     # 2) op_qkv_proj -> op_kv_cache
-    add_arrow(els, "w_kv_new", [[297, 242], [335, 242], [335, 313], [382, 313]], ARROW_COLOR)
-    add_wire_label(els, "l_kv_new", 310, 327, "KV_new [B, D_kv]")
+    add_arrow(els, "w_kv_new", [[254, 242], [282, 242], [282, 313], [318, 313]], ARROW_COLOR)
+    add_wire_label(els, "l_kv_new", 242, 327, "KV_new [B, D_kv]")
 
     # 3) op_q_gather -> op_local_attn
-    add_arrow(els, "w_q_full", [[547, 128], [610, 128], [610, 198], [652, 198]], ARROW_COLOR)
-    add_wire_label(els, "l_q_full", 615, 113, "Q_full [B, N_h, D]")
+    add_arrow(els, "w_q_full", [[468, 128], [516, 128], [516, 198], [552, 198]], ARROW_COLOR)
+    add_wire_label(els, "l_q_full", 538, 113, "Q_full [B, N_h, D]")
 
     # 4) op_kv_cache -> op_local_attn
-    add_arrow(els, "w_kv_shard", [[547, 313], [610, 313], [610, 242], [652, 242]], ARROW_COLOR)
-    add_wire_label(els, "l_kv_shard", 622, 327, "KV_local [S/DCP, D_kv]")
+    add_arrow(els, "w_kv_shard", [[468, 313], [516, 313], [516, 242], [552, 242]], ARROW_COLOR)
+    add_wire_label(els, "l_kv_shard", 542, 327, "KV_local [S/DCP, D_kv]")
 
-    # 5) op_local_attn -> op_a2a_lse (Two clean parallel horizontal lanes)
-    add_arrow(els, "w_oj", [[847, 196], [955, 196], [955, 112], [1015, 112]], ARROW_COLOR)
-    add_wire_label(els, "l_oj", 902, 181, "O_j [B, N_h, D]")
+    # 5) op_local_attn -> op_a2a_lse
+    add_arrow(els, "w_oj", [[737, 196], [790, 196], [790, 112], [845, 112]], ARROW_COLOR)
+    add_wire_label(els, "l_oj", 785, 97, "O_j [B, N_h, D]")
 
-    add_arrow(els, "w_lse", [[847, 244], [975, 244], [975, 146], [1015, 146]], ARROW_COLOR)
-    add_wire_label(els, "l_lse", 910, 258, "LSE_j [B, N_h, 1]")
+    add_arrow(els, "w_lse", [[737, 244], [812, 244], [812, 146], [845, 146]], ARROW_COLOR)
+    add_wire_label(els, "l_lse", 790, 258, "LSE_j [B, N_h, 1]")
 
     # 6) op_a2a_lse -> op_o_proj
-    add_arrow(els, "w_omerged", [[1112, 176], [1112, 270]], ARROW_COLOR)
-    add_wire_label(els, "l_omerged", 1175, 222, "O_merged\n[B, N_h/TP, D]")
+    add_arrow(els, "w_omerged", [[934, 176], [934, 270]], ARROW_COLOR)
+    add_wire_label(els, "l_omerged", 988, 222, "O_merged\n[B, N_h/TP, D]")
 
     # 7) op_o_proj -> final output
-    add_arrow(els, "w_out", [[1210, 313], [1375, 313]], ARROW_COLOR)
-    add_wire_label(els, "l_out", 1295, 287, "output\n[B, H]")
+    add_arrow(els, "w_out", [[1023, 313], [1225, 313]], ARROW_COLOR)
+    add_wire_label(els, "l_out", 1125, 287, "output\n[B, H]")
 
     return els, 1400, 440
 
