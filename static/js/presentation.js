@@ -117,6 +117,20 @@
     }
   }
 
+  function activateBranchSubPage(branch, targetId) {
+    var panes = all('.branch-tab-pane', branch);
+    if (!panes.length) return false;
+    var activeId = targetId || panes[0].id;
+    panes.forEach(function(pane) {
+      pane.classList.toggle('active', pane.id === activeId);
+    });
+    all('.branch-tab-btn[data-branch-page]', branch).forEach(function(btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-branch-page') === activeId);
+    });
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return true;
+  }
+
   function jumpToBranch(branchId, anchorId) {
     var webslides = byId('webslides');
     var container = byId('branch-container');
@@ -141,6 +155,10 @@
 
     var branchTitle = branch.getAttribute('data-branch-title') || '专题详情';
     setBranchUIState(true, branchTitle);
+
+    if (activateBranchSubPage(branch, anchorId)) {
+      return;
+    }
 
     if (anchorId) {
       var target = byId(anchorId);
@@ -299,7 +317,18 @@
         return;
       }
 
-      // 4) Interactive Stepper Tab: .stepper-tab[data-step-target="pane-id"]
+      // 4) Branch sub-page tab trigger: .branch-tab-btn[data-branch-page="pane-id"]
+      var branchTab = event.target.closest('.branch-tab-btn[data-branch-page]');
+      if (branchTab) {
+        event.preventDefault();
+        var parentBranch = branchTab.closest('.branch-slide');
+        if (parentBranch) {
+          activateBranchSubPage(parentBranch, branchTab.getAttribute('data-branch-page'));
+        }
+        return;
+      }
+
+      // 5) Interactive Stepper Tab: .stepper-tab[data-step-target="pane-id"]
       var stepTab = event.target.closest('.stepper-tab[data-step-target]');
       if (stepTab) {
         event.preventDefault();

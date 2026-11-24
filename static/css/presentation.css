@@ -746,10 +746,15 @@ section:not(.aligncenter) {
   position: sticky;
   top: 0;
   z-index: 120;
-  background: rgba(248, 250, 252, 0.92);
+  background: rgba(248, 250, 252, 0.96);
   backdrop-filter: blur(8px);
-  padding: 5.8rem 2.8rem 1rem;
+  padding: 5.6rem 0 1.1rem;
   border-bottom: 1px solid var(--border-color);
+}
+
+.branch-subnav-inner {
+  width: min(90vw, 156rem);
+  margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 0.8rem;
@@ -761,9 +766,30 @@ section:not(.aligncenter) {
   color: var(--ink-muted);
 }
 
+.branch-tab-btn.active {
+  background: var(--brand-primary);
+  color: #ffffff;
+  border-color: var(--brand-primary);
+  box-shadow: 0 4px 12px rgba(3, 105, 161, 0.18);
+}
+
 .branch-page {
-  padding: 2.8rem 2.8rem 3.6rem;
+  padding: 6.4rem 0 3.2rem;
   background: var(--bg-page);
+  min-height: 100vh;
+}
+
+.branch-subnav ~ .branch-page {
+  padding-top: 2rem;
+  min-height: calc(100vh - 10rem);
+}
+
+.branch-page.branch-tab-pane {
+  display: none;
+}
+
+.branch-page.branch-tab-pane.active {
+  display: block;
 }
 
 .branch-page .wrap {
