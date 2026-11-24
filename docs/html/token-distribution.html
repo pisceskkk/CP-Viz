@@ -146,22 +146,37 @@
 
     .tokens {
       display: grid;
-      grid-template-columns: repeat(var(--cols), minmax(4px, 1fr));
-      gap: 3px;
-      min-height: 34px;
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+      gap: 4px;
+      min-height: 36px;
       align-items: stretch;
+      background: #f8fafc;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
     }
 
     .token {
       min-width: 0;
+      height: 28px;
       border-radius: 4px;
       background: #bae6fd;
-      border: 1px solid rgba(3, 105, 161, 0.2);
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #0f172a;
+      font-variant-numeric: tabular-nums;
+      overflow: hidden;
     }
 
-    .token:nth-child(4n + 2) { background: #bbf7d0; border-color: rgba(22, 163, 74, 0.2); }
-    .token:nth-child(4n + 3) { background: #fed7aa; border-color: rgba(217, 119, 6, 0.2); }
-    .token:nth-child(4n) { background: #fecaca; border-color: rgba(220, 38, 38, 0.18); }
+    .token.pad-slot {
+      background: #f1f5f9 !important;
+      border: 1px dashed #cbd5e1;
+      color: #94a3b8;
+    }
 
     table {
       width: 100%;
@@ -290,11 +305,16 @@
         perRank[ownerRank(token, dcpSize, interleave)].push(token);
       }
 
+      const localMaxCount = Math.max(...perRank.map(tokens => tokens.length));
+      // Keep a fixed column capacity based on slider max (or actual localMax when dcpSize is small)
+      // so existing tokens never jump or wrap to line 2 when tokenCount changes!
+      const fixedCols = Math.max(16, Math.ceil(128 / dcpSize), localMaxCount);
+
       document.getElementById('tokenCountValue').textContent = tokenCount;
       document.getElementById('dcpSizeValue').textContent = dcpSize;
       document.getElementById('interleaveValue').textContent = interleave;
       document.getElementById('tokensPerRound').textContent = dcpSize * interleave;
-      document.getElementById('localMax').textContent = Math.max(...perRank.map(tokens => tokens.length));
+      document.getElementById('localMax').textContent = localMaxCount;
       document.getElementById('virtualBlocks').textContent = Math.ceil(tokenCount / interleave);
       document.getElementById('tailTokens').textContent = tokenCount % (dcpSize * interleave);
 
@@ -307,15 +327,24 @@
 
         const cells = document.createElement('div');
         cells.className = 'tokens';
-        cells.style.setProperty('--cols', Math.max(16, Math.ceil(tokenCount / dcpSize)));
+        cells.style.setProperty('--cols', fixedCols);
 
         tokens.forEach(token => {
           const cell = document.createElement('div');
           cell.className = 'token';
-          cell.title = `token ${token}`;
+          cell.title = `token ${token} (rank ${rank})`;
           cell.style.background = palette[rank % palette.length];
+          if (fixedCols <= 32) {
+            cell.textContent = token;
+          }
           cells.appendChild(cell);
         });
+
+        for (let i = tokens.length; i < fixedCols; i += 1) {
+          const emptyCell = document.createElement('div');
+          emptyCell.className = 'token pad-slot';
+          cells.appendChild(emptyCell);
+        }
 
         row.appendChild(cells);
         rankGrid.appendChild(row);
