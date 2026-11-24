@@ -1659,6 +1659,20 @@ def main() -> None:
             SVG_DIR / "glm53-dcp-sfa-sharded-indexer.svg",
         )
 
+    user_sfa_pcp_candidates = [
+        Path(r"C:\Users\q00946761\.gemini\antigravity\brain\c19a0503-108d-4190-8e18-710fc4b97768\.user_uploaded\media_1795513687135_a597d091.excalidraw"),
+        Path(r"d:\q00946761\projects\长序列\PCP&DCP\sfa_pcp.excalidraw"),
+        EXCALIDRAW_DIR / "glm53-pcp-prefill.excalidraw",
+    ]
+    for cand in user_sfa_pcp_candidates:
+        if cand.exists():
+            render_external_excalidraw(
+                cand,
+                EXCALIDRAW_DIR / "glm53-pcp-prefill.excalidraw",
+                SVG_DIR / "glm53-pcp-prefill.svg",
+            )
+            break
+
 
 if __name__ == "__main__":
     main()

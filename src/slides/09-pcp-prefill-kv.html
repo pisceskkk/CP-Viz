@@ -1,28 +1,38 @@
-<!-- Slide 09: PCP ③ Prefill 与 Chunked Prefill 的 KV 同步 -->
+<!-- Slide 09 (#slide=10): PCP ③ Prefill 与 Chunked Prefill 数据流 -->
 <section data-stage="03 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>PCP ③：Prefill 与 Chunked Prefill 的 KV 同步</strong></h3>
-        <p class="slide-subtitle">计算本地 <code>1/PCP</code> Query 的同时跨 PCP Group AllGather 当前步新 KV，通过 <code>gathered_kv_slot_mappings</code> 落盘</p>
+        <h3><strong>PCP ③：Prefill 与 Chunked Prefill 算子级数据流</strong></h3>
+        <p class="slide-subtitle">计算本地 <code>[X/CP, hs]</code> Query 的同时，主 KV 与 Indexer KV 跨 CP AllGather 写入完整 <code>[CTX, hs_c]</code> Cache，并衔接 <code>o_proj</code> 与 SP/MoE</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-pcp-restore-map" type="button">
           &lt;/&gt; gathered_kv_write_mask
         </button>
+        <button class="btn-code" data-code="code-pcp-dcp-stacked" type="button">
+          &lt;/&gt; sfa_cp.py
+        </button>
       </div>
     </div>
 
     <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
-      <div class="img-zoom-wrap">
-        <img src="static/images/CP/glm53-pcp-prefill.svg" alt="PCP Prefill & Chunked Prefill KV Sync">
+      <div class="img-zoom-wrap sfa-pcp-zoom-wrap">
+        <img src="static/images/CP/glm53-pcp-prefill.svg" alt="PCP Prefill & Chunked Prefill Dataflow">
 
-        <button class="hotspot-pin" style="left: 63.0%; top: 56.2%;" data-code="code-pcp-restore-map" type="button">
-          <span class="pin-label">&lt;/&gt; padded_gather_idx &amp; gathered_kv_write_mask</span>
+        <!-- 放置于上支路 save kvcache 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 49.0%; top: 19.0%;" data-code="code-pcp-restore-map" type="button">
+          <span class="pin-label">&lt;/&gt; AllGather CP &amp; save kvcache</span>
         </button>
 
-        <button class="hotspot-pin pin-left" style="right: 4.2%; left: auto; top: 19.8%;" data-code="code-ascend-pcp-manager" type="button">
-          <span class="pin-label">&lt;/&gt; AscendPCPAttentionContext</span>
+        <!-- 放置于主干 sparse-flash_attn 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 69.2%; top: 26.9%;" data-code="code-pcp-dcp-stacked" type="button">
+          <span class="pin-label">&lt;/&gt; sparse_flash_attn 本地 Query 注意力</span>
+        </button>
+
+        <!-- 放置于下支路 LightningIndexer 算子框右上角 -->
+        <button class="hotspot-pin" style="left: 57.4%; top: 65.8%;" data-code="code-glm53-kpool-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; Indexer AllGather CP &amp; top-k 检索</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -34,14 +44,18 @@
       </div>
     </div>
 
-    <div class="template-grid-2">
-      <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>普通 Prefill 路径</h4>
-        <p style="font-size:1.26rem; margin:0; white-space:nowrap;">计算本地 <code>Q_local / KV_local</code> &#8594; PCP AllGather 汇聚新 KV &#8594; 按 <code>padded_gather_idx</code> 落盘。</p>
+    <div class="template-grid-3">
+      <div class="surface-card" style="padding:1rem 1.4rem;">
+        <h4>1. 主 KV 与 Indexer 跨 CP 同步</h4>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;"><code>kv_down_proj</code> 与 <code>Wk</code> 经 <code>AllGather CP</code> 汇聚后写入 <code>[CTX, hs_c]</code>。</p>
       </div>
-      <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>Chunked Prefill / Prefix Cache 路径</h4>
-        <p style="font-size:1.26rem; margin:0; white-space:nowrap;"><code>DCP=1</code> 时各卡持有完整历史 KV，直接读取本地 Prefix KV 与当前步 Gather 的新 KV 拼接计算。</p>
+      <div class="surface-card" style="padding:1rem 1.4rem;">
+        <h4>2. 本地 <code>1/CP</code> Query 稀疏注意力</h4>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;"><code>LightningIndexer</code> 选出 <code>[X/CP, 2048]</code>，从完整 KV <code>select</code> 计算注意力。</p>
+      </div>
+      <div class="surface-card" style="padding:1rem 1.4rem;">
+        <h4>3. <code>o_proj</code> 两种模式与 SP 衔接</h4>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">支持 <code>AG weights (TP=1)</code> 或 <code>Slice heads + RS(SP)</code> 衔接 <code>LayerNorm / MoE</code>。</p>
       </div>
     </div>
   </div>

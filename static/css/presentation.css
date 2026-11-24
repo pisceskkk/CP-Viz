@@ -1014,6 +1014,10 @@ section:not(.aligncenter) {
   width: min(100%, calc(47vh * 2581 / 1021));
 }
 
+.img-zoom-wrap.sfa-pcp-zoom-wrap {
+  width: min(100%, calc(47vh * 2935 / 1068));
+}
+
 .img-zoom-wrap img {
   display: block;
   width: 100%;
