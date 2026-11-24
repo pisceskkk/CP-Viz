@@ -37,7 +37,7 @@
   }
 
   /* ========================================================================
-     1. Top Stage Navigation Bar (总 - 分 - 总 Breadcrumb)
+     1. Top Stage Navigation Bar
      NOTE: WebSlides dynamically reorders <section> DOM nodes during transitions
      (moveBeforeFirst / moveAfterLast). Therefore we MUST read slides from
      `window.ws.slides` (which preserves logical slide index `slide.i` and
@@ -139,8 +139,8 @@
     container.setAttribute('aria-hidden', 'false');
     branch.classList.add('active');
 
-    var branchTitle = branch.getAttribute('data-branch-title') || '支线详情';
-    setBranchUIState(true, '支线：' + branchTitle);
+    var branchTitle = branch.getAttribute('data-branch-title') || '专题详情';
+    setBranchUIState(true, branchTitle);
 
     if (anchorId) {
       var target = byId(anchorId);

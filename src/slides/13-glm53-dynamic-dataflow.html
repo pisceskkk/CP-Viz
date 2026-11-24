@@ -1,10 +1,10 @@
-<!-- Slide 13: GLM-5.3-Flash 动态算子数据流与源码走读 -->
+<!-- Slide 13: GLM-5.3-Flash 算子级 Tensor 数据流 -->
 <section data-stage="04 PCP+DCP &amp; GLM-5.3">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>GLM-5.3-Flash 动态算子数据流走读</strong></h3>
-        <p class="slide-subtitle">点击算子框或彩色连线高亮上下游 Tensor 链路，一键唤起对应源码</p>
+        <h3><strong>GLM-5.3-Flash 算子级 Tensor 数据流</strong></h3>
+        <p class="slide-subtitle">点击算子框或彩色连线高亮上下游 Tensor 链路，查看对应源码</p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-glm53-dataflow" type="button">
@@ -17,7 +17,7 @@
       <div class="interactive-card-bar">
         <span class="interactive-card-title">
           <span class="interactive-card-dot"></span>
-          交互式 Tensor 数据流画布：支持切换 [KDA 34层 / SFA+KPool 11层 / PCP Prefill / DCP Decode / PCP+DCP 叠加]
+          Tensor 数据流：支持切换 [KDA 34层 / SFA+KPool 11层 / PCP Prefill / DCP Decode / PCP+DCP 叠加]
         </span>
         <div style="display:flex; gap:0.6rem;">
           <button class="btn-code" data-code="code-glm53-kda-pcp" type="button" style="padding:0.2rem 0.7rem; font-size:1.12rem;">

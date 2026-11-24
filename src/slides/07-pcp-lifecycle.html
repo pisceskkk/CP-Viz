@@ -1,5 +1,5 @@
 <!-- Slide 07: PCP ① MRV2 单步 Batch 生命周期 -->
-<section data-stage="03 深入 PCP">
+<section data-stage="03 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -27,7 +27,7 @@ flowchart LR
     <div class="arch-flow">
       <div class="arch-node">
         <button class="hotspot-pin" data-code="code-pcp-dualchunk" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 _iter_rank_chunks</span>
+          <span class="pin-label">&lt;/&gt; _iter_rank_chunks</span>
         </button>
         <span class="arch-node-step">01 &middot; PARTITION</span>
         <h4 class="arch-node-title">2x 虚拟请求展开</h4>
@@ -36,7 +36,7 @@ flowchart LR
 
       <div class="arch-node">
         <button class="hotspot-pin" data-code="code-pcp-restore-map" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 _build_batch_layout</span>
+          <span class="pin-label">&lt;/&gt; _build_batch_layout</span>
         </button>
         <span class="arch-node-step">02 &middot; DUAL MAPS</span>
         <h4 class="arch-node-title">双向互逆映射表</h4>
@@ -45,7 +45,7 @@ flowchart LR
 
       <div class="arch-node">
         <button class="hotspot-pin" data-code="code-ascend-pcp-manager" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 AscendPCPAttentionContext</span>
+          <span class="pin-label">&lt;/&gt; AscendPCPAttentionContext</span>
         </button>
         <span class="arch-node-step">03 &middot; CONTEXT</span>
         <h4 class="arch-node-title">双视图上下文注入</h4>
@@ -54,7 +54,7 @@ flowchart LR
 
       <div class="arch-node">
         <button class="hotspot-pin" data-branch="branch-pcp-layout" type="button">
-          <span class="pin-label">进入 PCP 切分交互沙盘 &#10132;</span>
+          <span class="pin-label">PCP 切分布局 &#10132;</span>
         </button>
         <span class="arch-node-step">04 &middot; RESTORE</span>
         <h4 class="arch-node-title">采样边界还原</h4>

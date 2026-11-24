@@ -1,14 +1,14 @@
-<!-- Slide 02: CP 核心思想（两句话讲透 PCP & DCP） -->
-<section data-stage="01 总览">
+<!-- Slide 02: CP 核心机制与通信组拓扑 -->
+<section data-stage="01 核心机制">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>CP 总览：算力切分 vs 显存切分</strong></h3>
-        <p class="slide-subtitle">以 GLM-5.3-Flash（34 层 KDA + 11 层 SFA/KPool）为锚点的 PCP &amp; DCP 协同</p>
+        <h3><strong>PCP 与 DCP：算力切分 vs 显存切分</strong></h3>
+        <p class="slide-subtitle">GLM-5.3-Flash（34 层 KDA + 11 层 SFA/KPool）在 PCP 与 DCP 下的并行分工</p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-comm-topology" type="button">
-          通信组拓扑沙盘 &#10132;
+          通信组拓扑 &#10132;
         </button>
         <button class="btn-code" data-code="code-parallel-state" type="button">
           &lt;/&gt; parallel_state.py
@@ -42,15 +42,15 @@
         <img src="static/images/CP/glm53-cp-overview.svg" alt="GLM-5.3-Flash PCP & DCP Overview" style="width:100%; max-height:47vh; object-fit:contain;">
 
         <button class="hotspot-pin" style="left: 18%; top: 38%;" data-go-slide="7" type="button">
-          <span class="pin-label">深入 PCP 切分机制 &#10132;</span>
+          <span class="pin-label">PCP 切分机制 &#10132;</span>
         </button>
 
         <button class="hotspot-pin" style="left: 50%; top: 44%;" data-code="code-glm53-kda-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 KDA TP&times;PCP 源码</span>
+          <span class="pin-label">&lt;/&gt; KDA TP&times;PCP 源码</span>
         </button>
 
         <button class="hotspot-pin" style="left: 82%; top: 38%;" data-go-slide="3" type="button">
-          <span class="pin-label">深入 DCP 显存分片 &#10132;</span>
+          <span class="pin-label">DCP 显存分片 &#10132;</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">

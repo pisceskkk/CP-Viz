@@ -1,5 +1,5 @@
 <!-- Slide 04: DCP ② Decode 局部注意力与 dcp_a2a_fused -->
-<section data-stage="02 深入 DCP">
+<section data-stage="02 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -21,15 +21,15 @@
         <img src="static/images/CP/glm53-dcp-decode.svg" alt="GLM-5.3-Flash DCP Decode" style="width:100%; max-height:48vh; object-fit:contain;">
 
         <button class="hotspot-pin" style="left: 20%; top: 58%;" data-code="code-sfa-dcp-impl" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 sparse_index_remap</span>
+          <span class="pin-label">&lt;/&gt; sparse_index_remap</span>
         </button>
 
         <button class="hotspot-pin" style="left: 52%; top: 38%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
-          <span class="pin-label">交互演示：本地 1/DCP KV 分片 &#10132;</span>
+          <span class="pin-label">本地 1/DCP KV 分片 &#10132;</span>
         </button>
 
         <button class="hotspot-pin" style="left: 82%; top: 36%;" data-code="code-dcp-a2a-fused" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 dcp_a2a_fused 打包与归并</span>
+          <span class="pin-label">&lt;/&gt; dcp_a2a_fused 打包与归并</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">

@@ -1,14 +1,14 @@
 <div id="branch-dcp-detail" class="branch-slide" data-branch-title="DCP BlockTable &amp; Slot Mapping">
   <div class="branch-subnav">
-    <span class="branch-subnav-label">DCP 支线定位：</span>
+    <span class="branch-subnav-label">视图切换：</span>
     <button class="btn-slide-jump" onclick="document.getElementById('branch-dcp-blocktable').scrollIntoView({behavior:'smooth'})" type="button">
-      1. Virtual Block 交错映射沙盘
+      1. Virtual Block 交错映射
     </button>
     <button class="btn-slide-jump" onclick="document.getElementById('branch-dcp-tokens').scrollIntoView({behavior:'smooth'})" type="button">
       2. Token 分布与 Local Slot 统计
     </button>
     <button class="btn-code" data-code="code-slot-mapping-kernel" type="button" style="margin-left:auto;">
-      &lt;/&gt; 查看 Triton Slot Mapping Kernel
+      &lt;/&gt; Triton Slot Mapping Kernel
     </button>
   </div>
 
@@ -22,7 +22,7 @@
           </span>
         </div>
         <div class="interactive-card-body" style="height:70vh;">
-          <iframe src="src/dynamics/BlockTable.html" scrolling="auto" title="DCP BlockTable 沙盘"></iframe>
+          <iframe src="src/dynamics/BlockTable.html" scrolling="auto" title="DCP BlockTable 映射"></iframe>
         </div>
       </div>
     </div>
@@ -38,7 +38,7 @@
           </span>
         </div>
         <div class="interactive-card-body" style="height:70vh;">
-          <iframe src="docs/html/token-distribution.html" scrolling="auto" title="DCP Token 分布沙盘"></iframe>
+          <iframe src="docs/html/token-distribution.html" scrolling="auto" title="DCP Token 分布"></iframe>
         </div>
       </div>
     </div>

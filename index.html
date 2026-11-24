@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- SEO -->
-    <title>vLLM-Ascend 序列并行（PCP &amp; DCP）原理与代码架构指南</title>
-    <meta name="description" content="以 GLM-5.3-Flash 为例快速了解 vLLM &amp; vLLM-Ascend PCP 与 DCP 的原理与代码实现">
+    <title>vLLM-Ascend 序列并行（PCP &amp; DCP）</title>
+    <meta name="description" content="vLLM-Ascend PCP 与 DCP 架构及 GLM-5.3-Flash 实现">
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,700,700i%7CMaitree:200,300,400,600,700&amp;subset=latin-ext" rel="stylesheet">
@@ -69,12 +69,12 @@
         </nav>
 
         <div class="topbar-actions">
-          <span class="branch-badge" id="branch-indicator" style="display:none;">支线视图</span>
+          <span class="branch-badge" id="branch-indicator" style="display:none;">专题详情</span>
           <button class="btn-back" id="btn-back-branch" onclick="backFromBranch()" style="display:none;" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <polyline points="15 18 9 12 15 6"/>
             </svg>
-            返回主线
+            返回
           </button>
         </div>
       </div>
@@ -84,63 +84,63 @@
       <article id="webslides" class="vertical">
         <!-- ========== SLIDES START ========== -->
 
-<!-- Slide 00: 封面 & 导读 -->
+<!-- Slide 00: 封面 -->
 <section class="aligncenter" data-stage="封面">
   <div class="wrap">
     <h1><strong>vLLM-Ascend 序列并行（PCP &amp; DCP）</strong></h1>
     <p class="text-intro" style="margin-top:1.2rem;">
-      原理架构与 <strong>GLM-5.3-Flash</strong> 代码走读
+      并行架构与 <strong>GLM-5.3-Flash</strong> 实现
     </p>
     <p style="margin-top:2.4rem;">
       <button class="btn-branch" data-go-slide="1" type="button">
-        开始导览 &#10132;
+        进入目录 &#10132;
       </button>
     </p>
   </div>
 </section>
 
-<!-- Slide 01: 交互式目录（总-分-总路线图） -->
+<!-- Slide 01: 目录 -->
 <section class="aligncenter" data-stage="目录">
   <div class="wrap toc-wrap">
-    <h2><strong>目录（总 — 分 — 总）</strong></h2>
+    <h2><strong>目录</strong></h2>
     <div class="toc-container">
       <ol class="toc-items">
         <li class="toc-item" data-go-slide="2">
           <span class="toc-num">01</span>
-          <span class="toc-title">【总】核心思想与通信组拓扑</span>
+          <span class="toc-title">CP 核心机制与通信组拓扑</span>
         </li>
         <li class="toc-item" data-go-slide="3">
           <span class="toc-num">02</span>
-          <span class="toc-title">【分 ①】深入 DCP：KV 分片与 LSE 归并</span>
+          <span class="toc-title">DCP：KV Cache 交错分片与 LSE 归并</span>
         </li>
         <li class="toc-item" data-go-slide="7">
           <span class="toc-num">03</span>
-          <span class="toc-title">【分 ②】深入 PCP：DualChunkSwap 与异构同步</span>
+          <span class="toc-title">PCP：DualChunkSwap 与异构层同步</span>
         </li>
         <li class="toc-item" data-go-slide="11">
           <span class="toc-num">04</span>
-          <span class="toc-title">【分 ③】PCP+DCP 叠加 &amp; GLM-5.3-Flash 数据流</span>
+          <span class="toc-title">PCP+DCP 叠加与 GLM-5.3-Flash 实现</span>
         </li>
         <li class="toc-item" data-go-slide="14">
           <span class="toc-num">05</span>
-          <span class="toc-title">【总】适配矩阵、部署选型与演进规划</span>
+          <span class="toc-title">适配矩阵、部署选型与演进规划</span>
         </li>
       </ol>
     </div>
   </div>
 </section>
 
-<!-- Slide 02: CP 核心思想（两句话讲透 PCP & DCP） -->
-<section data-stage="01 总览">
+<!-- Slide 02: CP 核心机制与通信组拓扑 -->
+<section data-stage="01 核心机制">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>CP 总览：算力切分 vs 显存切分</strong></h3>
-        <p class="slide-subtitle">以 GLM-5.3-Flash（34 层 KDA + 11 层 SFA/KPool）为锚点的 PCP &amp; DCP 协同</p>
+        <h3><strong>PCP 与 DCP：算力切分 vs 显存切分</strong></h3>
+        <p class="slide-subtitle">GLM-5.3-Flash（34 层 KDA + 11 层 SFA/KPool）在 PCP 与 DCP 下的并行分工</p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-comm-topology" type="button">
-          通信组拓扑沙盘 &#10132;
+          通信组拓扑 &#10132;
         </button>
         <button class="btn-code" data-code="code-parallel-state" type="button">
           &lt;/&gt; parallel_state.py
@@ -174,15 +174,15 @@
         <img src="static/images/CP/glm53-cp-overview.svg" alt="GLM-5.3-Flash PCP & DCP Overview" style="width:100%; max-height:47vh; object-fit:contain;">
 
         <button class="hotspot-pin" style="left: 18%; top: 38%;" data-go-slide="7" type="button">
-          <span class="pin-label">深入 PCP 切分机制 &#10132;</span>
+          <span class="pin-label">PCP 切分机制 &#10132;</span>
         </button>
 
         <button class="hotspot-pin" style="left: 50%; top: 44%;" data-code="code-glm53-kda-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 KDA TP&times;PCP 源码</span>
+          <span class="pin-label">&lt;/&gt; KDA TP&times;PCP 源码</span>
         </button>
 
         <button class="hotspot-pin" style="left: 82%; top: 38%;" data-go-slide="3" type="button">
-          <span class="pin-label">深入 DCP 显存分片 &#10132;</span>
+          <span class="pin-label">DCP 显存分片 &#10132;</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -197,7 +197,7 @@
 </section>
 
 <!-- Slide 03: DCP ① Virtual Block 与交错 Slot Mapping -->
-<section data-stage="02 深入 DCP">
+<section data-stage="02 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -206,7 +206,7 @@
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-dcp-detail" data-anchor="branch-dcp-blocktable" type="button">
-          BlockTable 沙盘 &#10132;
+          BlockTable 映射 &#10132;
         </button>
         <button class="btn-code" data-code="code-slot-mapping-kernel" type="button">
           &lt;/&gt; compute_slot_mappings.py
@@ -219,15 +219,15 @@
         <img src="static/images/CP/glm53-dcp-slot-mapping.svg" alt="GLM-5.3-Flash DCP Slot Mapping" style="width:100%; max-height:48vh; object-fit:contain;">
 
         <button class="hotspot-pin" style="left: 18%; top: 38%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-blocktable" type="button">
-          <span class="pin-label">交互演示：Virtual Block 跨卡映射 &#10132;</span>
+          <span class="pin-label">Virtual Block 跨卡映射 &#10132;</span>
         </button>
 
         <button class="hotspot-pin" style="left: 46%; top: 48%;" data-code="code-slot-mapping-kernel" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 Triton Slot Mapping 源码</span>
+          <span class="pin-label">&lt;/&gt; Triton Slot Mapping 源码</span>
         </button>
 
         <button class="hotspot-pin" style="left: 78%; top: 30%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
-          <span class="pin-label">交互演示：Token 分布与 -1 掩码 &#10132;</span>
+          <span class="pin-label">Token 分布与 -1 掩码 &#10132;</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -257,7 +257,7 @@
 </section>
 
 <!-- Slide 04: DCP ② Decode 局部注意力与 dcp_a2a_fused -->
-<section data-stage="02 深入 DCP">
+<section data-stage="02 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -279,15 +279,15 @@
         <img src="static/images/CP/glm53-dcp-decode.svg" alt="GLM-5.3-Flash DCP Decode" style="width:100%; max-height:48vh; object-fit:contain;">
 
         <button class="hotspot-pin" style="left: 20%; top: 58%;" data-code="code-sfa-dcp-impl" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 sparse_index_remap</span>
+          <span class="pin-label">&lt;/&gt; sparse_index_remap</span>
         </button>
 
         <button class="hotspot-pin" style="left: 52%; top: 38%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
-          <span class="pin-label">交互演示：本地 1/DCP KV 分片 &#10132;</span>
+          <span class="pin-label">本地 1/DCP KV 分片 &#10132;</span>
         </button>
 
         <button class="hotspot-pin" style="left: 82%; top: 36%;" data-code="code-dcp-a2a-fused" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 dcp_a2a_fused 打包与归并</span>
+          <span class="pin-label">&lt;/&gt; dcp_a2a_fused 打包与归并</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -317,7 +317,7 @@
 </section>
 
 <!-- Slide 05: DCP ③ SFA 双模式与 Prefill 紧凑 KV Gather -->
-<section data-stage="02 深入 DCP">
+<section data-stage="02 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -339,11 +339,11 @@
         <img src="static/images/CP/glm53-dcp-sfa-prefill.svg" alt="GLM-5.3-Flash SFA DCP Modes" style="width:100%; max-height:48vh; object-fit:contain;">
 
         <button class="hotspot-pin" style="left: 32%; top: 36%;" data-code="code-glm53-kpool-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 Replicated KPool (4:1) 源码</span>
+          <span class="pin-label">&lt;/&gt; Replicated KPool (4:1) 源码</span>
         </button>
 
         <button class="hotspot-pin" style="left: 84%; top: 36%;" data-code="code-sfa-dcp-impl" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 _record_dcp_kv_gather_context</span>
+          <span class="pin-label">&lt;/&gt; _record_dcp_kv_gather_context</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -369,7 +369,7 @@
 </section>
 
 <!-- Slide 06: DCP ④ History / Current 拆流重叠 -->
-<section data-stage="02 深入 DCP">
+<section data-stage="02 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -412,7 +412,7 @@ flowchart LR
 </section>
 
 <!-- Slide 07: PCP ① MRV2 单步 Batch 生命周期 -->
-<section data-stage="03 深入 PCP">
+<section data-stage="03 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -440,7 +440,7 @@ flowchart LR
     <div class="arch-flow">
       <div class="arch-node">
         <button class="hotspot-pin" data-code="code-pcp-dualchunk" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 _iter_rank_chunks</span>
+          <span class="pin-label">&lt;/&gt; _iter_rank_chunks</span>
         </button>
         <span class="arch-node-step">01 &middot; PARTITION</span>
         <h4 class="arch-node-title">2x 虚拟请求展开</h4>
@@ -449,7 +449,7 @@ flowchart LR
 
       <div class="arch-node">
         <button class="hotspot-pin" data-code="code-pcp-restore-map" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 _build_batch_layout</span>
+          <span class="pin-label">&lt;/&gt; _build_batch_layout</span>
         </button>
         <span class="arch-node-step">02 &middot; DUAL MAPS</span>
         <h4 class="arch-node-title">双向互逆映射表</h4>
@@ -458,7 +458,7 @@ flowchart LR
 
       <div class="arch-node">
         <button class="hotspot-pin" data-code="code-ascend-pcp-manager" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 AscendPCPAttentionContext</span>
+          <span class="pin-label">&lt;/&gt; AscendPCPAttentionContext</span>
         </button>
         <span class="arch-node-step">03 &middot; CONTEXT</span>
         <h4 class="arch-node-title">双视图上下文注入</h4>
@@ -467,7 +467,7 @@ flowchart LR
 
       <div class="arch-node">
         <button class="hotspot-pin" data-branch="branch-pcp-layout" type="button">
-          <span class="pin-label">进入 PCP 切分交互沙盘 &#10132;</span>
+          <span class="pin-label">PCP 切分布局 &#10132;</span>
         </button>
         <span class="arch-node-step">04 &middot; RESTORE</span>
         <h4 class="arch-node-title">采样边界还原</h4>
@@ -478,7 +478,7 @@ flowchart LR
 </section>
 
 <!-- Slide 08: PCP ② DualChunkSwap 头尾对称切分 -->
-<section data-stage="03 深入 PCP">
+<section data-stage="03 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -487,7 +487,7 @@ flowchart LR
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-pcp-layout" type="button">
-          请求切分沙盘 &#10132;
+          请求切分布局 &#10132;
         </button>
         <button class="btn-code" data-code="code-pcp-dualchunk" type="button">
           &lt;/&gt; pcp_manager.py
@@ -500,11 +500,11 @@ flowchart LR
         <img src="static/images/CP/glm53-pcp-dualchunk.svg" alt="GLM-5.3-Flash PCP DualChunkSwap" style="width:100%; max-height:48vh; object-fit:contain;">
 
         <button class="hotspot-pin" style="left: 25%; top: 68%;" data-branch="branch-pcp-layout" type="button">
-          <span class="pin-label">交互演示：观察各 Rank 的 Segment 布局 &#10132;</span>
+          <span class="pin-label">各 Rank 的 Segment 布局 &#10132;</span>
         </button>
 
         <button class="hotspot-pin" style="left: 78%; top: 68%;" data-code="code-pcp-restore-map" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 padded_gather_idx &amp; restore_idx 源码</span>
+          <span class="pin-label">&lt;/&gt; padded_gather_idx &amp; restore_idx 源码</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -530,7 +530,7 @@ flowchart LR
 </section>
 
 <!-- Slide 09: PCP ③ GLM-5.3-Flash Prefill 异构同步 -->
-<section data-stage="03 深入 PCP">
+<section data-stage="03 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -552,15 +552,15 @@ flowchart LR
         <img src="static/images/CP/glm53-pcp-prefill.svg" alt="GLM-5.3-Flash PCP Prefill" style="width:100%; max-height:48vh; object-fit:contain;">
 
         <button class="hotspot-pin" style="left: 50%; top: 28%;" data-code="code-glm53-kda-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 KDA AllGather &amp; ReduceScatter</span>
+          <span class="pin-label">&lt;/&gt; KDA AllGather &amp; ReduceScatter</span>
         </button>
 
         <button class="hotspot-pin" style="left: 30%; top: 75%;" data-code="code-glm53-kpool-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 KPool all_gather_async 重叠</span>
+          <span class="pin-label">&lt;/&gt; KPool all_gather_async 重叠</span>
         </button>
 
         <button class="hotspot-pin" style="left: 68%; top: 75%;" data-code="code-pcp-dcp-stacked" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 SFA 主 KV 同步与稀疏注意力</span>
+          <span class="pin-label">&lt;/&gt; SFA 主 KV 同步与稀疏注意力</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -586,7 +586,7 @@ flowchart LR
 </section>
 
 <!-- Slide 10: PCP ④ Decode 策略与 TP×PCP 权重切分 -->
-<section data-stage="03 深入 PCP">
+<section data-stage="03 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -605,11 +605,11 @@ flowchart LR
         <img src="static/images/CP/glm53-pcp-decode-weights.svg" alt="GLM-5.3-Flash PCP Decode & Weight Sharding" style="width:100%; max-height:48vh; object-fit:contain;">
 
         <button class="hotspot-pin" style="left: 22%; top: 36%;" data-code="code-ascend-pcp-manager" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 Decode 状态同步策略</span>
+          <span class="pin-label">&lt;/&gt; Decode 状态同步策略</span>
         </button>
 
         <button class="hotspot-pin" style="left: 82%; top: 36%;" data-code="code-glm53-kda-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 KDA TP&times;PCP 权重与状态切分</span>
+          <span class="pin-label">&lt;/&gt; KDA TP&times;PCP 权重与状态切分</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -644,7 +644,7 @@ flowchart LR
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-comm-topology" type="button">
-          通信组叠加沙盘 &#10132;
+          通信组拓扑 &#10132;
         </button>
         <button class="btn-code" data-code="code-pcp-dcp-stacked" type="button">
           &lt;/&gt; AscendSFAPCPDCPMetadataBuilder
@@ -695,10 +695,10 @@ flowchart LR
           </div>
           <div style="display:flex; flex-direction:column; justify-content:center; gap:1rem;">
             <button class="btn-code" data-code="code-pcp-dcp-stacked" type="button">
-              &lt;/&gt; 查看 AscendSFAPCPDCPMetadataBuilder
+              &lt;/&gt; AscendSFAPCPDCPMetadataBuilder
             </button>
             <button class="btn-code" data-code="code-pcp-restore-map" type="button">
-              &lt;/&gt; 查看 padded_gather_idx &amp; write_mask
+              &lt;/&gt; padded_gather_idx &amp; write_mask
             </button>
           </div>
         </div>
@@ -715,7 +715,7 @@ flowchart LR
           </div>
           <div style="display:flex; flex-direction:column; justify-content:center; gap:1rem;">
             <button class="btn-code" data-code="code-dcp-impl-mixin" type="button">
-              &lt;/&gt; 查看 DCPImplMixin._merge_dcp_attention_output
+              &lt;/&gt; DCPImplMixin._merge_dcp_attention_output
             </button>
           </div>
         </div>
@@ -734,7 +734,7 @@ flowchart LR
       </div>
       <div class="slide-actions">
         <button class="btn-slide-jump" data-go-slide="13" type="button">
-          进入动态数据流画布 &#10132;
+          算子级 Tensor 数据流 &#10132;
         </button>
       </div>
     </div>
@@ -742,7 +742,7 @@ flowchart LR
     <div class="arch-flow" style="margin-bottom:1.6rem;">
       <div class="arch-node" style="border-top:4px solid #16a34a;">
         <button class="hotspot-pin" data-code="code-glm53-kda-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 kda.py</span>
+          <span class="pin-label">&lt;/&gt; kda.py</span>
         </button>
         <span class="arch-node-step">34 LAYERS &middot; KDA</span>
         <h4 class="arch-node-title">KDA 线性注意力</h4>
@@ -751,7 +751,7 @@ flowchart LR
 
       <div class="arch-node" style="border-top:4px solid #d97706;">
         <button class="hotspot-pin" data-code="code-glm53-kpool-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 indexer_kpool.py</span>
+          <span class="pin-label">&lt;/&gt; indexer_kpool.py</span>
         </button>
         <span class="arch-node-step">11 LAYERS &middot; KPOOL</span>
         <h4 class="arch-node-title">KPool 4:1 索引器</h4>
@@ -760,7 +760,7 @@ flowchart LR
 
       <div class="arch-node" style="border-top:4px solid #7c3aed;">
         <button class="hotspot-pin" data-code="code-pcp-dcp-stacked" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 sfa_cp.py</span>
+          <span class="pin-label">&lt;/&gt; sfa_cp.py</span>
         </button>
         <span class="arch-node-step">11 LAYERS &middot; NoPE SFA</span>
         <h4 class="arch-node-title">NoPE SFA 主注意力</h4>
@@ -769,7 +769,7 @@ flowchart LR
 
       <div class="arch-node" style="border-top:4px solid #0284c7;">
         <button class="hotspot-pin" data-code="code-ascend-pcp-manager" type="button">
-          <span class="pin-label">&lt;/&gt; 查看 pcp_manager.py</span>
+          <span class="pin-label">&lt;/&gt; pcp_manager.py</span>
         </button>
         <span class="arch-node-step">45 LAYERS &middot; mHC &amp; MoE</span>
         <h4 class="arch-node-title">mHC &amp; EP MoE</h4>
@@ -816,13 +816,13 @@ flowchart LR
   </div>
 </section>
 
-<!-- Slide 13: GLM-5.3-Flash 动态算子数据流与源码走读 -->
+<!-- Slide 13: GLM-5.3-Flash 算子级 Tensor 数据流 -->
 <section data-stage="04 PCP+DCP &amp; GLM-5.3">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>GLM-5.3-Flash 动态算子数据流走读</strong></h3>
-        <p class="slide-subtitle">点击算子框或彩色连线高亮上下游 Tensor 链路，一键唤起对应源码</p>
+        <h3><strong>GLM-5.3-Flash 算子级 Tensor 数据流</strong></h3>
+        <p class="slide-subtitle">点击算子框或彩色连线高亮上下游 Tensor 链路，查看对应源码</p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-glm53-dataflow" type="button">
@@ -835,7 +835,7 @@ flowchart LR
       <div class="interactive-card-bar">
         <span class="interactive-card-title">
           <span class="interactive-card-dot"></span>
-          交互式 Tensor 数据流画布：支持切换 [KDA 34层 / SFA+KPool 11层 / PCP Prefill / DCP Decode / PCP+DCP 叠加]
+          Tensor 数据流：支持切换 [KDA 34层 / SFA+KPool 11层 / PCP Prefill / DCP Decode / PCP+DCP 叠加]
         </span>
         <div style="display:flex; gap:0.6rem;">
           <button class="btn-code" data-code="code-glm53-kda-pcp" type="button" style="padding:0.2rem 0.7rem; font-size:1.12rem;">
@@ -857,7 +857,7 @@ flowchart LR
 </section>
 
 <!-- Slide 14: PCP & DCP 适配全景矩阵 -->
-<section data-stage="05 总结与规划">
+<section data-stage="05 适配与演进">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -980,7 +980,7 @@ flowchart LR
 </section>
 
 <!-- Slide 15: 部署选型与演进规划 -->
-<section data-stage="05 总结与规划">
+<section data-stage="05 适配与演进">
   <div class="wrap">
     <div class="slide-header">
       <div>
@@ -1031,17 +1031,17 @@ flowchart LR
   </div>
 </section>
 
-<!-- Slide 16: 核心源码速查表 & Q&A -->
-<section data-stage="05 总结与规划">
+<!-- Slide 16: 核心源码索引 & Q&A -->
+<section data-stage="05 适配与演进">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>核心源码速查表 &amp; Q&amp;A</strong></h3>
-        <p class="slide-subtitle">点击右侧按钮直接唤起代码抽屉</p>
+        <h3><strong>核心源码索引 &amp; Q&amp;A</strong></h3>
+        <p class="slide-subtitle">vLLM 与 vLLM-Ascend 序列并行关键实现文件</p>
       </div>
       <div class="slide-actions">
         <button class="btn-slide-jump" data-go-slide="0" type="button">
-          &#8634; 返回封面
+          &#8634; 返回首页
         </button>
       </div>
     </div>
@@ -1052,7 +1052,7 @@ flowchart LR
           <th style="width:22%;">功能域</th>
           <th style="width:38%;">核心文件路径 (vllm / vllm-ascend)</th>
           <th style="width:26%;">关键类 / 算子</th>
-          <th style="width:14%;">源码透视</th>
+          <th style="width:14%;">源码</th>
         </tr>
       </thead>
       <tbody>
@@ -1108,7 +1108,7 @@ flowchart LR
 
     <!-- ========== BRANCH SLIDES (off mainline, scrollable longform with sub-anchor nav) ========== -->
     <div id="branch-container" aria-hidden="true">
-<div id="branch-comm-topology" class="branch-slide" data-branch-title="通信组拓扑沙盘">
+<div id="branch-comm-topology" class="branch-slide" data-branch-title="通信组拓扑">
   <div class="branch-page">
     <div class="wrap">
       <div class="interactive-card">
@@ -1118,11 +1118,11 @@ flowchart LR
             TP &times; PCP &times; DCP 物理网格与逻辑通信组排布（PCP-first, then TP）
           </span>
           <button class="btn-code" data-code="code-parallel-state" type="button" style="padding:0.25rem 0.8rem; font-size:1.15rem;">
-            &lt;/&gt; 查看 parallel_state.py
+            &lt;/&gt; parallel_state.py
           </button>
         </div>
         <div class="interactive-card-body" style="height:74vh;">
-          <iframe src="src/dynamics/PCP_comm_group.html" scrolling="auto" title="通信组拓扑沙盘"></iframe>
+          <iframe src="src/dynamics/PCP_comm_group.html" scrolling="auto" title="通信组拓扑"></iframe>
         </div>
       </div>
     </div>
@@ -1131,15 +1131,15 @@ flowchart LR
 
 <div id="branch-dcp-detail" class="branch-slide" data-branch-title="DCP BlockTable &amp; Slot Mapping">
   <div class="branch-subnav">
-    <span class="branch-subnav-label">DCP 支线定位：</span>
+    <span class="branch-subnav-label">视图切换：</span>
     <button class="btn-slide-jump" onclick="document.getElementById('branch-dcp-blocktable').scrollIntoView({behavior:'smooth'})" type="button">
-      1. Virtual Block 交错映射沙盘
+      1. Virtual Block 交错映射
     </button>
     <button class="btn-slide-jump" onclick="document.getElementById('branch-dcp-tokens').scrollIntoView({behavior:'smooth'})" type="button">
       2. Token 分布与 Local Slot 统计
     </button>
     <button class="btn-code" data-code="code-slot-mapping-kernel" type="button" style="margin-left:auto;">
-      &lt;/&gt; 查看 Triton Slot Mapping Kernel
+      &lt;/&gt; Triton Slot Mapping Kernel
     </button>
   </div>
 
@@ -1153,7 +1153,7 @@ flowchart LR
           </span>
         </div>
         <div class="interactive-card-body" style="height:70vh;">
-          <iframe src="src/dynamics/BlockTable.html" scrolling="auto" title="DCP BlockTable 沙盘"></iframe>
+          <iframe src="src/dynamics/BlockTable.html" scrolling="auto" title="DCP BlockTable 映射"></iframe>
         </div>
       </div>
     </div>
@@ -1169,7 +1169,7 @@ flowchart LR
           </span>
         </div>
         <div class="interactive-card-body" style="height:70vh;">
-          <iframe src="docs/html/token-distribution.html" scrolling="auto" title="DCP Token 分布沙盘"></iframe>
+          <iframe src="docs/html/token-distribution.html" scrolling="auto" title="DCP Token 分布"></iframe>
         </div>
       </div>
     </div>
@@ -1195,7 +1195,7 @@ flowchart LR
           </div>
         </div>
         <div class="interactive-card-body" style="height:75vh;">
-          <iframe src="src/dynamics/pcp_prefill_split.html" scrolling="auto" title="MRV2 PCP 序列切分沙盘"></iframe>
+          <iframe src="src/dynamics/pcp_prefill_split.html" scrolling="auto" title="MRV2 PCP 序列切分"></iframe>
         </div>
       </div>
     </div>
