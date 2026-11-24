@@ -517,96 +517,179 @@ def diag_2_dcp_slot_mapping() -> tuple[list[dict], int, int]:
     return els, 1400, 440
 
 
+def add_wire_badge(
+    els: list[dict],
+    badge_id: str,
+    cx: int,
+    cy: int,
+    text: str,
+    stroke: str = "#0284c7",
+    bg: str = "#ffffff",
+) -> None:
+    """Add a compact pill badge on an arrow wire showing tensor name and shape."""
+    w = max(110, int(len(text) * 8.4) + 18)
+    h = 26
+    x = cx - w // 2
+    y = cy - h // 2
+    tid = f"{badge_id}_t"
+    els.append(
+        make_rect(
+            badge_id,
+            x,
+            y,
+            w,
+            h,
+            bg,
+            stroke,
+            stroke_width=1,
+            stroke_style="solid",
+            fill_style="solid",
+            bound_text_id=tid,
+        )
+    )
+    els.append(
+        make_text(
+            tid,
+            x + 4,
+            y + 3,
+            w - 8,
+            h - 6,
+            text,
+            font_size=13,
+            color=stroke,
+            container_id=badge_id,
+        )
+    )
+
+
 # =============================================================================
-# 3. DCP Decode (Model-Agnostic: Q Gather -> Local 1/DCP KV -> dcp_a2a_fused)
+# 3. DCP Decode (Slide 5: Operator Block Dataflow with Tensor Shapes on Arrows)
 # =============================================================================
 def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
-    """Slide 04: General DCP Decode flow."""
+    """Slide 04 (#slide=5): Operator-block tensor dataflow for DCP Decode."""
     els: list[dict] = []
-    add_zone(els, "z_s1", 25, 25, 360, 390, "Step 1 · 收集完整 Query Heads", "#f8fafc", "#64748b")
+
+    # Subtle Stage Background Zones
+    add_zone(els, "z_op1", 20, 20, 465, 400, "STAGE 1 · Query 投影与跨 DCP Head 收集", "#f8fafc", "#94a3b8")
+    add_zone(els, "z_op2", 505, 20, 415, 400, "STAGE 2 · 本地 1/DCP KV 分片局部注意力", "#faf5ff", "#7c3aed", "#6d28d9")
+    add_zone(els, "z_op3", 940, 20, 440, 400, "STAGE 3 · 融合 All2All LSE 归并与输出投影", "#f0fdf4", "#16a34a", "#15803d")
+
+    # Operator 1: QKV Projection
     add_box(
         els,
-        "dec_q_in",
-        50,
-        85,
-        310,
-        105,
-        "本地 Query Heads\n[B, H_local, D]\n\n新 Token KV 写入对应 Owner 卡",
+        "op_qkv_proj",
+        38,
+        110,
+        180,
+        92,
+        "QKV Linear Proj\n(q_proj / kv_proj)\n输入: hidden [B, H]",
         "#e0f2fe",
-        "#0284c7",
-        font_size=16,
-    )
-    add_box(
-        els,
-        "dec_q_ag",
-        50,
-        225,
-        310,
-        150,
-        "_dcp_all_gather_fragments\n跨 DCP Gather 完整 Q Heads\n→ [B, H_full, D]\n\n(DCP==PCP 或 Q Replicate 时免通信)",
-        "#bae6fd",
         "#0284c7",
         font_size=15,
     )
-    add_arrow(els, "a_q1", [[205, 190], [205, 225]], "#0284c7")
 
-    add_zone(els, "z_s2", 425, 25, 480, 390, "Step 2 · 各卡对本地 1/DCP KV 算局部 Attention", "#faf5ff", "#7c3aed", "#6d28d9")
+    # Operator 2A: AllGather Query Heads
     add_box(
         els,
-        "r0_kv",
-        455,
-        85,
-        420,
-        130,
-        "DCP Rank 0 · 本地 1/DCP 历史 KV 分片\nKV Cache 静止不动 (零 KV 通信!)\n计算局部输出 (O_0, FP32 LSE_0)",
-        "#f3e8ff",
-        "#7c3aed",
-        font_size=16,
-    )
-    add_box(
-        els,
-        "r1_kv",
-        455,
-        250,
-        420,
-        130,
-        "DCP Rank 1 · 本地 1/DCP 历史 KV 分片\nKV Cache 静止不动 (零 KV 通信!)\n计算局部输出 (O_1, FP32 LSE_1)",
-        "#f3e8ff",
-        "#7c3aed",
-        font_size=16,
-    )
-
-    add_zone(els, "z_s3", 945, 25, 430, 390, "Step 3 · dcp_a2a_fused 无损打包归并", "#f0fdf4", "#16a34a", "#15803d")
-    add_box(
-        els,
-        "a2a_pack",
-        975,
-        85,
-        370,
-        145,
-        "dcp_a2a_fused (Triton + All-to-All)\n\n• Triton 无损打包 O_j + FP32 LSE_j\n• 单次 all_to_all_single 按 Head 切分\n• LSE 权重归并: w_j = exp(L_j - max L)",
+        "op_q_gather",
+        285,
+        75,
+        185,
+        88,
+        "AllGather Q Heads\n(_dcp_all_gather)\n跨 DCP 收集 Q 分片",
         "#dcfce7",
         "#16a34a",
         font_size=15,
     )
+
+    # Operator 2B: Reshape & Cache New KV
     add_box(
         els,
-        "a2a_out",
-        975,
-        260,
-        370,
-        120,
-        "归并后精确 Attention 输出\n[B, H_local, D]\n↓\nO-Projection 写回残差流",
-        "#ccfbf1",
-        "#0d9488",
-        font_size=16,
+        "op_kv_cache",
+        285,
+        265,
+        185,
+        88,
+        "Reshape & Cache\n(Owner Slot 落盘)\n非归属 Rank 写 -1",
+        "#f3e8ff",
+        "#7c3aed",
+        font_size=15,
     )
 
-    add_arrow(els, "a_dd1", [[360, 280], [455, 150]], "#0284c7")
-    add_arrow(els, "a_dd2", [[360, 310], [455, 315]], "#0284c7")
-    add_arrow(els, "a_dd5", [[875, 150], [975, 145]], "#16a34a")
-    add_arrow(els, "a_dd6", [[875, 315], [975, 175]], "#16a34a")
-    add_arrow(els, "a_dd7", [[1160, 230], [1160, 260]], "#0d9488")
+    # Operator 3: Local FlashAttention / MLA / SFA Kernel
+    add_box(
+        els,
+        "op_local_attn",
+        635,
+        155,
+        235,
+        110,
+        "Local Attention Kernel\n(FIA / MLA / SFA)\n全量 Q × 本地 1/DCP KV\n(历史 KV 免跨卡通信!)",
+        "#ede9fe",
+        "#6d28d9",
+        font_size=15,
+    )
+
+    # Operator 4: dcp_a2a_fused (Pack + All2All + LSE Combine)
+    add_box(
+        els,
+        "op_a2a_lse",
+        1025,
+        75,
+        225,
+        105,
+        "dcp_a2a_fused\n1. Triton Pack (O_j, LSE_j)\n2. all_to_all_single (切 Head)\n3. LSE 加权: ∑w_j·O_j / ∑w_j",
+        "#dcfce7",
+        "#16a34a",
+        font_size=14,
+    )
+
+    # Operator 5: O-Projection
+    add_box(
+        els,
+        "op_o_proj",
+        1025,
+        275,
+        225,
+        88,
+        "RowParallel o_proj\n([B, N_h/TP, D] → [B, H])\n输出写回残差流",
+        "#ccfbf1",
+        "#0d9488",
+        font_size=15,
+    )
+
+    # Wires & Tensor Shape Badges (glm53_prefill_decode_operator_block_diagram style)
+    # 1) op_qkv_proj -> op_q_gather
+    add_arrow(els, "w_q_loc", [[218, 136], [250, 136], [250, 119], [285, 119]], "#0284c7")
+    add_wire_badge(els, "b_q_loc", 232, 60, "Q_local [B, N_h/DCP, D]", "#0284c7", "#f0f9ff")
+
+    # 2) op_qkv_proj -> op_kv_cache
+    add_arrow(els, "w_kv_new", [[218, 178], [250, 178], [250, 309], [285, 309]], "#7c3aed")
+    add_wire_badge(els, "b_kv_new", 155, 309, "KV_new [B, D_kv]", "#7c3aed", "#faf5ff")
+
+    # 3) op_q_gather -> op_local_attn
+    add_arrow(els, "w_q_full", [[470, 119], [555, 119], [555, 190], [635, 190]], "#16a34a")
+    add_wire_badge(els, "b_q_full", 565, 100, "Q_full [B, N_h, D]", "#15803d", "#f0fdf4")
+
+    # 4) op_kv_cache -> op_local_attn
+    add_arrow(els, "w_kv_shard", [[470, 309], [555, 309], [555, 232], [635, 232]], "#7c3aed")
+    add_wire_badge(els, "b_kv_shard", 575, 330, "KV_local [S/DCP, D_kv]", "#6d28d9", "#faf5ff")
+
+    # 5) op_local_attn -> op_a2a_lse (Two parallel tensor wires: O_j and LSE_j)
+    add_arrow(els, "w_oj", [[870, 185], [955, 185], [955, 112], [1025, 112]], "#0284c7")
+    add_wire_badge(els, "b_oj", 915, 82, "O_j [B, N_h, D] (BF16)", "#0284c7", "#f0f9ff")
+
+    add_arrow(els, "w_lse", [[870, 235], [975, 235], [975, 152], [1025, 152]], "#d97706")
+    add_wire_badge(els, "b_lse", 915, 262, "LSE_j [B, N_h, 1] (FP32)", "#b45309", "#fffbeb")
+
+    # 6) op_a2a_lse -> op_o_proj
+    add_arrow(els, "w_omerged", [[1138, 180], [1138, 275]], "#16a34a")
+    add_wire_badge(els, "b_omerged", 1138, 228, "O_merged [B, N_h/DCP, D]", "#15803d", "#f0fdf4")
+
+    # 7) op_o_proj -> output
+    add_arrow(els, "w_out", [[1250, 319], [1355, 319]], "#0d9488")
+    add_wire_badge(els, "b_out", 1300, 368, "attn_out [B, H]", "#0f766e", "#f0fdfa")
+
     return els, 1400, 440
 
 
