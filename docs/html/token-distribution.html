@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DCP Token Distribution</title>
+  <title>DCP Token 归属与 Slot Mapping 串联演示</title>
   <style>
     :root {
       color-scheme: light;
@@ -13,60 +13,60 @@
       --text: #0f172a;
       --muted: #64748b;
       --blue: #0369a1;
-      --green: #16a34a;
-      --amber: #d97706;
-      --red: #dc2626;
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      min-height: 100vh;
-      padding: 18px;
+      padding: 12px 14px;
       background: var(--bg);
       color: var(--text);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
     }
 
     .app {
       display: grid;
-      grid-template-columns: 300px minmax(0, 1fr);
-      gap: 18px;
-      min-height: calc(100vh - 36px);
+      grid-template-columns: 270px minmax(0, 1fr);
+      gap: 14px;
+      max-width: 1380px;
+      margin: 0 auto;
     }
 
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
     }
 
     .controls {
-      padding: 18px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
     h1 {
-      margin: 0 0 6px;
-      font-size: 20px;
-      line-height: 1.2;
+      margin: 0 0 4px;
+      font-size: 17px;
+      line-height: 1.25;
     }
 
     .subtitle {
-      margin: 0 0 18px;
+      margin: 0 0 12px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.45;
     }
 
     label {
       display: grid;
-      gap: 8px;
-      margin-top: 18px;
+      gap: 5px;
+      margin-top: 12px;
       color: #334155;
-      font-size: 13px;
-      font-weight: 650;
+      font-size: 12.5px;
+      font-weight: 700;
     }
 
     .value {
@@ -77,100 +77,116 @@
 
     input[type="range"] {
       width: 100%;
+      height: 20px;
       accent-color: var(--blue);
-    }
-
-    .divisor-group {
-      display: flex;
-      gap: 6px;
-    }
-
-    .divisor-btn {
-      flex: 1;
-      height: 30px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #ffffff;
-      color: #334155;
-      font-size: 12.5px;
-      font-weight: 700;
       cursor: pointer;
-      transition: all 0.15s;
     }
 
-    .divisor-btn:hover {
-      border-color: var(--blue);
-      color: var(--blue);
-    }
-
-    .divisor-btn.active {
-      background: var(--blue);
-      border-color: var(--blue);
-      color: #ffffff;
-    }
-
-    .content {
-      display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
-      gap: 18px;
+    .tick-marks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: var(--muted);
+      font-weight: 600;
+      padding: 0 2px;
+      font-variant-numeric: tabular-nums;
     }
 
     .metrics {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 14px;
     }
 
     .metric {
-      padding: 14px 16px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 10px;
     }
 
     .metric strong {
       display: block;
-      margin-bottom: 3px;
-      font-size: 24px;
+      font-size: 18px;
+      color: var(--blue);
       font-variant-numeric: tabular-nums;
     }
 
     .metric span {
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
+      white-space: nowrap;
     }
 
-    .visuals {
+    .formula-card {
+      margin-top: 12px;
+      background: #f1f5f9;
+      border-left: 3px solid var(--blue);
+      border-radius: 5px;
+      padding: 8px 10px;
+      font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #334155;
+    }
+
+    .content {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
-      gap: 18px;
-      min-height: 0;
+      grid-template-rows: auto auto;
+      gap: 12px;
+      min-width: 0;
     }
 
     .section {
-      padding: 16px;
+      padding: 12px 16px;
       overflow: hidden;
     }
 
-    .section h2 {
-      margin: 0 0 12px;
-      font-size: 16px;
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
     }
 
+    .section h2 {
+      margin: 0;
+      font-size: 14.5px;
+      white-space: nowrap;
+    }
+
+    .section-hint {
+      font-size: 11.5px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* Upper View: Per-Rank Compact Physical Storage (Rank Token Ownership) */
     .rank-grid {
       display: grid;
-      gap: 12px;
+      gap: 8px;
     }
 
     .rank {
       display: grid;
-      grid-template-columns: 84px minmax(0, 1fr);
+      grid-template-columns: 92px minmax(0, 1fr);
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .rank-name {
       color: #334155;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       text-align: right;
+      white-space: nowrap;
+      line-height: 1.25;
+    }
+
+    .rank-name small {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 11px;
     }
 
     .tokens {
@@ -187,164 +203,227 @@
 
     .token {
       min-width: 0;
-      height: 28px;
+      height: 30px;
       border-radius: 4px;
-      background: #bae6fd;
-      border: 1px solid rgba(15, 23, 42, 0.14);
+      border: 1px solid rgba(15, 23, 42, 0.16);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
-      font-weight: 700;
-      color: #0f172a;
       font-variant-numeric: tabular-nums;
       overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+      line-height: 1.05;
+    }
+
+    .token .tok-id {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .token .slot-id {
+      font-size: 9px;
+      color: #334155;
+      font-family: ui-monospace, Consolas, monospace;
     }
 
     .token.pad-slot {
       background: #f1f5f9 !important;
       border: 1px dashed #cbd5e1;
-      color: #94a3b8;
+      cursor: default;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
+    /* Lower View: Global Sequence Slot Mapping Matrix (Token Order -> slot@dcp_r) */
+    .slot-matrix-wrap {
+      overflow-x: auto;
+      padding-bottom: 4px;
     }
 
-    th,
-    td {
-      border-bottom: 1px solid var(--line);
-      padding: 8px 10px;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
+    .slot-matrix {
+      display: grid;
+      gap: 6px;
+      min-width: 640px;
     }
 
-    th {
+    .matrix-row {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+
+    .matrix-label {
+      font: 700 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       color: #334155;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .chip-track {
+      display: grid;
+      grid-template-columns: repeat(var(--seq-cols), minmax(0, 1fr));
+      gap: 3px;
+      background: #f8fafc;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .m-chip {
+      height: 24px;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s;
+      overflow: hidden;
+    }
+
+    .m-chip.order-chip {
+      background: #e0f2fe;
+      border-color: #7dd3fc;
+      color: #0369a1;
+    }
+
+    .m-chip.valid-slot {
+      color: #0f172a;
+      border-color: rgba(15, 23, 42, 0.22);
+    }
+
+    .m-chip.pad-minus {
       background: #f1f5f9;
-      font-size: 12px;
-      font-weight: 750;
+      border-color: #e2e8f0;
+      color: #94a3b8;
+      font-weight: 500;
     }
 
-    td:first-child,
-    th:first-child {
-      text-align: left;
+    .m-chip.empty-col {
+      background: transparent;
+      border: 1px dashed #e2e8f0;
+      color: transparent;
+      pointer-events: none;
     }
 
-    .note {
-      margin: 12px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.45;
+    .active-tok {
+      outline: 2.5px solid #ef4444 !important;
+      outline-offset: 0px;
+      transform: scale(1.06);
+      z-index: 5;
+      box-shadow: 0 3px 10px rgba(239, 68, 68, 0.28);
     }
 
     @media (max-width: 900px) {
-      body { padding: 12px; }
-      .app,
-      .visuals {
-        grid-template-columns: 1fr;
-      }
-      .metrics {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+      .app { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <main class="app">
     <aside class="panel controls">
-      <h1>DCP Token 分布</h1>
-      <p class="subtitle">调整 token 长度、DCP size 和 interleave，观察 KV Cache token 归属与 slot mapping 的变化。</p>
+      <div>
+        <h1>DCP 归属与 Slot Mapping</h1>
+        <p class="subtitle">上方展示各 Rank 物理块紧凑落盘，下方同步展示全局序列在各卡的 Slot Mapping 与 <code>-1</code> 掩码。</p>
 
-      <label>
-        <span>Token 长度 <span class="value" id="tokenCountValue"></span></span>
-        <input id="tokenCount" type="range" min="16" max="128" step="8" value="64">
-      </label>
+        <label for="tokenCount">
+          <span>Token 序列长度 <span class="value" id="tokenCountValue">32</span></span>
+          <input id="tokenCount" type="range" min="16" max="64" step="4" value="32">
+          <div class="tick-marks"><span>16</span><span>32</span><span>48</span><span>64</span></div>
+        </label>
 
-      <label>
-        <span>DCP size <span class="value" id="dcpSizeValue"></span></span>
-        <input id="dcpSize" type="range" min="1" max="8" step="1" value="4">
-      </label>
+        <label for="dcpLevel">
+          <span>DCP size <span class="value" id="dcpSizeValue">4</span></span>
+          <input id="dcpLevel" type="range" min="0" max="2" step="1" value="1">
+          <div class="tick-marks"><span>2</span><span>4</span><span>8</span></div>
+        </label>
 
-      <label>
-        <span>Interleave size (block_size=16 的因数) <span class="value" id="interleaveValue">4</span></span>
-        <div class="divisor-group" id="divisorGroup">
-          <button type="button" class="divisor-btn" data-val="1">1</button>
-          <button type="button" class="divisor-btn" data-val="2">2</button>
-          <button type="button" class="divisor-btn active" data-val="4">4</button>
-          <button type="button" class="divisor-btn" data-val="8">8</button>
-          <button type="button" class="divisor-btn" data-val="16">16</button>
+        <label for="interleaveLevel">
+          <span>Interleave size (block_size=16 因数) <span class="value" id="interleaveValue">4</span></span>
+          <input id="interleaveLevel" type="range" min="0" max="4" step="1" value="2">
+          <div class="tick-marks"><span>1</span><span>2</span><span>4</span><span>8</span><span>16</span></div>
+        </label>
+
+        <div class="metrics">
+          <div class="metric"><strong id="tokensPerRound">16</strong><span>每轮交错跨度 (I&times;DCP)</span></div>
+          <div class="metric"><strong id="localMax">8</strong><span>单卡物理槽位数</span></div>
+          <div class="metric"><strong id="virtualBlocks">8</strong><span>交错块数 (ceil(T/I))</span></div>
+          <div class="metric"><strong id="tailTokens">0</strong><span>尾部未满轮 Token</span></div>
         </div>
-      </label>
+      </div>
+
+      <div class="formula-card">
+        owner = floor(pos / I) % DCP<br>
+        local_slot = floor(pos / (I&times;DCP))&times;I + (pos % I)<br>
+        slot@dcp_r = (owner == r) ? local_slot : <strong>-1</strong>
+      </div>
     </aside>
 
     <section class="content">
-      <div class="metrics">
-        <div class="panel metric"><strong id="tokensPerRound"></strong><span>每轮覆盖 token</span></div>
-        <div class="panel metric"><strong id="localMax"></strong><span>单 rank 最大 token 数</span></div>
-        <div class="panel metric"><strong id="virtualBlocks"></strong><span>示意 virtual blocks</span></div>
-        <div class="panel metric"><strong id="tailTokens"></strong><span>尾部不满 token</span></div>
-      </div>
+      <!-- Part 1: Compact Physical Storage per DCP Rank -->
+      <section class="panel section">
+        <div class="section-head">
+          <h2>① 各 DCP Rank 物理 KV Cache 紧凑存储（Rank Token 归属 &amp; Local Slot ID）</h2>
+          <span class="section-hint">悬停任意 Token 可联动高亮下方 Slot Mapping 矩阵</span>
+        </div>
+        <div class="rank-grid" id="rankGrid"></div>
+      </section>
 
-      <div class="visuals">
-        <section class="panel section">
-          <h2>Rank token 归属</h2>
-          <div class="rank-grid" id="rankGrid"></div>
-          <p class="note">同一 interleave 片段内 token 连续落到同一 DCP rank，片段结束后轮转到下一个 rank。</p>
-        </section>
-
-        <section class="panel section">
-          <h2>Slot mapping 样例</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Token</th>
-                <th>DCP rank</th>
-                <th>Local slot</th>
-                <th>Virtual block</th>
-              </tr>
-            </thead>
-            <tbody id="slotRows"></tbody>
-          </table>
-          <p class="note">表格展示前 24 个 token 的映射，便于对照左侧分布。</p>
-        </section>
-      </div>
+      <!-- Part 2: Global Sequence Slot Mapping Matrix -->
+      <section class="panel section">
+        <div class="section-head">
+          <h2>② 全局序列 Slot Mapping 矩阵（归属 Rank 写入 Local Slot，非归属 Rank 写入 <code>-1</code>）</h2>
+          <span class="section-hint">每列对应 1 个全局 Token Position，直观串联上方物理槽位</span>
+        </div>
+        <div class="slot-matrix-wrap">
+          <div class="slot-matrix" id="slotMatrix"></div>
+        </div>
+      </section>
     </section>
   </main>
 
   <script>
-    const palette = ['#bae6fd', '#bbf7d0', '#fed7aa', '#fecaca', '#ddd6fe', '#ccfbf1', '#fde68a', '#e2e8f0'];
-    const controls = {
-      tokenCount: document.getElementById('tokenCount'),
-      dcpSize: document.getElementById('dcpSize')
-    };
-    const divisorBtns = document.querySelectorAll('.divisor-btn');
-    let currentInterleave = 4;
+    const palette = ['#bae6fd', '#bbf7d0', '#fed7aa', '#ddd6fe', '#fecaca', '#ccfbf1', '#fde68a', '#e2e8f0'];
+    const DCP_CHOICES = [2, 4, 8];
+    const INTERLEAVE_DIVISORS = [1, 2, 4, 8, 16];
+    const MAX_SEQ_TOKENS = 64;
 
-    function intValue(name) {
-      return Number.parseInt(controls[name].value, 10);
+    const tokenCountEl = document.getElementById('tokenCount');
+    const dcpLevelEl = document.getElementById('dcpLevel');
+    const interleaveLevelEl = document.getElementById('interleaveLevel');
+
+    function ownerRank(pos, dcpSize, interleave) {
+      return Math.floor(pos / interleave) % dcpSize;
     }
 
-    function ownerRank(tokenIndex, dcpSize, interleave) {
-      return Math.floor(tokenIndex / interleave) % dcpSize;
+    function computeLocalSlot(pos, dcpSize, interleave) {
+      return Math.floor(pos / (interleave * dcpSize)) * interleave + (pos % interleave);
+    }
+
+    function highlightToken(tokId) {
+      document.querySelectorAll('[data-tok]').forEach(el => {
+        el.classList.toggle('active-tok', tokId !== null && Number(el.dataset.tok) === tokId);
+      });
     }
 
     function render() {
-      const tokenCount = intValue('tokenCount');
-      const dcpSize = intValue('dcpSize');
-      const interleave = currentInterleave;
-      const perRank = Array.from({ length: dcpSize }, () => []);
+      const tokenCount = Number(tokenCountEl.value);
+      const dcpSize = DCP_CHOICES[Number(dcpLevelEl.value)] || 4;
+      const interleave = INTERLEAVE_DIVISORS[Number(interleaveLevelEl.value)] || 4;
 
-      for (let token = 0; token < tokenCount; token += 1) {
-        perRank[ownerRank(token, dcpSize, interleave)].push(token);
+      const perRank = Array.from({ length: dcpSize }, () => []);
+      for (let pos = 0; pos < tokenCount; pos += 1) {
+        const r = ownerRank(pos, dcpSize, interleave);
+        const lSlot = computeLocalSlot(pos, dcpSize, interleave);
+        perRank[r].push({ pos, localSlot: lSlot });
       }
 
-      const localMaxCount = Math.max(...perRank.map(tokens => tokens.length));
-      // Keep a fixed column capacity based on slider max (or actual localMax when dcpSize is small)
-      // so existing tokens never jump or wrap to line 2 when tokenCount changes!
-      const fixedCols = Math.max(16, Math.ceil(128 / dcpSize), localMaxCount);
+      const localMaxCount = Math.max(...perRank.map(arr => arr.length));
+      const fixedRankCols = Math.max(16, Math.ceil(MAX_SEQ_TOKENS / dcpSize), localMaxCount);
 
       document.getElementById('tokenCountValue').textContent = tokenCount;
       document.getElementById('dcpSizeValue').textContent = dcpSize;
@@ -354,56 +433,112 @@
       document.getElementById('virtualBlocks').textContent = Math.ceil(tokenCount / interleave);
       document.getElementById('tailTokens').textContent = tokenCount % (dcpSize * interleave);
 
+      // 1. Render Upper Panel: Per-Rank Compact Physical Storage
       const rankGrid = document.getElementById('rankGrid');
       rankGrid.innerHTML = '';
-      perRank.forEach((tokens, rank) => {
+      perRank.forEach((items, rank) => {
         const row = document.createElement('div');
         row.className = 'rank';
-        row.innerHTML = `<div class="rank-name">rank ${rank}<br>${tokens.length} tokens</div>`;
+        row.innerHTML = `<div class="rank-name">DCP rank ${rank}<br><small>${items.length} slots</small></div>`;
 
         const cells = document.createElement('div');
         cells.className = 'tokens';
-        cells.style.setProperty('--cols', fixedCols);
+        cells.style.setProperty('--cols', fixedRankCols);
 
-        tokens.forEach(token => {
+        items.forEach(item => {
           const cell = document.createElement('div');
           cell.className = 'token';
-          cell.title = `token ${token} (rank ${rank})`;
+          cell.dataset.tok = item.pos;
           cell.style.background = palette[rank % palette.length];
-          if (fixedCols <= 32) {
-            cell.textContent = token;
-          }
+          cell.title = `Global Token T${item.pos} → DCP rank ${rank}, Local Slot s${item.localSlot}`;
+          cell.innerHTML = `<span class="tok-id">T${item.pos}</span><span class="slot-id">s${item.localSlot}</span>`;
+          cell.addEventListener('mouseenter', () => highlightToken(item.pos));
+          cell.addEventListener('mouseleave', () => highlightToken(null));
           cells.appendChild(cell);
         });
 
-        for (let i = tokens.length; i < fixedCols; i += 1) {
-          const emptyCell = document.createElement('div');
-          emptyCell.className = 'token pad-slot';
-          cells.appendChild(emptyCell);
+        for (let i = items.length; i < fixedRankCols; i += 1) {
+          const empty = document.createElement('div');
+          empty.className = 'token pad-slot';
+          cells.appendChild(empty);
         }
 
         row.appendChild(cells);
         rankGrid.appendChild(row);
       });
 
-      const localOffsets = Array.from({ length: dcpSize }, () => 0);
-      const rows = [];
-      for (let token = 0; token < Math.min(24, tokenCount); token += 1) {
-        const rank = ownerRank(token, dcpSize, interleave);
-        const localSlot = localOffsets[rank];
-        localOffsets[rank] += 1;
-        rows.push(`<tr><td>token ${token}</td><td>${rank}</td><td>${localSlot}</td><td>${Math.floor(token / interleave)}</td></tr>`);
+      // 2. Render Lower Panel: Global Sequence Slot Mapping Matrix
+      const slotMatrix = document.getElementById('slotMatrix');
+      slotMatrix.innerHTML = '';
+
+      // Show up to 32 columns per view or fixed 32 columns if tokenCount <= 32, fixed 64 if tokenCount > 32
+      const matrixCols = tokenCount <= 32 ? 32 : 64;
+
+      // Header Row: token order T0 .. T_{n-1}
+      const orderRow = document.createElement('div');
+      orderRow.className = 'matrix-row';
+      orderRow.innerHTML = `<div class="matrix-label">token order</div>`;
+      const orderTrack = document.createElement('div');
+      orderTrack.className = 'chip-track';
+      orderTrack.style.setProperty('--seq-cols', matrixCols);
+
+      for (let pos = 0; pos < matrixCols; pos += 1) {
+        const chip = document.createElement('div');
+        if (pos < tokenCount) {
+          chip.className = 'm-chip order-chip';
+          chip.dataset.tok = pos;
+          chip.textContent = matrixCols <= 32 ? `T${pos}` : pos;
+          chip.title = `Global Token T${pos} (pos=${pos})`;
+          chip.addEventListener('mouseenter', () => highlightToken(pos));
+          chip.addEventListener('mouseleave', () => highlightToken(null));
+        } else {
+          chip.className = 'm-chip empty-col';
+        }
+        orderTrack.appendChild(chip);
       }
-      document.getElementById('slotRows').innerHTML = rows.join('');
+      orderRow.appendChild(orderTrack);
+      slotMatrix.appendChild(orderRow);
+
+      // Per-rank Slot Mapping Rows: slot@dcp0 .. slot@dcp_{DCP-1}
+      for (let r = 0; r < dcpSize; r += 1) {
+        const sRow = document.createElement('div');
+        sRow.className = 'matrix-row';
+        sRow.innerHTML = `<div class="matrix-label">slot@dcp${r}</div>`;
+        const sTrack = document.createElement('div');
+        sTrack.className = 'chip-track';
+        sTrack.style.setProperty('--seq-cols', matrixCols);
+
+        for (let pos = 0; pos < matrixCols; pos += 1) {
+          const chip = document.createElement('div');
+          if (pos < tokenCount) {
+            const owner = ownerRank(pos, dcpSize, interleave);
+            const lSlot = computeLocalSlot(pos, dcpSize, interleave);
+            chip.dataset.tok = pos;
+            if (owner === r) {
+              chip.className = 'm-chip valid-slot';
+              chip.style.background = palette[r % palette.length];
+              chip.textContent = matrixCols <= 32 ? `s${lSlot}` : lSlot;
+              chip.title = `T${pos} 归属 DCP${r} → 写入物理槽位 s${lSlot}`;
+            } else {
+              chip.className = 'm-chip pad-minus';
+              chip.textContent = '-1';
+              chip.title = `T${pos} 归属 DCP${owner} → DCP${r} 写入 -1 (跳过)`;
+            }
+            chip.addEventListener('mouseenter', () => highlightToken(pos));
+            chip.addEventListener('mouseleave', () => highlightToken(null));
+          } else {
+            chip.className = 'm-chip empty-col';
+          }
+          sTrack.appendChild(chip);
+        }
+        sRow.appendChild(sTrack);
+        slotMatrix.appendChild(sRow);
+      }
     }
 
-    Object.values(controls).forEach(control => control.addEventListener('input', render));
-    divisorBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        currentInterleave = Number.parseInt(btn.dataset.val, 10);
-        divisorBtns.forEach(b => b.classList.toggle('active', b === btn));
-        render();
-      });
+    [tokenCountEl, dcpLevelEl, interleaveLevelEl].forEach(ctrl => {
+      ctrl.addEventListener('input', render);
+      ctrl.addEventListener('change', render);
     });
     render();
   </script>

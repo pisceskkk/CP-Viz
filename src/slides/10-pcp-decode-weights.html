@@ -17,12 +17,10 @@
       <div class="img-zoom-wrap">
         <img src="static/images/CP/glm53-pcp-decode-weights.svg" alt="PCP Decode & Weight Sharding">
 
-        <!-- 放置于左区 Decode Request Sharding 文本框右上角 -->
         <button class="hotspot-pin" style="left: 37.6%; top: 18.8%;" data-code="code-pcp-dualchunk" type="button">
           <span class="pin-label">&lt;/&gt; Decode 请求轮询分片源码</span>
         </button>
 
-        <!-- 放置于右区 权重切分文本框右上角 -->
         <button class="hotspot-pin pin-left" style="right: 4.2%; left: auto; top: 18.8%;" data-code="code-glm53-kda-pcp" type="button">
           <span class="pin-label">&lt;/&gt; PCPColumn / PCPRowParallel 权重切分</span>
         </button>
@@ -39,11 +37,11 @@
     <div class="template-grid-2">
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
         <h4>Decode Request Sharding vs Replicated Decode</h4>
-        <p style="font-size:1.3rem; margin:0;"><code>PCP&gt;1, DCP=1</code> 下支持按 <code>decode_ordinal % PCP</code> 轮询切分请求；当叠加 <code>DCP&gt;1</code> 或含跨卡切分线性状态时保持请求复制。</p>
+        <p style="font-size:1.26rem; margin:0; white-space:nowrap;"><code>PCP&gt;1, DCP=1</code> 下按 <code>decode_ordinal % PCP</code> 轮询切分；叠加 <code>DCP&gt;1</code> 或跨卡状态时保持复制。</p>
       </div>
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
         <h4>常驻权重跨 <code>TP &times; PCP</code> 切分</h4>
-        <p style="font-size:1.3rem; margin:0;">默认开启词表 Embedding、LM Head 及 SFA/DSA <code>o_proj</code> 的跨 PCP 权重切分，显著释放单卡 HBM 容量。</p>
+        <p style="font-size:1.26rem; margin:0; white-space:nowrap;">默认开启 Embedding、LM Head 及 SFA/DSA <code>o_proj</code> 的跨 PCP 权重切分，释放单卡 HBM。</p>
       </div>
     </div>
   </div>

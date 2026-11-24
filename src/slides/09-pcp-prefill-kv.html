@@ -17,12 +17,10 @@
       <div class="img-zoom-wrap">
         <img src="static/images/CP/glm53-pcp-prefill.svg" alt="PCP Prefill & Chunked Prefill KV Sync">
 
-        <!-- 放置于中区 gathered_kv_slot_mappings 文本框右上角 -->
         <button class="hotspot-pin" style="left: 63.0%; top: 56.2%;" data-code="code-pcp-restore-map" type="button">
           <span class="pin-label">&lt;/&gt; padded_gather_idx &amp; gathered_kv_write_mask</span>
         </button>
 
-        <!-- 放置于右区 Causal Attention 文本框右上角 -->
         <button class="hotspot-pin pin-left" style="right: 4.2%; left: auto; top: 19.8%;" data-code="code-ascend-pcp-manager" type="button">
           <span class="pin-label">&lt;/&gt; AscendPCPAttentionContext</span>
         </button>
@@ -39,11 +37,11 @@
     <div class="template-grid-2">
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
         <h4>普通 Prefill 路径</h4>
-        <p style="font-size:1.3rem; margin:0;">各卡仅计算本地 <code>Q_local</code> 与 <code>KV_local</code> &#8594; PCP AllGather 汇聚完整新 KV &#8594; 按 <code>padded_gather_idx</code> 映射的 Slot 落盘并完成因果 Attention。</p>
+        <p style="font-size:1.26rem; margin:0; white-space:nowrap;">计算本地 <code>Q_local / KV_local</code> &#8594; PCP AllGather 汇聚新 KV &#8594; 按 <code>padded_gather_idx</code> 落盘。</p>
       </div>
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
         <h4>Chunked Prefill / Prefix Cache 路径</h4>
-        <p style="font-size:1.3rem; margin:0;">当 <code>DCP=1</code> 时每个 PCP Rank 均持有完整历史 KV Cache，直接读取本地历史 Prefix KV 与当前步 Gather 的新 KV 拼接计算。</p>
+        <p style="font-size:1.26rem; margin:0; white-space:nowrap;"><code>DCP=1</code> 时各卡持有完整历史 KV，直接读取本地 Prefix KV 与当前步 Gather 的新 KV 拼接计算。</p>
       </div>
     </div>
   </div>

@@ -40,15 +40,15 @@
 
     .controls {
       display: grid;
-      grid-template-columns: 310px 280px 1fr;
+      grid-template-columns: 310px 260px 1fr;
       gap: 18px;
       align-items: center;
-      padding: 14px 18px;
+      padding: 12px 18px;
     }
 
     .control {
       display: grid;
-      gap: 6px;
+      gap: 4px;
       font-size: 12.5px;
     }
 
@@ -57,6 +57,7 @@
       color: #334155;
       display: flex;
       justify-content: space-between;
+      white-space: nowrap;
     }
 
     .value {
@@ -65,39 +66,20 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .divisor-group {
-      display: flex;
-      gap: 6px;
-    }
-
-    .divisor-btn {
-      flex: 1;
-      height: 30px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      background: #ffffff;
-      color: #334155;
-      font-size: 12.5px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .divisor-btn:hover {
-      border-color: var(--brand);
-      color: var(--brand);
-    }
-
-    .divisor-btn.active {
-      background: var(--brand);
-      border-color: var(--brand);
-      color: #ffffff;
-      box-shadow: 0 2px 8px rgba(3, 105, 161, 0.2);
-    }
-
     input[type="range"] {
       width: 100%;
+      height: 22px;
       accent-color: var(--brand);
+      cursor: pointer;
+    }
+
+    .tick-marks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: var(--muted);
+      padding: 0 2px;
+      font-variant-numeric: tabular-nums;
     }
 
     .formula-box {
@@ -122,11 +104,13 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 4px;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .board-head h2 {
       margin: 0;
-      font-size: 16px;
+      font-size: 15.5px;
     }
 
     .legend {
@@ -134,6 +118,7 @@
       gap: 14px;
       font-size: 12px;
       color: #475569;
+      white-space: nowrap;
     }
 
     .legend span {
@@ -188,7 +173,6 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 11.5px;
       font-variant-numeric: tabular-nums;
-      transition: transform 0.12s;
     }
 
     .chip.decode-tok {
@@ -222,17 +206,12 @@
   <div class="app">
     <section class="panel controls">
       <div class="control">
-        <label>
-          <span>Block interleave size (block_size=16 的因数)</span>
+        <label for="interleaveLevel">
+          <span>Block interleave size (block_size=16 因数)</span>
           <span class="value"><span id="interleaveSizeVal">4</span> tokens</span>
         </label>
-        <div class="divisor-group">
-          <button type="button" class="divisor-btn" data-val="1">1</button>
-          <button type="button" class="divisor-btn" data-val="2">2</button>
-          <button type="button" class="divisor-btn active" data-val="4">4</button>
-          <button type="button" class="divisor-btn" data-val="8">8</button>
-          <button type="button" class="divisor-btn" data-val="16">16</button>
-        </div>
+        <input id="interleaveLevel" type="range" min="0" max="4" step="1" value="2" />
+        <div class="tick-marks"><span>1</span><span>2</span><span>4</span><span>8</span><span>16</span></div>
       </div>
 
       <div class="control">
@@ -241,6 +220,7 @@
           <span class="value" id="pTokenCountVal">24</span>
         </label>
         <input id="pTokenCount" type="range" min="8" max="32" step="4" value="24" />
+        <div class="tick-marks"><span>8</span><span>16</span><span>24</span><span>32</span></div>
       </div>
 
       <div class="formula-box">
@@ -254,9 +234,9 @@
       <div class="board-head">
         <h2>混合 Batch (2 个 Decode + N 个 Prefill Token) 在各 DCP Rank 上的 Slot Mapping</h2>
         <div class="legend">
-          <span><i class="dot" style="background:#f3e8ff;border:1px solid #c084fc;"></i>Decode Token (D20 @ base 128, D27 @ base 256)</span>
-          <span><i class="dot" style="background:#dbeafe;border:1px solid #93c5fd;"></i>Prefill Token (P0..Pn @ base 384)</span>
-          <span><i class="dot" style="background:#bbf7d0;border:1px solid #4ade80;"></i>本卡有效物理 Slot</span>
+          <span><i class="dot" style="background:#f3e8ff;border:1px solid #c084fc;"></i>Decode (D20 @ 128, D27 @ 256)</span>
+          <span><i class="dot" style="background:#dbeafe;border:1px solid #93c5fd;"></i>Prefill (P0..Pn @ 384)</span>
+          <span><i class="dot" style="background:#bbf7d0;border:1px solid #4ade80;"></i>本卡物理 Slot</span>
           <span><i class="dot" style="background:#f1f5f9;border:1px solid #cbd5e1;"></i>非本卡归属 (-1)</span>
         </div>
       </div>
@@ -272,12 +252,11 @@
 
   <script>
     const CP_SIZE = 4;
+    const DIVISORS = [1, 2, 4, 8, 16];
+    const interleaveLevelEl = document.getElementById("interleaveLevel");
     const pTokenCountEl = document.getElementById("pTokenCount");
     const slotRowsEl = document.getElementById("slotRows");
     const tokenOrderEl = document.getElementById("tokenOrder");
-    const divisorBtns = document.querySelectorAll(".divisor-btn");
-
-    let currentInterleave = 4;
 
     function makeChip(value, cls = "", title = "") {
       const span = document.createElement("span");
@@ -298,8 +277,9 @@
     }
 
     function render() {
+      const interleaveSize = DIVISORS[Number(interleaveLevelEl.value)] || 4;
       const pTokenCount = Number(pTokenCountEl.value);
-      document.getElementById("interleaveSizeVal").textContent = currentInterleave;
+      document.getElementById("interleaveSizeVal").textContent = interleaveSize;
       document.getElementById("pTokenCountVal").textContent = pTokenCount;
 
       const order = buildTokenOrderExample(pTokenCount);
@@ -329,10 +309,10 @@
 
         for (const item of order) {
           const tokenId = item.tokenId;
-          const owner = Math.floor(tokenId / currentInterleave) % CP_SIZE;
+          const owner = Math.floor(tokenId / interleaveSize) % CP_SIZE;
           const localIndex =
-            Math.floor(tokenId / (currentInterleave * CP_SIZE)) * currentInterleave +
-            (tokenId % currentInterleave);
+            Math.floor(tokenId / (interleaveSize * CP_SIZE)) * interleaveSize +
+            (tokenId % interleaveSize);
           const physicalSlot = item.startId + localIndex;
           const isLocal = owner === localDcpRank;
 
@@ -353,16 +333,10 @@
       }
     }
 
-    divisorBtns.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        currentInterleave = Number(btn.dataset.val);
-        divisorBtns.forEach((b) => b.classList.toggle("active", b === btn));
-        render();
-      });
+    [interleaveLevelEl, pTokenCountEl].forEach((node) => {
+      node.addEventListener("input", render);
+      node.addEventListener("change", render);
     });
-
-    pTokenCountEl.addEventListener("input", render);
-    pTokenCountEl.addEventListener("change", render);
 
     render();
   </script>

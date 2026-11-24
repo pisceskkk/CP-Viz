@@ -25,17 +25,17 @@ flowchart LR
     </div>
 
     <div class="template-grid-3">
-      <div class="surface-card">
+      <div class="surface-card" style="padding:1.1rem 1.4rem;">
         <h4>1. 为什么要拆分？</h4>
-        <p style="font-size:1.32rem; margin:0;">MTP 验证携带 <code>K+1</code> 个因果 Token：历史 KV 已按 DCP 分片，而当前步新 KV 在本地完整持有。</p>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">历史 KV 已按 DCP 分片，当前步新 KV 本地完整持有。</p>
       </div>
-      <div class="surface-card">
+      <div class="surface-card" style="padding:1.1rem 1.4rem;">
         <h4>2. 双流隐藏 All2All</h4>
-        <p style="font-size:1.32rem; margin:0;">在 <code>cp_decode_comm_stream</code> 上异步执行历史输出的 All-to-All，与主流 Current 计算重叠。</p>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">通信流异步执行 History All2All，与主流 Current 并行。</p>
       </div>
-      <div class="surface-card">
+      <div class="surface-card" style="padding:1.1rem 1.4rem;">
         <h4>3. 单次 LSE 归一化</h4>
-        <p style="font-size:1.32rem; margin:0;"><code>fused_dcp_lse_combine</code> 将所有 History 分片与 Local Current 一次性加权归约，避免重复计数。</p>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;"><code>fused_dcp_lse_combine</code> 一次性归约 History 与 Current。</p>
       </div>
     </div>
   </div>

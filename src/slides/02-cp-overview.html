@@ -17,22 +17,22 @@
     </div>
 
     <div class="takeaway-grid">
-      <div class="takeaway-card">
-        <div class="takeaway-title">
+      <div class="takeaway-card" style="padding:1.4rem 1.8rem;">
+        <div class="takeaway-title" style="font-size:1.65rem;">
           <span>PCP (Prefill Context Parallel)</span>
           <span class="takeaway-tag">切算力 &middot; 降 TTFT</span>
         </div>
-        <p class="takeaway-desc">
-          将长 Prefill 的输入 Query 序列按 <strong>DualChunkSwap</strong> 头尾对称切分到多卡并行计算，扩展 World Size 为 <code>PCP &times; TP</code>。
+        <p class="takeaway-desc" style="font-size:1.38rem; white-space:nowrap;">
+          按 <strong>DualChunkSwap</strong> 头尾对称切分长 Prefill 输入序列，扩展 World Size 为 <code>PCP &times; TP</code>。
         </p>
       </div>
-      <div class="takeaway-card accent-secondary">
-        <div class="takeaway-title">
+      <div class="takeaway-card accent-secondary" style="padding:1.4rem 1.8rem;">
+        <div class="takeaway-title" style="font-size:1.65rem;">
           <span>DCP (Decode Context Parallel)</span>
           <span class="takeaway-tag">切显存 &middot; 降 TPOT</span>
         </div>
-        <p class="takeaway-desc">
-          复用 <code>PCP / TP</code> 进程组，默认将所有 Attention 的 KV Cache（含 Full Attention、主 KV 与 Indexer）沿序列维度交错分片（<code>1/DCP</code>）。
+        <p class="takeaway-desc" style="font-size:1.38rem; white-space:nowrap;">
+          复用 <code>PCP / TP</code> 进程组，默认将所有 Attention KV Cache（含主 KV 与 Indexer）交错分片（<code>1/DCP</code>）。
         </p>
       </div>
     </div>
@@ -41,17 +41,14 @@
       <div class="img-zoom-wrap overview-zoom-wrap">
         <img src="static/images/CP/glm53-cp-overview.svg" alt="PCP & DCP Overview">
 
-        <!-- 放置于左区 PCP 文本框右上角边沿 -->
         <button class="hotspot-pin" style="left: 29.8%; top: 16.5%;" data-go-slide="7" type="button">
           <span class="pin-label">PCP 切分机制 &#10132;</span>
         </button>
 
-        <!-- 放置于中区 通信组拓扑文本框右上角边沿 -->
         <button class="hotspot-pin" style="left: 63.4%; top: 39.5%;" data-branch="branch-comm-topology" type="button">
           <span class="pin-label">TP &times; PCP &times; DCP 通信组排布 &#10132;</span>
         </button>
 
-        <!-- 放置于右区 DCP 文本框左上角边沿 -->
         <button class="hotspot-pin pin-left" style="right: 4.4%; left: auto; top: 16.5%;" data-go-slide="3" type="button">
           <span class="pin-label">DCP 显存分片 &#10132;</span>
         </button>

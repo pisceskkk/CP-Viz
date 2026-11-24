@@ -17,12 +17,10 @@
       <div class="img-zoom-wrap">
         <img src="static/images/CP/glm53-dcp-sfa-prefill.svg" alt="DCP Prefill & Sparse Indexer Modes">
 
-        <!-- 放置于左区 Step 2 文本框右上角 -->
         <button class="hotspot-pin" style="left: 45.8%; top: 44.2%;" data-code="code-dcp-impl-mixin" type="button">
           <span class="pin-label">&lt;/&gt; 查看 MLA 分块 KV AllGather</span>
         </button>
 
-        <!-- 放置于右区 Sharded Indexer 文本框右上角 -->
         <button class="hotspot-pin pin-left" style="right: 4.2%; left: auto; top: 18.8%;" data-code="code-sfa-dcp-impl" type="button">
           <span class="pin-label">&lt;/&gt; 查看 Sharded / Replicated Indexer 实现</span>
         </button>
@@ -39,11 +37,11 @@
     <div class="template-grid-2">
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
         <h4>Full Attention / Dense MLA：分块 Workspace AllGather</h4>
-        <p style="font-size:1.3rem; margin:0;">按 <code>lcm(block_size, I &times; DCP)</code> 对齐划窗，跨 DCP 收集历史 KV 并按 <code>kv_rank_offsets</code> 还原连续顺序。</p>
+        <p style="font-size:1.26rem; margin:0; white-space:nowrap;">按 <code>lcm(block_size, I&times;DCP)</code> 划窗收集历史 KV，经 <code>kv_rank_offsets</code> 还原顺序。</p>
       </div>
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>Sparse Attention：Sharded Indexer vs Replicated Indexer</h4>
-        <p style="font-size:1.3rem; margin:0;">未压缩 Indexer 与主 KV 按相同 Token Owner 同步切分（跨卡基数排序归并 Top-K）；高倍压缩 Indexer（如 4:1 KPool）可配置全卡复制以省去 Top-K 通信。</p>
+        <h4>Sparse Attention：Sharded vs Replicated Indexer</h4>
+        <p style="font-size:1.26rem; margin:0; white-space:nowrap;">默认与主 KV 同步按 DCP 切分（基数排序归并 Top-K）；高倍压缩池（如 4:1 KPool）可全卡复制。</p>
       </div>
     </div>
   </div>

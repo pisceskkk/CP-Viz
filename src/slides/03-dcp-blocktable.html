@@ -20,17 +20,14 @@
       <div class="img-zoom-wrap">
         <img src="static/images/CP/glm53-dcp-slot-mapping.svg" alt="DCP Virtual Block & Slot Mapping">
 
-        <!-- 放置于左区 Virtual Block 虚线框右上角空白处 -->
         <button class="hotspot-pin" style="left: 31.2%; top: 8.5%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-blocktable" type="button">
           <span class="pin-label">Virtual Block 跨卡映射 &#10132;</span>
         </button>
 
-        <!-- 放置于中间 compute_slot_mappings 文本框右上角 -->
         <button class="hotspot-pin" style="left: 55.4%; top: 32.5%;" data-code="code-slot-mapping-kernel" type="button">
           <span class="pin-label">&lt;/&gt; Triton Slot Mapping 源码</span>
         </button>
 
-        <!-- 放置于右区 DCP Rank 0 物理 Block 文本框右上角 -->
         <button class="hotspot-pin pin-left" style="right: 4.5%; left: auto; top: 17.5%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-slotmapping" type="button">
           <span class="pin-label">Slot Mapping 与 -1 掩码演示 &#10132;</span>
         </button>
@@ -46,15 +43,15 @@
 
     <div class="template-grid-2">
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>交错映射公式（Interleave Size <code>I</code>）</h4>
-        <p style="font-size:1.32rem; margin:0; font-family:ui-monospace, monospace;">
-          virtual_block_size = block_size &times; DCP &nbsp;|&nbsp; <strong>target_rank = ((pos % VBlock) // I) % DCP</strong>
+        <h4>交错映射公式（<code>block_size % I == 0</code>）</h4>
+        <p style="font-size:1.26rem; margin:0; font-family:ui-monospace, monospace; white-space:nowrap;">
+          VBlock = block_size &times; DCP &nbsp;|&nbsp; <strong>target_rank = ((pos % VBlock) // I) % DCP</strong>
         </p>
       </div>
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
         <h4>Attention KV 默认全切分 (<code>AttentionSpec.dcp_sharded = True</code>)</h4>
-        <p style="font-size:1.32rem; margin:0;">
-          Full Attention、MLA/SFA 主 KV 及 Indexer Cache 默认均按 DCP 交错切分；非序列增长状态（如 Mamba/线性层）按 Group 设为 <code>False</code>。
+        <p style="font-size:1.28rem; margin:0; white-space:nowrap;">
+          Full Attention、主 KV 及 Indexer 默认均按 DCP 切分；非序列状态按 Group 设为 <code>False</code>。
         </p>
       </div>
     </div>

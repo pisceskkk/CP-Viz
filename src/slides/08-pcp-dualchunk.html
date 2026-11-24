@@ -20,12 +20,10 @@
       <div class="img-zoom-wrap">
         <img src="static/images/CP/glm53-pcp-dualchunk.svg" alt="PCP DualChunkSwap">
 
-        <!-- 放置于左下区 PCP Rank 0 文本框右上角 -->
         <button class="hotspot-pin" style="left: 29.8%; top: 55.5%;" data-branch="branch-pcp-layout" type="button">
           <span class="pin-label">各 Rank 的 Segment 布局 &#10132;</span>
         </button>
 
-        <!-- 放置于右下区 双向互逆映射表文本框右上角 -->
         <button class="hotspot-pin pin-left" style="right: 4.2%; left: auto; top: 55.5%;" data-code="code-pcp-restore-map" type="button">
           <span class="pin-label">&lt;/&gt; padded_gather_idx &amp; restore_idx 源码</span>
         </button>
@@ -42,11 +40,11 @@
     <div class="template-grid-2">
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
         <h4>2x 独立虚拟请求段 (<code>RankSegment</code>)</h4>
-        <p style="font-size:1.3rem; margin:0;">Head 与 Tail 作为两条独立虚拟请求行，各自携带真实 <code>positions</code> 与 <code>num_computed_tokens</code>。</p>
+        <p style="font-size:1.26rem; margin:0; white-space:nowrap;">Head 与 Tail 作为两条独立虚拟请求行，各自携带真实 <code>positions</code> 与 <code>num_computed_tokens</code>。</p>
       </div>
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
         <h4>短请求自动复制 (<code>replicated_requests</code>)</h4>
-        <p style="font-size:1.3rem; margin:0;">在 <code>PCP+DCP</code> 下若请求不够分满 <code>2P</code> 个 Chunk，自动全卡复制以保证集合通信步调一致。</p>
+        <p style="font-size:1.26rem; margin:0; white-space:nowrap;"><code>PCP+DCP</code> 下若请求不够分满 <code>2P</code> 个 Chunk，自动全卡复制以保证集合通信步调一致。</p>
       </div>
     </div>
   </div>

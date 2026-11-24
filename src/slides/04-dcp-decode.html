@@ -20,17 +20,14 @@
       <div class="img-zoom-wrap">
         <img src="static/images/CP/glm53-dcp-decode.svg" alt="DCP Decode">
 
-        <!-- 放置于左区 _dcp_all_gather_fragments 文本框右上角 -->
         <button class="hotspot-pin" style="left: 25.4%; top: 51.5%;" data-code="code-dcp-impl-mixin" type="button">
           <span class="pin-label">&lt;/&gt; _dcp_all_gather_fragments</span>
         </button>
 
-        <!-- 放置于中区 DCP Rank 0 文本框右上角 -->
         <button class="hotspot-pin" style="left: 62.2%; top: 19.8%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
           <span class="pin-label">本地 1/DCP KV 分片 &#10132;</span>
         </button>
 
-        <!-- 放置于右区 dcp_a2a_fused 文本框右上角 -->
         <button class="hotspot-pin pin-left" style="right: 4.2%; left: auto; top: 19.8%;" data-code="code-dcp-a2a-fused" type="button">
           <span class="pin-label">&lt;/&gt; dcp_a2a_fused 打包与归并</span>
         </button>
@@ -47,15 +44,15 @@
     <div class="template-grid-3">
       <div class="surface-card" style="padding:1rem 1.4rem;">
         <h4>1. Query Gather / Replicate</h4>
-        <p style="font-size:1.28rem; margin:0;">跨 DCP 收集完整 Q Heads（<code>DCP==PCP</code> 或开启 <code>VLLM_DCP_Q_REPLICATE</code> 时免通信）。</p>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">跨 DCP 收集完整 Q Heads（<code>DCP==PCP</code> 时免通信）。</p>
       </div>
       <div class="surface-card" style="padding:1rem 1.4rem;">
         <h4>2. 无损 LSE 打包 All2All</h4>
-        <p style="font-size:1.28rem; margin:0;">Triton 将 BF16 <code>O_j</code> 与 FP32 <code>LSE_j</code> 打包至单次 <code>all_to_all_single</code>。</p>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">Triton 打包 BF16 <code>O_j</code> 与 FP32 <code>LSE_j</code> 单次 All2All。</p>
       </div>
       <div class="surface-card" style="padding:1rem 1.4rem;">
         <h4>3. LSE 稳定加权归并</h4>
-        <p style="font-size:1.28rem; margin:0; font-family:ui-monospace, monospace;">w_j = exp(L_j - max L) &nbsp;|&nbsp; O = &Sigma;(w_j&middot;O_j) / &Sigma;w_j</p>
+        <p style="font-size:1.25rem; margin:0; font-family:ui-monospace, monospace; white-space:nowrap;">w_j = exp(L_j - max L) &nbsp;|&nbsp; O = &Sigma;(w_j&middot;O_j) / &Sigma;w_j</p>
       </div>
     </div>
   </div>
