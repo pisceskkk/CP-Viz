@@ -430,7 +430,7 @@ def diag_1_overview() -> tuple[list[dict], int, int]:
 
     add_zone(els, "z_topo", 480, 25, 440, 410, "通信组拓扑 (parallel_state.py)", "#f8fafc", "#64748b", "#334155")
     add_box(els, "topo_grid", 510, 75, 380, 78, "物理 Rank 网格: (..., PCP, TP)\nrank = pcp_rank × TP + tp_rank", "#ccfbf1", "#0d9488", font_size=16)
-    add_box(els, "topo_dcp", 510, 180, 380, 88, "DCP 复用 PCP / TP 进程组 (零额外建卡)\n转置为 (TP, PCP) 后按 dcp_size 切分\n(优先跨 PCP 维度，再跨 TP 维度)", "#dcfce7", "#16a34a", font_size=15)
+    add_box(els, "topo_dcp", 510, 180, 380, 88, "DCP 复用 PCP / TP 进程组\n转置为 (TP, PCP) 后按 dcp_size 切分\n(优先跨 PCP 维度，再跨 TP 维度)", "#dcfce7", "#16a34a", font_size=15)
     add_box(els, "topo_rule", 510, 295, 380, 110, "职责正交解耦：\n• PCP 负责切分输入序列计算与常驻权重\n• DCP 负责切分 Attention KV Cache 显存\n• 两者可独立开启，也可 PCP + DCP 叠加", "#fef3c7", "#d97706", font_size=15)
     add_arrow(els, "a_t1", [[700, 153], [700, 180]], "#0d9488")
     add_arrow(els, "a_t2", [[700, 268], [700, 295]], "#16a34a")

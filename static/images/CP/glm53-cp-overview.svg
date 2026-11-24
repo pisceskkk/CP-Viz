@@ -90,7 +90,7 @@
 <text x="496.0" y="53.0" font-size="16" font-weight="700" fill="#334155" text-anchor="start">通信组拓扑 (parallel_state.py)</text>
 <text x="700.0" y="107.0" font-size="16" font-weight="700" fill="#1e293b" text-anchor="middle">物理 Rank 网格: (..., PCP, TP)</text>
 <text x="700.0" y="127.8" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">rank = pcp_rank × TP + tp_rank</text>
-<text x="700.0" y="207.7" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">DCP 复用 PCP / TP 进程组 (零额外建卡)</text>
+<text x="700.0" y="207.7" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">DCP 复用 PCP / TP 进程组</text>
 <text x="700.0" y="227.2" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">转置为 (TP, PCP) 后按 dcp_size 切分</text>
 <text x="700.0" y="246.7" font-size="15" font-weight="600" fill="#334155" text-anchor="middle">(优先跨 PCP 维度，再跨 TP 维度)</text>
 <text x="700.0" y="323.9" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">职责正交解耦：</text>
