@@ -1,0 +1,79 @@
+<!-- Slide 10a (#slide=11): PCP ④ Decode 请求的两种调度模式 -->
+<section data-stage="03 PCP">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>PCP ④：Decode 请求的两种调度模式</strong></h3>
+        <p class="slide-subtitle">根据 KV Cache 与状态是否跨卡分片，在 <code>PCPManager._iter_rank_chunks</code> 中自动选择轮询分片或全卡复制</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-code" data-code="code-pcp-dualchunk" type="button">
+          &lt;/&gt; _iter_rank_chunks
+        </button>
+      </div>
+    </div>
+
+    <div class="template-grid-2" style="margin-bottom:1.6rem;">
+      <div class="arch-node" style="border-top:4px solid #0284c7; padding:1.6rem 2rem;">
+        <button class="hotspot-pin" data-code="code-pcp-dualchunk" type="button">
+          <span class="pin-label">&lt;/&gt; shard_decode_requests 源码</span>
+        </button>
+        <span class="arch-node-step">MODE A &middot; DECODE REQUEST SHARDING</span>
+        <h4 class="arch-node-title">按请求轮询分片（<code>PCP &gt; 1, DCP = 1</code>）</h4>
+        <p class="arch-node-desc" style="margin-top:0.4rem;">
+          当历史 KV Cache 在各 PCP Rank 上完整持有（<code>DCP = 1</code>）且模型无跨 PCP 切分状态时开启：
+        </p>
+        <ul style="margin:0.8rem 0 0 1.6rem; font-size:1.3rem; color:var(--ink-body); line-height:1.65;">
+          <li><strong>分配规则：</strong>按 <code>owner_rank = decode_ordinal % PCP</code> 将不同 Decode 请求轮询分配到各 PCP Rank。</li>
+          <li><strong>MTP 约束：</strong>同一 Decode 请求的 <code>K + 1</code> 个验证 Token 始终绑定在同一 Owner Rank。</li>
+          <li><strong>KV 同步：</strong>各卡仅计算 <code>1 / PCP</code> 的 Decode 请求，每层产生的新 Token KV 跨 PCP AllGather 落盘。</li>
+        </ul>
+      </div>
+
+      <div class="arch-node" style="border-top:4px solid #7c3aed; padding:1.6rem 2rem;">
+        <button class="hotspot-pin" data-code="code-sfa-dcp-impl" type="button">
+          <span class="pin-label">&lt;/&gt; DCP Decode 协同源码</span>
+        </button>
+        <span class="arch-node-step">MODE B &middot; REPLICATED DECODE</span>
+        <h4 class="arch-node-title">全 Rank 复制调度（<code>DCP &gt; 1</code> 或含跨卡状态）</h4>
+        <p class="arch-node-desc" style="margin-top:0.4rem;">
+          当叠加 <code>DCP &gt; 1</code>（历史 KV 跨卡分片）或包含跨 <code>TP &times; PCP</code> 切分的线性状态层时启用：
+        </p>
+        <ul style="margin:0.8rem 0 0 1.6rem; font-size:1.3rem; color:var(--ink-body); line-height:1.65;">
+          <li><strong>分配规则：</strong>所有 PCP Rank 接收相同的 Decode Query 序列（<code>replicated = True</code>）。</li>
+          <li><strong>注意力协同：</strong>各 Rank 拿相同的 Decode Query 读取本卡持有的 <code>1 / DCP</code> 历史 KV 分片，经 <code>dcp_a2a_fused</code> 归并。</li>
+          <li><strong>状态层推进：</strong>各 Rank 并行推进本卡负责的 <code>1 / (TP &times; PCP)</code> Recurrent State 分片。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="surface-card" style="padding:1.2rem 1.8rem;">
+      <table class="progress-table" style="margin-top:0; font-size:1.28rem;">
+        <thead>
+          <tr>
+            <th style="width:22%;">维度</th>
+            <th style="width:39%;">Mode A：Decode Request Sharding</th>
+            <th style="width:39%;">Mode B：Replicated Decode</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="code">启用条件</td>
+            <td><code>PCP &gt; 1, DCP = 1</code> 且无跨 PCP 状态层</td>
+            <td><code>DCP &gt; 1</code> 或含跨 <code>TP &times; PCP</code> 状态层</td>
+          </tr>
+          <tr>
+            <td class="code">单卡 Decode 算力</td>
+            <td><strong>分摊为 <code>1 / PCP</code> 请求数</strong></td>
+            <td>各卡处理全量 Decode Token（KV 读取降为 <code>1 / DCP</code>）</td>
+          </tr>
+          <tr>
+            <td class="code">层内通信开销</td>
+            <td>每层 AllGather 新产生的 Decode KV 并写 Cache</td>
+            <td>走标准 DCP 路径（<code>AllGather Q</code> + <code>dcp_a2a_fused</code>）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

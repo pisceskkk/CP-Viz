@@ -117,11 +117,11 @@
           <span class="toc-num">03</span>
           <span class="toc-title">PCP：DualChunkSwap 与异构层同步</span>
         </li>
-        <li class="toc-item" data-go-slide="11">
+        <li class="toc-item" data-go-slide="12">
           <span class="toc-num">04</span>
           <span class="toc-title">PCP+DCP 叠加与 GLM-5.3-Flash 实现</span>
         </li>
-        <li class="toc-item" data-go-slide="14">
+        <li class="toc-item" data-go-slide="15">
           <span class="toc-num">05</span>
           <span class="toc-title">适配矩阵、部署选型与演进规划</span>
         </li>
@@ -627,51 +627,161 @@ flowchart LR
   </div>
 </section>
 
-<!-- Slide 10: PCP ④ Decode 请求调度与 TP×PCP 权重切分 -->
+<!-- Slide 10a (#slide=11): PCP ④ Decode 请求的两种调度模式 -->
 <section data-stage="03 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>PCP ④：Decode 请求分配与 <code>TP &times; PCP</code> 权重切分</strong></h3>
-        <p class="slide-subtitle">利用 PCP 引入的额外 Rank 分摊 Decode 请求计算与常驻权重显存</p>
+        <h3><strong>PCP ④：Decode 请求的两种调度模式</strong></h3>
+        <p class="slide-subtitle">根据 KV Cache 与状态是否跨卡分片，在 <code>PCPManager._iter_rank_chunks</code> 中自动选择轮询分片或全卡复制</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-pcp-dualchunk" type="button">
-          &lt;/&gt; Decode Request Sharding
+          &lt;/&gt; _iter_rank_chunks
         </button>
       </div>
     </div>
 
-    <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
-      <div class="img-zoom-wrap">
-        <img src="static/images/CP/glm53-pcp-decode-weights.svg" alt="PCP Decode & Weight Sharding">
-
-        <button class="hotspot-pin" style="left: 37.6%; top: 18.8%;" data-code="code-pcp-dualchunk" type="button">
-          <span class="pin-label">&lt;/&gt; Decode 请求轮询分片源码</span>
+    <div class="template-grid-2" style="margin-bottom:1.6rem;">
+      <div class="arch-node" style="border-top:4px solid #0284c7; padding:1.6rem 2rem;">
+        <button class="hotspot-pin" data-code="code-pcp-dualchunk" type="button">
+          <span class="pin-label">&lt;/&gt; shard_decode_requests 源码</span>
         </button>
+        <span class="arch-node-step">MODE A &middot; DECODE REQUEST SHARDING</span>
+        <h4 class="arch-node-title">按请求轮询分片（<code>PCP &gt; 1, DCP = 1</code>）</h4>
+        <p class="arch-node-desc" style="margin-top:0.4rem;">
+          当历史 KV Cache 在各 PCP Rank 上完整持有（<code>DCP = 1</code>）且模型无跨 PCP 切分状态时开启：
+        </p>
+        <ul style="margin:0.8rem 0 0 1.6rem; font-size:1.3rem; color:var(--ink-body); line-height:1.65;">
+          <li><strong>分配规则：</strong>按 <code>owner_rank = decode_ordinal % PCP</code> 将不同 Decode 请求轮询分配到各 PCP Rank。</li>
+          <li><strong>MTP 约束：</strong>同一 Decode 请求的 <code>K + 1</code> 个验证 Token 始终绑定在同一 Owner Rank。</li>
+          <li><strong>KV 同步：</strong>各卡仅计算 <code>1 / PCP</code> 的 Decode 请求，每层产生的新 Token KV 跨 PCP AllGather 落盘。</li>
+        </ul>
+      </div>
 
-        <button class="hotspot-pin pin-left" style="right: 4.2%; left: auto; top: 18.8%;" data-code="code-glm53-kda-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; PCPColumn / PCPRowParallel 权重切分</span>
+      <div class="arch-node" style="border-top:4px solid #7c3aed; padding:1.6rem 2rem;">
+        <button class="hotspot-pin" data-code="code-sfa-dcp-impl" type="button">
+          <span class="pin-label">&lt;/&gt; DCP Decode 协同源码</span>
         </button>
+        <span class="arch-node-step">MODE B &middot; REPLICATED DECODE</span>
+        <h4 class="arch-node-title">全 Rank 复制调度（<code>DCP &gt; 1</code> 或含跨卡状态）</h4>
+        <p class="arch-node-desc" style="margin-top:0.4rem;">
+          当叠加 <code>DCP &gt; 1</code>（历史 KV 跨卡分片）或包含跨 <code>TP &times; PCP</code> 切分的线性状态层时启用：
+        </p>
+        <ul style="margin:0.8rem 0 0 1.6rem; font-size:1.3rem; color:var(--ink-body); line-height:1.65;">
+          <li><strong>分配规则：</strong>所有 PCP Rank 接收相同的 Decode Query 序列（<code>replicated = True</code>）。</li>
+          <li><strong>注意力协同：</strong>各 Rank 拿相同的 Decode Query 读取本卡持有的 <code>1 / DCP</code> 历史 KV 分片，经 <code>dcp_a2a_fused</code> 归并。</li>
+          <li><strong>状态层推进：</strong>各 Rank 并行推进本卡负责的 <code>1 / (TP &times; PCP)</code> Recurrent State 分片。</li>
+        </ul>
+      </div>
+    </div>
 
-        <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
-          </svg>
+    <div class="surface-card" style="padding:1.2rem 1.8rem;">
+      <table class="progress-table" style="margin-top:0; font-size:1.28rem;">
+        <thead>
+          <tr>
+            <th style="width:22%;">维度</th>
+            <th style="width:39%;">Mode A：Decode Request Sharding</th>
+            <th style="width:39%;">Mode B：Replicated Decode</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="code">启用条件</td>
+            <td><code>PCP &gt; 1, DCP = 1</code> 且无跨 PCP 状态层</td>
+            <td><code>DCP &gt; 1</code> 或含跨 <code>TP &times; PCP</code> 状态层</td>
+          </tr>
+          <tr>
+            <td class="code">单卡 Decode 算力</td>
+            <td><strong>分摊为 <code>1 / PCP</code> 请求数</strong></td>
+            <td>各卡处理全量 Decode Token（KV 读取降为 <code>1 / DCP</code>）</td>
+          </tr>
+          <tr>
+            <td class="code">层内通信开销</td>
+            <td>每层 AllGather 新产生的 Decode KV 并写 Cache</td>
+            <td>走标准 DCP 路径（<code>AllGather Q</code> + <code>dcp_a2a_fused</code>）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 10b (#slide=12): PCP ⑤ 显存挑战与 TP×PCP 权重切分 -->
+<section data-stage="03 PCP">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>PCP ⑤：显存挑战与 <code>TP &times; PCP</code> 权重切分</strong></h3>
+        <p class="slide-subtitle">纯 PCP 下单卡默认复制权重与完整 KV Cache；通过跨 <code>TP &times; PCP</code> 联合切分常驻权重释放单卡 HBM</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-code" data-code="code-glm53-kda-pcp" type="button">
+          &lt;/&gt; PCP Parallel Linear
         </button>
       </div>
     </div>
 
-    <div class="template-grid-2">
-      <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>Decode Request Sharding vs Replicated Decode</h4>
-        <p style="font-size:1.26rem; margin:0; white-space:nowrap;"><code>PCP&gt;1, DCP=1</code> 下按 <code>decode_ordinal % PCP</code> 轮询切分；叠加 <code>DCP&gt;1</code> 或跨卡状态时保持复制。</p>
+    <div class="arch-flow" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom:1.6rem;">
+      <div class="arch-node" style="border-top:4px solid #16a34a;">
+        <span class="arch-node-step">01 &middot; EMBEDDING &amp; LM HEAD</span>
+        <h4 class="arch-node-title">词表权重跨 <code>TP &times; PCP</code> 切分</h4>
+        <p class="arch-node-desc">
+          <code>enable_pcp_embedding_lmhead_weight_sharding = True</code>（默认开启）：大词表 Embedding 与 LM Head 权重按 <code>TP &times; PCP</code> 联合切分，适用于所有 Attention 后端。
+        </p>
       </div>
-      <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>常驻权重跨 <code>TP &times; PCP</code> 切分</h4>
-        <p style="font-size:1.26rem; margin:0; white-space:nowrap;">默认开启 Embedding、LM Head 及 SFA/DSA <code>o_proj</code> 的跨 PCP 权重切分，释放单卡 HBM。</p>
+
+      <div class="arch-node" style="border-top:4px solid #d97706;">
+        <span class="arch-node-step">02 &middot; ATTENTION O_PROJ</span>
+        <h4 class="arch-node-title"><code>o_proj</code> 跨 PCP 权重/激活切分</h4>
+        <p class="arch-node-desc">
+          <code>enable_pcp_o_proj_weight_sharding = True</code>（SFA/DSA 默认开启）：支持 <code>TP=1</code> 下临时 <code>AllGather weights</code>，或按 Head 切分后走 <code>ReduceScatter (SP)</code>。
+        </p>
       </div>
+
+      <div class="arch-node" style="border-top:4px solid #0284c7;">
+        <button class="hotspot-pin" data-code="code-glm53-kda-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; PCPRowParallelLinear</span>
+        </button>
+        <span class="arch-node-step">03 &middot; LINEAR ATTENTION &amp; STATE</span>
+        <h4 class="arch-node-title">线性层权重与状态扩维切分</h4>
+        <p class="arch-node-desc">
+          通过 <code>PCPColumnParallelLinear</code> 与 <code>PCPRowParallelLinear</code>，将线性注意力（如 KDA）的投影权重与常驻 SSM 状态按 <code>TP &times; PCP</code> 切分。
+        </p>
+      </div>
+    </div>
+
+    <div class="surface-card" style="padding:1.2rem 1.8rem;">
+      <table class="progress-table" style="margin-top:0; font-size:1.28rem;">
+        <thead>
+          <tr>
+            <th style="width:24%;">显存组成项</th>
+            <th style="width:24%;">纯 PCP 默认行为</th>
+            <th style="width:26%;">开启 <code>TP &times; PCP</code> 切分后</th>
+            <th style="width:26%;">进一步叠加 DCP 后</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="code">Prefill 激活显存</td>
+            <td><strong>降为 <code>1 / PCP</code></strong></td>
+            <td><strong>保持 <code>1 / PCP</code>（开启 SP 进一步降为 <code>1 / (PCP&times;TP)</code>）</strong></td>
+            <td><strong>保持 <code>1 / PCP</code></strong></td>
+          </tr>
+          <tr>
+            <td class="code">Embedding / LM Head / o_proj</td>
+            <td>仅按 <code>1 / TP</code> 切分（PCP 间复制）</td>
+            <td><strong>按 <code>1 / (TP &times; PCP)</code> 切分</strong></td>
+            <td><strong>按 <code>1 / (TP &times; PCP)</code> 切分</strong></td>
+          </tr>
+          <tr>
+            <td class="code">Attention 主 KV Cache</td>
+            <td>各 PCP Rank 完整保存（<code>1 / TP</code>）</td>
+            <td>各 PCP Rank 完整保存（<code>1 / TP</code>）</td>
+            <td><strong>按 <code>1 / DCP</code> 交错分片（最高 <code>TP&times;PCP</code>）</strong></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
@@ -775,7 +885,7 @@ flowchart LR
         <p class="slide-subtitle">45 层主干（34 层 KDA + 11 层 NoPE SFA/KPool + mHC + MoE）与 5 组 Cache 存储契约</p>
       </div>
       <div class="slide-actions">
-        <button class="btn-slide-jump" data-go-slide="13" type="button">
+        <button class="btn-slide-jump" data-go-slide="14" type="button">
           算子级 Tensor 数据流 &#10132;
         </button>
       </div>

@@ -1,0 +1,78 @@
+<!-- Slide 10b (#slide=12): PCP ⑤ 显存挑战与 TP×PCP 权重切分 -->
+<section data-stage="03 PCP">
+  <div class="wrap">
+    <div class="slide-header">
+      <div>
+        <h3><strong>PCP ⑤：显存挑战与 <code>TP &times; PCP</code> 权重切分</strong></h3>
+        <p class="slide-subtitle">纯 PCP 下单卡默认复制权重与完整 KV Cache；通过跨 <code>TP &times; PCP</code> 联合切分常驻权重释放单卡 HBM</p>
+      </div>
+      <div class="slide-actions">
+        <button class="btn-code" data-code="code-glm53-kda-pcp" type="button">
+          &lt;/&gt; PCP Parallel Linear
+        </button>
+      </div>
+    </div>
+
+    <div class="arch-flow" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom:1.6rem;">
+      <div class="arch-node" style="border-top:4px solid #16a34a;">
+        <span class="arch-node-step">01 &middot; EMBEDDING &amp; LM HEAD</span>
+        <h4 class="arch-node-title">词表权重跨 <code>TP &times; PCP</code> 切分</h4>
+        <p class="arch-node-desc">
+          <code>enable_pcp_embedding_lmhead_weight_sharding = True</code>（默认开启）：大词表 Embedding 与 LM Head 权重按 <code>TP &times; PCP</code> 联合切分，适用于所有 Attention 后端。
+        </p>
+      </div>
+
+      <div class="arch-node" style="border-top:4px solid #d97706;">
+        <span class="arch-node-step">02 &middot; ATTENTION O_PROJ</span>
+        <h4 class="arch-node-title"><code>o_proj</code> 跨 PCP 权重/激活切分</h4>
+        <p class="arch-node-desc">
+          <code>enable_pcp_o_proj_weight_sharding = True</code>（SFA/DSA 默认开启）：支持 <code>TP=1</code> 下临时 <code>AllGather weights</code>，或按 Head 切分后走 <code>ReduceScatter (SP)</code>。
+        </p>
+      </div>
+
+      <div class="arch-node" style="border-top:4px solid #0284c7;">
+        <button class="hotspot-pin" data-code="code-glm53-kda-pcp" type="button">
+          <span class="pin-label">&lt;/&gt; PCPRowParallelLinear</span>
+        </button>
+        <span class="arch-node-step">03 &middot; LINEAR ATTENTION &amp; STATE</span>
+        <h4 class="arch-node-title">线性层权重与状态扩维切分</h4>
+        <p class="arch-node-desc">
+          通过 <code>PCPColumnParallelLinear</code> 与 <code>PCPRowParallelLinear</code>，将线性注意力（如 KDA）的投影权重与常驻 SSM 状态按 <code>TP &times; PCP</code> 切分。
+        </p>
+      </div>
+    </div>
+
+    <div class="surface-card" style="padding:1.2rem 1.8rem;">
+      <table class="progress-table" style="margin-top:0; font-size:1.28rem;">
+        <thead>
+          <tr>
+            <th style="width:24%;">显存组成项</th>
+            <th style="width:24%;">纯 PCP 默认行为</th>
+            <th style="width:26%;">开启 <code>TP &times; PCP</code> 切分后</th>
+            <th style="width:26%;">进一步叠加 DCP 后</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="code">Prefill 激活显存</td>
+            <td><strong>降为 <code>1 / PCP</code></strong></td>
+            <td><strong>保持 <code>1 / PCP</code>（开启 SP 进一步降为 <code>1 / (PCP&times;TP)</code>）</strong></td>
+            <td><strong>保持 <code>1 / PCP</code></strong></td>
+          </tr>
+          <tr>
+            <td class="code">Embedding / LM Head / o_proj</td>
+            <td>仅按 <code>1 / TP</code> 切分（PCP 间复制）</td>
+            <td><strong>按 <code>1 / (TP &times; PCP)</code> 切分</strong></td>
+            <td><strong>按 <code>1 / (TP &times; PCP)</code> 切分</strong></td>
+          </tr>
+          <tr>
+            <td class="code">Attention 主 KV Cache</td>
+            <td>各 PCP Rank 完整保存（<code>1 / TP</code>）</td>
+            <td>各 PCP Rank 完整保存（<code>1 / TP</code>）</td>
+            <td><strong>按 <code>1 / DCP</code> 交错分片（最高 <code>TP&times;PCP</code>）</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
