@@ -523,11 +523,11 @@ def add_wire_label(
     cx: int,
     cy: int,
     text: str,
-    font_size: int = 14,
+    font_size: int = 13,
 ) -> None:
-    """Add plain black text label for tensor name and shape along an arrow (no border or background)."""
-    w = max(110, int(len(text) * 8.5) + 12)
-    h = 22
+    """Add blue text label for tensor name and shape snugly hugging an arrow wire."""
+    w = max(96, int(len(text) * 8.2) + 10)
+    h = 18
     els.append(
         make_text(
             lbl_id,
@@ -537,7 +537,7 @@ def add_wire_label(
             h,
             text,
             font_size=font_size,
-            color="#0f172a",
+            color="#0284c7",
             align="center",
             v_align="middle",
         )
@@ -653,41 +653,41 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
         font_size=16,
     )
 
-    # Arrows (Unified Blue) & Plain Black Tensor Labels (Spaced cleanly with zero overlap)
+    # Arrows (Unified Blue) & Blue Tensor Labels (Snugly positioned right along arrow segments)
     # 0) Initial input arrow -> op_qkv_proj
     add_arrow(els, "w_in", [[18, 220], [142, 220]], ARROW_COLOR)
-    add_wire_label(els, "l_in", 75, 185, "hidden\n[B, H]", font_size=14)
+    add_wire_label(els, "l_in", 76, 194, "hidden\n[B, H]", font_size=13)
 
     # 1) op_qkv_proj -> op_q_gather
     add_arrow(els, "w_q_loc", [[297, 198], [335, 198], [335, 128], [382, 128]], ARROW_COLOR)
-    add_wire_label(els, "l_q_loc", 275, 92, "Q_local [B, N_h/TP, D]")
+    add_wire_label(els, "l_q_loc", 310, 113, "Q_local [B, N_h/TP, D]")
 
     # 2) op_qkv_proj -> op_kv_cache
     add_arrow(els, "w_kv_new", [[297, 242], [335, 242], [335, 313], [382, 313]], ARROW_COLOR)
-    add_wire_label(els, "l_kv_new", 268, 345, "KV_new [B, D_kv]")
+    add_wire_label(els, "l_kv_new", 310, 327, "KV_new [B, D_kv]")
 
     # 3) op_q_gather -> op_local_attn
     add_arrow(els, "w_q_full", [[547, 128], [610, 128], [610, 198], [652, 198]], ARROW_COLOR)
-    add_wire_label(els, "l_q_full", 645, 96, "Q_full [B, N_h, D]")
+    add_wire_label(els, "l_q_full", 615, 113, "Q_full [B, N_h, D]")
 
     # 4) op_kv_cache -> op_local_attn
     add_arrow(els, "w_kv_shard", [[547, 313], [610, 313], [610, 242], [652, 242]], ARROW_COLOR)
-    add_wire_label(els, "l_kv_shard", 655, 345, "KV_local [S/DCP, D_kv]")
+    add_wire_label(els, "l_kv_shard", 622, 327, "KV_local [S/DCP, D_kv]")
 
     # 5) op_local_attn -> op_a2a_lse (Two clean parallel horizontal lanes)
     add_arrow(els, "w_oj", [[847, 196], [955, 196], [955, 112], [1015, 112]], ARROW_COLOR)
-    add_wire_label(els, "l_oj", 885, 95, "O_j [B, N_h, D]")
+    add_wire_label(els, "l_oj", 902, 181, "O_j [B, N_h, D]")
 
     add_arrow(els, "w_lse", [[847, 244], [975, 244], [975, 146], [1015, 146]], ARROW_COLOR)
-    add_wire_label(els, "l_lse", 885, 272, "LSE_j [B, N_h, 1]")
+    add_wire_label(els, "l_lse", 910, 258, "LSE_j [B, N_h, 1]")
 
     # 6) op_a2a_lse -> op_o_proj
     add_arrow(els, "w_omerged", [[1112, 176], [1112, 270]], ARROW_COLOR)
-    add_wire_label(els, "l_omerged", 1200, 222, "O_merged\n[B, N_h/TP, D]")
+    add_wire_label(els, "l_omerged", 1175, 222, "O_merged\n[B, N_h/TP, D]")
 
     # 7) op_o_proj -> final output
     add_arrow(els, "w_out", [[1210, 313], [1375, 313]], ARROW_COLOR)
-    add_wire_label(els, "l_out", 1335, 278, "output\n[B, H]")
+    add_wire_label(els, "l_out", 1295, 287, "output\n[B, H]")
 
     return els, 1400, 440
 

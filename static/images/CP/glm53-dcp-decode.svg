@@ -106,16 +106,16 @@
 <text x="1112.5" y="152.2" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">+ LSE 加权归并</text>
 <text x="1112.5" y="306.0" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">o_proj</text>
 <text x="1112.5" y="326.8" font-size="16" font-weight="600" fill="#334155" text-anchor="middle">(TP 行切分 AllReduce)</text>
-<text x="75.0" y="188.0" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">hidden</text>
-<text x="75.0" y="206.2" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">[B, H]</text>
-<text x="275.5" y="95.0" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">Q_local [B, N_h/TP, D]</text>
-<text x="268.0" y="348.0" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">KV_new [B, D_kv]</text>
-<text x="645.5" y="99.0" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">Q_full [B, N_h, D]</text>
-<text x="655.5" y="348.0" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">KV_local [S/DCP, D_kv]</text>
-<text x="885.5" y="98.0" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">O_j [B, N_h, D]</text>
-<text x="885.0" y="275.0" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">LSE_j [B, N_h, 1]</text>
-<text x="1200.5" y="225.0" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">O_merged</text>
-<text x="1200.5" y="243.2" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">[B, N_h/TP, D]</text>
-<text x="1335.0" y="281.0" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">output</text>
-<text x="1335.0" y="299.2" font-size="14" font-weight="600" fill="#0f172a" text-anchor="middle">[B, H]</text>
+<text x="76.0" y="198.0" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">hidden</text>
+<text x="76.0" y="214.9" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">[B, H]</text>
+<text x="310.0" y="117.0" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">Q_local [B, N_h/TP, D]</text>
+<text x="310.5" y="331.0" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">KV_new [B, D_kv]</text>
+<text x="615.5" y="117.0" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">Q_full [B, N_h, D]</text>
+<text x="622.0" y="331.0" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">KV_local [S/DCP, D_kv]</text>
+<text x="902.0" y="185.0" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">O_j [B, N_h, D]</text>
+<text x="910.5" y="262.0" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">LSE_j [B, N_h, 1]</text>
+<text x="1175.0" y="226.0" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">O_merged</text>
+<text x="1175.0" y="242.9" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">[B, N_h/TP, D]</text>
+<text x="1295.0" y="291.0" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">output</text>
+<text x="1295.0" y="307.9" font-size="13" font-weight="600" fill="#0284c7" text-anchor="middle">[B, H]</text>
 </svg>
