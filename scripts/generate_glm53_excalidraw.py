@@ -605,13 +605,12 @@ def add_mini_cell(
 
 
 # =============================================================================
-# 3. DCP Decode (Slide 5: DCP+TP Operator Dataflow + 3 Key Tensor Layout Diagrams)
+# 3. DCP Decode (Slide 5: Clean 3-Stage Flow + Floating Tensor Layout Callouts Outside Stages)
 # =============================================================================
 def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
-    """Slide 04 (#slide=5): DCP+TP Decode operator dataflow with 3 key tensor layout diagrams:
-    1) Before/after AllGather Q
-    2) KV_local (interleaved 1/DCP KV shards)
-    3) Before/after dcp_a2a_fused All2All transpose
+    """Slide 04 (#slide=5): DCP+TP Decode operator dataflow where the 3 Stage boxes
+    keep their clean, balanced proportions and the 3 tensor layout diagrams float
+    outside the Stage boundaries.
     """
     els: list[dict] = []
 
@@ -622,19 +621,21 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     ARROW_COLOR = "#0284c7"
     TEXT_BLACK = "#0f172a"
 
-    # 3 Unified Gray Stage Zones
-    add_zone(els, "z_op1", 95, 16, 405, 420, "STAGE 1 · TP 投影与 DCP Query 收集", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
-    add_zone(els, "z_op2", 514, 16, 285, 420, "STAGE 2 · 本地 1/DCP KV 局部注意力", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
-    add_zone(els, "z_op3", 813, 16, 572, 420, "STAGE 3 · All2All LSE 归并与 TP 输出", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    # =========================================================================
+    # 1. Clean, Proportionally Balanced 3 Stage Boxes (Unchanged by callouts!)
+    # =========================================================================
+    add_zone(els, "z_op1", 95, 115, 375, 295, "STAGE 1 · TP 投影与 DCP Query 收集", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_op2", 495, 115, 275, 295, "STAGE 2 · 本地 1/DCP KV 局部注意力", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
+    add_zone(els, "z_op3", 795, 115, 265, 295, "STAGE 3 · All2All 归并与 TP 输出", ZONE_BG, ZONE_STROKE, TEXT_BLACK)
 
     # Operator 1: QKV Projection (TP Sharded)
     add_box(
         els,
         "op_qkv_proj",
-        112,
-        215,
+        115,
+        220,
         140,
-        86,
+        84,
         "QKV Linear\n(TP 列切分)",
         OP_BG,
         OP_STROKE,
@@ -646,10 +647,10 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     add_box(
         els,
         "op_q_gather",
-        332,
-        172,
-        152,
-        80,
+        305,
+        162,
+        148,
+        78,
         "AllGather Q\n(跨 DCP 组)",
         OP_BG,
         OP_STROKE,
@@ -661,10 +662,10 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     add_box(
         els,
         "op_kv_cache",
-        332,
-        292,
-        152,
-        80,
+        305,
+        295,
+        148,
+        78,
         "Reshape & Cache\n(按 DCP 交错落盘)",
         OP_BG,
         OP_STROKE,
@@ -676,8 +677,8 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     add_box(
         els,
         "op_local_attn",
-        566,
-        180,
+        542,
+        212,
         182,
         96,
         "Local Attention\n(全量 Q × 1/DCP KV)\n历史 KV 免通信",
@@ -691,10 +692,10 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     add_box(
         els,
         "op_a2a_lse",
-        848,
-        85,
-        175,
-        94,
+        838,
+        158,
+        180,
+        88,
         "dcp_a2a_fused\nPack + All2All\n+ LSE 加权归并",
         OP_BG,
         OP_STROKE,
@@ -706,10 +707,10 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     add_box(
         els,
         "op_o_proj",
-        848,
-        278,
-        175,
-        84,
+        838,
+        295,
+        180,
+        78,
         "o_proj\n(TP 行切分 AllReduce)",
         OP_BG,
         OP_STROKE,
@@ -718,16 +719,15 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     )
 
     # =========================================================================
-    # Callout ①: Before & After AllGather Q (Top of Stage 1)
-    # Shows Q_local (h1..h3 on Rank0, h4..h6 on Rank1) -> DCP AllGather -> Q_full (h1..h6 on all ranks)
+    # 2. Floating Callout ①: Before & After AllGather Q (Floats ABOVE Stage 1)
     # =========================================================================
     els.append(
         make_rect(
             "q_ag_card",
-            222,
-            48,
+            235,
+            8,
             264,
-            106,
+            92,
             "#ffffff",
             "#cbd5e1",
             stroke_width=1,
@@ -735,15 +735,14 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
             fill_style="solid",
         )
     )
-    qcw, qch = 14, 14
-    # Before AllGather Q: Rank 0 holds h1..h3 (yellow), h4..h6 (white); Rank 1 holds h4..h6 (yellow)
-    qx0, qy0 = 232, 60
+    qcw, qch = 14, 13
+    qx0, qy0 = 245, 16
     for r in range(2):
-        ry = qy0 + r * (qch + 4)
+        ry = qy0 + r * (qch + 3)
         for c in range(6):
             cx = qx0 + c * qcw
             is_active = (r == 0 and c < 3) or (r == 1 and c >= 3)
-            lbl = f"h{c+1}" if (r == 0 and c < 3) or (r == 1 and c >= 3) else None
+            lbl = f"h{c+1}" if is_active else None
             add_mini_cell(
                 els,
                 f"q1_{r}_{c}",
@@ -759,25 +758,25 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     els.append(
         make_text(
             "q1_cap",
-            228,
-            100,
-            92,
-            28,
-            "Q_local\n(1, h/tp)",
+            242,
+            52,
+            90,
+            26,
+            "Q_local (1, h/tp)",
             font_size=10,
             color="#0f172a",
             align="center",
         )
     )
 
-    add_arrow(els, "q_ag_arr1", [[320, 76], [334, 76]], "#334155", stroke_width=1)
+    add_arrow(els, "q_ag_arr1", [[333, 30], [347, 30]], "#334155", stroke_width=1)
     add_box(
         els,
         "q_ag_pill",
-        336,
-        58,
+        349,
+        13,
         46,
-        36,
+        34,
         "DCP\nAG",
         "#fff1f2",
         "#e11d48",
@@ -785,12 +784,11 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
         font_size=9,
         stroke_width=1,
     )
-    add_arrow(els, "q_ag_arr2", [[384, 76], [396, 76]], "#334155", stroke_width=1)
+    add_arrow(els, "q_ag_arr2", [[397, 30], [409, 30]], "#334155", stroke_width=1)
 
-    # After AllGather Q: Both Rank 0 and Rank 1 hold full h1..h6 (all yellow)
-    qx1 = 398
+    qx1 = 411
     for r in range(2):
-        ry = qy0 + r * (qch + 4)
+        ry = qy0 + r * (qch + 3)
         for c in range(6):
             cx = qx1 + c * qcw
             lbl = f"h{c+1}" if r == 0 else None
@@ -809,28 +807,29 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     els.append(
         make_text(
             "q2_cap",
-            394,
-            100,
-            90,
-            28,
-            "Q_full\n(1, h*dcp/tp)",
+            406,
+            52,
+            92,
+            26,
+            "Q_full (1, h*dcp/tp)",
             font_size=10,
             color="#0f172a",
             align="center",
         )
     )
+    # Dashed pointer from floating callout ① down to AllGather Q box
+    add_arrow(els, "ptr_q_ag", [[379, 100], [379, 160]], "#94a3b8", stroke_width=1, stroke_style="dashed")
 
     # =========================================================================
-    # Callout ②: KV_local Interleaved Layout (Bottom of Stage 2)
-    # Shows Rank 0 holds B0, B2 (yellow) and Rank 1 holds B1, B3 (yellow)
+    # 3. Floating Callout ②: KV_local Layout (Floats ABOVE Stage 2)
     # =========================================================================
     els.append(
         make_rect(
             "kv_loc_card",
-            532,
-            318,
-            250,
-            104,
+            518,
+            8,
+            234,
+            92,
             "#ffffff",
             "#cbd5e1",
             stroke_width=1,
@@ -838,16 +837,16 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
             fill_style="solid",
         )
     )
-    kcw, kch = 24, 15
-    kx0, ky0 = 592, 330
+    kcw, kch = 24, 14
+    kx0, ky0 = 574, 16
     for r in range(2):
-        ry = ky0 + r * (kch + 5)
+        ry = ky0 + r * (kch + 4)
         els.append(
             make_text(
                 f"kv_rk_{r}",
-                540,
-                ry + 1,
-                46,
+                524,
+                ry,
+                44,
                 14,
                 f"dcp{r}:",
                 font_size=10,
@@ -873,26 +872,28 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     els.append(
         make_text(
             "kv_loc_cap",
-            540,
-            372,
-            234,
-            32,
-            "KV_local (S/dcp, d_kv)\n各卡仅持 1/DCP 交错块，非归属块为 -1",
+            526,
+            54,
+            218,
+            28,
+            "KV_local (S/dcp, d_kv)：仅持 1/DCP 交错块",
             font_size=10,
             color="#0f172a",
             align="center",
         )
     )
+    # Dashed pointer from floating callout ② down to KV_local wire
+    add_arrow(els, "ptr_kv_loc", [[633, 100], [633, 210]], "#94a3b8", stroke_width=1, stroke_style="dashed")
 
     # =========================================================================
-    # Callout ③: Before & After dcp_a2a_fused All2All Transpose (Right of Stage 3)
+    # 4. Floating Callout ③: All2All Transpose (Floats OUTSIDE to the RIGHT of Stage 3)
     # =========================================================================
     els.append(
         make_rect(
             "a2a_card",
-            1042,
-            60,
-            322,
+            1078,
+            115,
+            310,
             195,
             "#ffffff",
             "#cbd5e1",
@@ -903,7 +904,7 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     )
 
     cw, ch = 15, 13
-    lx0, ly0 = 1055, 76
+    lx0, ly0 = 1090, 131
     for r in range(3):
         ry = ly0 + r * (ch + 2) + (4 if r == 1 else (6 if r == 2 else 0))
         for c in range(6):
@@ -941,8 +942,8 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     els.append(
         make_text(
             "m1_cap",
-            1048,
-            196,
+            1082,
+            251,
             110,
             34,
             "O' (1, h*dcp/tp)\nlse",
@@ -952,13 +953,13 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
         )
     )
 
-    add_arrow(els, "m_arr1", [[1150, 132], [1168, 132]], "#334155", stroke_width=1)
+    add_arrow(els, "m_arr1", [[1184, 187], [1200, 187]], "#334155", stroke_width=1)
     add_box(
         els,
         "m_a2a_pill",
-        1170,
-        112,
-        66,
+        1202,
+        167,
+        64,
         40,
         "DCP Group\nAll2All",
         "#fff1f2",
@@ -967,9 +968,9 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
         font_size=10,
         stroke_width=1,
     )
-    add_arrow(els, "m_arr2", [[1238, 132], [1256, 132]], "#334155", stroke_width=1)
+    add_arrow(els, "m_arr2", [[1268, 187], [1284, 187]], "#334155", stroke_width=1)
 
-    rx0, ry0 = 1262, 74
+    rx0, ry0 = 1288, 129
     for c in range(3):
         cx = rx0 + c * (cw + 3)
         cy_base = ry0 + c * 6
@@ -988,7 +989,7 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
                 label=lbl,
                 font_size=9,
             )
-    rx1, ry1 = 1304, 136
+    rx1, ry1 = 1328, 191
     for c in range(3):
         cx = rx1 + c * (cw + 3)
         cy_base = ry1 + c * 6
@@ -1007,8 +1008,8 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
     els.append(
         make_text(
             "m2_cap",
-            1252,
-            196,
+            1280,
+            251,
             106,
             34,
             "O'' (dcp, h/tp)\nlse",
@@ -1017,47 +1018,48 @@ def diag_3_dcp_decode() -> tuple[list[dict], int, int]:
             align="center",
         )
     )
+    # Dashed pointer from dcp_a2a_fused box to floating callout ③
+    add_arrow(els, "ptr_a2a", [[1018, 202], [1076, 202]], "#94a3b8", stroke_width=1, stroke_style="dashed")
 
     # =========================================================================
-    # Arrows (Unified Blue) & Blue Tensor Labels (Snugly hugging arrow wires)
+    # 5. Main Flow Arrows (Unified Blue) & Blue Tensor Labels (Snugly hugging wires)
     # =========================================================================
     # 0) Initial input arrow -> op_qkv_proj
-    add_arrow(els, "w_in", [[14, 258], [112, 258]], ARROW_COLOR)
-    add_wire_label(els, "l_in", 58, 232, "hidden\n[B, H]", font_size=13)
+    add_arrow(els, "w_in", [[14, 262], [115, 262]], ARROW_COLOR)
+    add_wire_label(els, "l_in", 58, 236, "hidden\n[B, H]", font_size=13)
 
     # 1) op_qkv_proj -> op_q_gather
-    add_arrow(els, "w_q_loc", [[252, 236], [285, 236], [285, 212], [332, 212]], ARROW_COLOR)
-    add_wire_label(els, "l_q_loc", 232, 185, "Q_local [B, N_h/TP, D]")
+    add_arrow(els, "w_q_loc", [[255, 240], [280, 240], [280, 201], [305, 201]], ARROW_COLOR)
+    add_wire_label(els, "l_q_loc", 215, 186, "Q_local [B, N_h/TP, D]")
 
     # 2) op_qkv_proj -> op_kv_cache
-    add_arrow(els, "w_kv_new", [[252, 278], [285, 278], [285, 332], [332, 332]], ARROW_COLOR)
-    add_wire_label(els, "l_kv_new", 232, 346, "KV_new [B, D_kv]")
+    add_arrow(els, "w_kv_new", [[255, 282], [280, 282], [280, 334], [305, 334]], ARROW_COLOR)
+    add_wire_label(els, "l_kv_new", 215, 348, "KV_new [B, D_kv]")
 
     # 3) op_q_gather -> op_local_attn
-    add_arrow(els, "w_q_full", [[484, 212], [530, 212]], ARROW_COLOR)
-    add_arrow(els, "w_q_full2", [[530, 212], [566, 212]], ARROW_COLOR)
-    add_wire_label(els, "l_q_full", 542, 160, "Q_full [B, N_h, D]")
+    add_arrow(els, "w_q_full", [[453, 201], [505, 201], [505, 240], [542, 240]], ARROW_COLOR)
+    add_wire_label(els, "l_q_full", 518, 186, "Q_full [B, N_h, D]")
 
     # 4) op_kv_cache -> op_local_attn
-    add_arrow(els, "w_kv_shard", [[484, 332], [525, 332], [525, 250], [566, 250]], ARROW_COLOR)
-    add_wire_label(els, "l_kv_shard", 580, 294, "KV_local [S/DCP, D_kv]")
+    add_arrow(els, "w_kv_shard", [[453, 334], [505, 334], [505, 282], [542, 282]], ARROW_COLOR)
+    add_wire_label(els, "l_kv_shard", 538, 348, "KV_local [S/DCP, D_kv]")
 
     # 5) op_local_attn -> op_a2a_lse
-    add_arrow(els, "w_oj", [[748, 206], [792, 206], [792, 114], [848, 114]], ARROW_COLOR)
-    add_wire_label(els, "l_oj", 785, 97, "O_j [B, N_h, D]")
+    add_arrow(els, "w_oj", [[724, 238], [780, 238], [780, 186], [838, 186]], ARROW_COLOR)
+    add_wire_label(els, "l_oj", 772, 171, "O_j [B, N_h, D]")
 
-    add_arrow(els, "w_lse", [[748, 248], [815, 248], [815, 148], [848, 148]], ARROW_COLOR)
-    add_wire_label(els, "l_lse", 790, 262, "LSE_j [B, N_h, 1]")
+    add_arrow(els, "w_lse", [[724, 282], [805, 282], [805, 218], [838, 218]], ARROW_COLOR)
+    add_wire_label(els, "l_lse", 775, 296, "LSE_j [B, N_h, 1]")
 
     # 6) op_a2a_lse -> op_o_proj
-    add_arrow(els, "w_omerged", [[935, 179], [935, 278]], ARROW_COLOR)
-    add_wire_label(els, "l_omerged", 988, 226, "O_merged\n[B, N_h/TP, D]")
+    add_arrow(els, "w_omerged", [[928, 246], [928, 295]], ARROW_COLOR)
+    add_wire_label(els, "l_omerged", 982, 270, "O_merged\n[B, N_h/TP, D]")
 
     # 7) op_o_proj -> final output
-    add_arrow(els, "w_out", [[1023, 320], [1225, 320]], ARROW_COLOR)
-    add_wire_label(els, "l_out", 1125, 294, "output\n[B, H]")
+    add_arrow(els, "w_out", [[1018, 334], [1165, 334]], ARROW_COLOR)
+    add_wire_label(els, "l_out", 1110, 360, "output\n[B, H]")
 
-    return els, 1400, 450
+    return els, 1400, 430
 
 
 # =============================================================================
