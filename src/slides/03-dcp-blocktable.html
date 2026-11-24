@@ -4,7 +4,7 @@
     <div class="slide-header">
       <div>
         <h3><strong>DCP ①：Virtual Block 与交错 Slot Mapping</strong></h3>
-        <p class="slide-subtitle">仅 SFA 主 KV 按 DCP 交错切分（<code>I = 128</code>），非归属 Rank 写 <code>-1</code></p>
+        <p class="slide-subtitle">默认切分所有 Attention KV Cache：通过 Virtual Block 跨卡交错落盘，非归属 Rank 写 <code>-1</code></p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-dcp-detail" data-anchor="branch-dcp-blocktable" type="button">
@@ -18,7 +18,7 @@
 
     <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
       <div class="img-zoom-wrap">
-        <img src="static/images/CP/glm53-dcp-slot-mapping.svg" alt="GLM-5.3-Flash DCP Slot Mapping" style="width:100%; max-height:48vh; object-fit:contain;">
+        <img src="static/images/CP/glm53-dcp-slot-mapping.svg" alt="DCP Virtual Block & Slot Mapping" style="width:100%; max-height:48vh; object-fit:contain;">
 
         <button class="hotspot-pin" style="left: 18%; top: 38%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-blocktable" type="button">
           <span class="pin-label">Virtual Block 跨卡映射 &#10132;</span>
@@ -43,15 +43,15 @@
 
     <div class="template-grid-2">
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>交错映射公式</h4>
+        <h4>交错映射公式（Interleave Size <code>I</code>）</h4>
         <p style="font-size:1.32rem; margin:0; font-family:ui-monospace, monospace;">
           virtual_block_size = block_size &times; DCP &nbsp;|&nbsp; <strong>target_rank = ((pos % VBlock) // I) % DCP</strong>
         </p>
       </div>
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>按 Cache Group 独立控制 (<code>dcp_sharded: list[bool]</code>)</h4>
+        <h4>Attention KV 默认全切分 (<code>AttentionSpec.dcp_sharded = True</code>)</h4>
         <p style="font-size:1.32rem; margin:0;">
-          SFA 主 KV 设为 <code>True</code>（切为 <code>1/DCP</code>）；KPool 压缩池与 KDA 线性状态设为 <code>False</code>。
+          Full Attention、MLA/SFA 主 KV 及 Indexer Cache 默认均按 DCP 交错切分；非序列增长状态（如 Mamba/线性层）按 Group 设为 <code>False</code>。
         </p>
       </div>
     </div>

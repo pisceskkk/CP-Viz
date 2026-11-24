@@ -19,7 +19,7 @@ flowchart LR
     G["1. Global Batch<br/>(Scheduler 统一调度)"] --> P["2. partition_batch<br/>(拆为 2x 虚拟请求段)"]
     P --> R["3. _reorder_segments<br/>(Decodes 在前, Prefills 在后)"]
     R --> CTX["4. AscendPCPAttentionContext<br/>(Local Query + Global Cache 视图)"]
-    CTX --> FWD["5. Model Forward<br/>(KDA / SFA 异构并行)"]
+    CTX --> FWD["5. Model Forward<br/>(跨 PCP 同步 KV / 局部 Attention)"]
     FWD --> REST["6. restore_for_sampling<br/>(恢复全局 Token 顺序)"]
       </div>
     </div>

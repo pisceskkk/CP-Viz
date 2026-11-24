@@ -1,35 +1,28 @@
-<!-- Slide 09: PCP ③ GLM-5.3-Flash Prefill 异构同步 -->
+<!-- Slide 09: PCP ③ Prefill 与 Chunked Prefill 的 KV 同步 -->
 <section data-stage="03 PCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>PCP ③：GLM-5.3-Flash Prefill 异构层同步</strong></h3>
-        <p class="slide-subtitle">34 层 KDA 还原因果顺序推进状态；11 层 SFA+KPool 异步重叠 Key Gather 与本地 Query 计算</p>
+        <h3><strong>PCP ③：Prefill 与 Chunked Prefill 的 KV 同步</strong></h3>
+        <p class="slide-subtitle">计算本地 <code>1/PCP</code> Query 的同时跨 PCP Group AllGather 当前步新 KV，通过 <code>gathered_kv_slot_mappings</code> 落盘</p>
       </div>
       <div class="slide-actions">
-        <button class="btn-code" data-code="code-glm53-kda-pcp" type="button">
-          &lt;/&gt; kda.py
-        </button>
-        <button class="btn-code" data-code="code-glm53-kpool-pcp" type="button">
-          &lt;/&gt; indexer_kpool.py
+        <button class="btn-code" data-code="code-pcp-restore-map" type="button">
+          &lt;/&gt; gathered_kv_write_mask
         </button>
       </div>
     </div>
 
     <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
       <div class="img-zoom-wrap">
-        <img src="static/images/CP/glm53-pcp-prefill.svg" alt="GLM-5.3-Flash PCP Prefill" style="width:100%; max-height:48vh; object-fit:contain;">
+        <img src="static/images/CP/glm53-pcp-prefill.svg" alt="PCP Prefill & Chunked Prefill KV Sync" style="width:100%; max-height:48vh; object-fit:contain;">
 
-        <button class="hotspot-pin" style="left: 50%; top: 28%;" data-code="code-glm53-kda-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; KDA AllGather &amp; ReduceScatter</span>
+        <button class="hotspot-pin" style="left: 48%; top: 65%;" data-code="code-pcp-restore-map" type="button">
+          <span class="pin-label">&lt;/&gt; padded_gather_idx &amp; gathered_kv_write_mask</span>
         </button>
 
-        <button class="hotspot-pin" style="left: 30%; top: 75%;" data-code="code-glm53-kpool-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; KPool all_gather_async 重叠</span>
-        </button>
-
-        <button class="hotspot-pin" style="left: 68%; top: 75%;" data-code="code-pcp-dcp-stacked" type="button">
-          <span class="pin-label">&lt;/&gt; SFA 主 KV 同步与稀疏注意力</span>
+        <button class="hotspot-pin" style="left: 82%; top: 38%;" data-code="code-ascend-pcp-manager" type="button">
+          <span class="pin-label">&lt;/&gt; AscendPCPAttentionContext</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -43,12 +36,12 @@
 
     <div class="template-grid-2">
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>支路 A · 34 层 KDA：因果还原 + ReduceScatter</h4>
-        <p style="font-size:1.3rem; margin:0;">入口用 <code>hidden_restore_idx</code> 恢复 <code>[T_global]</code> 推进 <code>1/(TP&times;PCP)</code> Head 状态，出口按 <code>padded_gather_idx</code> 切回 <code>[T_pcp]</code>。</p>
+        <h4>普通 Prefill 路径</h4>
+        <p style="font-size:1.3rem; margin:0;">各卡仅计算本地 <code>Q_local</code> 与 <code>KV_local</code> &#8594; PCP AllGather 汇聚完整新 KV &#8594; 按 <code>padded_gather_idx</code> 映射的 Slot 落盘并完成因果 Attention。</p>
       </div>
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>支路 B · 11 层 SFA+KPool：异步重叠 + 本地 Query</h4>
-        <p style="font-size:1.3rem; margin:0;"><code>all_gather_async(k_hidden)</code> 与本地 <code>wq_b / q_b_proj</code> 重叠；SFA 仅算本卡 <code>T_pcp</code> 个 Query。</p>
+        <h4>Chunked Prefill / Prefix Cache 路径</h4>
+        <p style="font-size:1.3rem; margin:0;">当 <code>DCP=1</code> 时每个 PCP Rank 均持有完整历史 KV Cache，直接读取本地历史 Prefix KV 与当前步 Gather 的新 KV 拼接计算。</p>
       </div>
     </div>
   </div>

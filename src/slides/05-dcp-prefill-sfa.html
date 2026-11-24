@@ -1,15 +1,12 @@
-<!-- Slide 05: DCP ③ SFA 双模式与 Prefill 紧凑 KV Gather -->
+<!-- Slide 05: DCP ③ Prefill / Chunked Prefill 与 Sparse Indexer 切分 -->
 <section data-stage="02 DCP">
   <div class="wrap">
     <div class="slide-header">
       <div>
-        <h3><strong>DCP ③：KPool 双模式与紧凑 KV Gather</strong></h3>
-        <p class="slide-subtitle">GQA DCP 已移除（RFC #21305）；GLM-5.3-Flash 默认采用 Replicated KPool + 紧凑块表 AllGather</p>
+        <h3><strong>DCP ③：Chunked Prefill 与 Sparse Indexer 协同</strong></h3>
+        <p class="slide-subtitle">Full Attention / Dense MLA 分块还原历史 KV；稀疏注意力支持 Indexer 与主 KV 同步切分或压缩复制</p>
       </div>
       <div class="slide-actions">
-        <button class="btn-code" data-code="code-glm53-kpool-pcp" type="button">
-          &lt;/&gt; indexer_kpool.py
-        </button>
         <button class="btn-code" data-code="code-sfa-dcp-impl" type="button">
           &lt;/&gt; sfa_cp.py
         </button>
@@ -18,14 +15,14 @@
 
     <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
       <div class="img-zoom-wrap">
-        <img src="static/images/CP/glm53-dcp-sfa-prefill.svg" alt="GLM-5.3-Flash SFA DCP Modes" style="width:100%; max-height:48vh; object-fit:contain;">
+        <img src="static/images/CP/glm53-dcp-sfa-prefill.svg" alt="DCP Prefill & Sparse Indexer Modes" style="width:100%; max-height:48vh; object-fit:contain;">
 
-        <button class="hotspot-pin" style="left: 32%; top: 36%;" data-code="code-glm53-kpool-pcp" type="button">
-          <span class="pin-label">&lt;/&gt; Replicated KPool (4:1) 源码</span>
+        <button class="hotspot-pin" style="left: 25%; top: 55%;" data-code="code-dcp-impl-mixin" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 MLA 分块 KV AllGather</span>
         </button>
 
-        <button class="hotspot-pin" style="left: 84%; top: 36%;" data-code="code-sfa-dcp-impl" type="button">
-          <span class="pin-label">&lt;/&gt; _record_dcp_kv_gather_context</span>
+        <button class="hotspot-pin" style="left: 78%; top: 35%;" data-code="code-sfa-dcp-impl" type="button">
+          <span class="pin-label">&lt;/&gt; 查看 Sharded / Replicated Indexer 实现</span>
         </button>
 
         <button class="img-zoom-btn" onclick="event.stopPropagation();openLightbox(this.parentElement.querySelector('img').src)" type="button" title="全屏放大">
@@ -39,12 +36,12 @@
 
     <div class="template-grid-2">
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>为什么 KPool 默认复制？</h4>
-        <p style="font-size:1.3rem; margin:0;">4:1 池化后体积仅为主 KV 的 <code>~1/16</code>，全卡复制可零通信直出一致的全局 Top-2051。</p>
+        <h4>Full Attention / Dense MLA：分块 Workspace AllGather</h4>
+        <p style="font-size:1.3rem; margin:0;">按 <code>lcm(block_size, I &times; DCP)</code> 对齐划窗，跨 DCP 收集历史 KV 并按 <code>kv_rank_offsets</code> 还原连续顺序。</p>
       </div>
       <div class="surface-card" style="padding:1.1rem 1.6rem;">
-        <h4>Prefill 紧凑块收集 (<code>kv_gather_block_ids</code>)</h4>
-        <p style="font-size:1.3rem; margin:0;">写完本地新 KV 后，仅提取本步活跃块跨 DCP AllGather 拼接，支撑 Chunked Prefill 与 APC。</p>
+        <h4>Sparse Attention：Sharded Indexer vs Replicated Indexer</h4>
+        <p style="font-size:1.3rem; margin:0;">未压缩 Indexer 与主 KV 按相同 Token Owner 同步切分（跨卡基数排序归并 Top-K）；高倍压缩 Indexer（如 4:1 KPool）可配置全卡复制以省去 Top-K 通信。</p>
       </div>
     </div>
   </div>

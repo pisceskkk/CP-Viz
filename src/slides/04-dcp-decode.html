@@ -4,7 +4,7 @@
     <div class="slide-header">
       <div>
         <h3><strong>DCP ②：Decode 局部注意力与 <code>dcp_a2a_fused</code></strong></h3>
-        <p class="slide-subtitle">KV Cache 静止不动：<code>sparse_index_remap</code> 过滤本地 Top-K &#8594; 局部 Attention &#8594; All2All LSE 归并</p>
+        <p class="slide-subtitle">收集完整 Query Heads &#8594; 对本地 <code>1/DCP</code> KV 分片算局部 Attention &#8594; All2All LSE 加权归并</p>
       </div>
       <div class="slide-actions">
         <button class="btn-code" data-code="code-dcp-impl-mixin" type="button">
@@ -18,10 +18,10 @@
 
     <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
       <div class="img-zoom-wrap">
-        <img src="static/images/CP/glm53-dcp-decode.svg" alt="GLM-5.3-Flash DCP Decode" style="width:100%; max-height:48vh; object-fit:contain;">
+        <img src="static/images/CP/glm53-dcp-decode.svg" alt="DCP Decode" style="width:100%; max-height:48vh; object-fit:contain;">
 
-        <button class="hotspot-pin" style="left: 20%; top: 58%;" data-code="code-sfa-dcp-impl" type="button">
-          <span class="pin-label">&lt;/&gt; sparse_index_remap</span>
+        <button class="hotspot-pin" style="left: 20%; top: 58%;" data-code="code-dcp-impl-mixin" type="button">
+          <span class="pin-label">&lt;/&gt; _dcp_all_gather_fragments</span>
         </button>
 
         <button class="hotspot-pin" style="left: 52%; top: 38%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
@@ -43,8 +43,8 @@
 
     <div class="template-grid-3">
       <div class="surface-card" style="padding:1rem 1.4rem;">
-        <h4>1. <code>sparse_index_remap</code></h4>
-        <p style="font-size:1.28rem; margin:0;">将 KPool 选出的全局 Top-2051 过滤映射为本卡 DCP 物理 KV 页索引。</p>
+        <h4>1. Query Gather / Replicate</h4>
+        <p style="font-size:1.28rem; margin:0;">跨 DCP 收集完整 Q Heads（<code>DCP==PCP</code> 或开启 <code>VLLM_DCP_Q_REPLICATE</code> 时免通信）。</p>
       </div>
       <div class="surface-card" style="padding:1rem 1.4rem;">
         <h4>2. 无损 LSE 打包 All2All</h4>
