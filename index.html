@@ -113,15 +113,15 @@
           <span class="toc-num">02</span>
           <span class="toc-title">DCP：KV Cache 交错分片、Chunked Prefill 与 Sharded Indexer</span>
         </li>
-        <li class="toc-item" data-go-slide="8">
+        <li class="toc-item" data-go-slide="7">
           <span class="toc-num">03</span>
           <span class="toc-title">PCP：DualChunkSwap 与异构层同步</span>
         </li>
-        <li class="toc-item" data-go-slide="12">
+        <li class="toc-item" data-go-slide="11">
           <span class="toc-num">04</span>
           <span class="toc-title">PCP+DCP 叠加与 GLM-5.3-Flash 实现</span>
         </li>
-        <li class="toc-item" data-go-slide="15">
+        <li class="toc-item" data-go-slide="14">
           <span class="toc-num">05</span>
           <span class="toc-title">适配矩阵、部署选型与演进规划</span>
         </li>
@@ -173,7 +173,7 @@
       <div class="img-zoom-wrap overview-zoom-wrap">
         <img src="static/images/CP/glm53-cp-overview.svg" alt="PCP & DCP Overview">
 
-        <button class="hotspot-pin" style="left: 29.8%; top: 16.5%;" data-go-slide="8" type="button">
+        <button class="hotspot-pin" style="left: 29.8%; top: 16.5%;" data-go-slide="7" type="button">
           <span class="pin-label">PCP 切分机制 &#10132;</span>
         </button>
 
@@ -441,49 +441,6 @@
       <div class="surface-card" style="padding:1rem 1.4rem;">
         <h4>3. Remap 本地 Select &amp; All2All</h4>
         <p style="font-size:1.25rem; margin:0; white-space:nowrap;">过滤出落在本卡的 <code>local_topk</code> 读取主 KV，算完经 All2All 归并。</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Slide 06: DCP ④ History / Current 拆流重叠 -->
-<section data-stage="02 DCP">
-  <div class="wrap">
-    <div class="slide-header">
-      <div>
-        <h3><strong>DCP ⑤：History / Current 拆流通信重叠</strong></h3>
-        <p class="slide-subtitle">MTP 多 Token 因果 Decode 下，将历史 KV 的 All2All 通信与当前步 KV 计算并行</p>
-      </div>
-      <div class="slide-actions">
-        <button class="btn-code" data-code="code-dcp-a2a-fused" type="button">
-          &lt;/&gt; fused_dcp_lse_combine
-        </button>
-      </div>
-    </div>
-
-    <div class="surface-card" style="margin-bottom:1.6rem; padding:1.6rem 2rem;">
-      <div class="mermaid">
-flowchart LR
-    Q["Query Heads Gather"] --> H_ATTN["主流：History Attention<br/>(本地 1/DCP 历史 KV)"]
-    H_ATTN --> COMM["通信流：dcp_a2a_fused<br/>(defer_combine=True 异步 All2All)"]
-    H_ATTN --> C_ATTN["主流：Current Attention<br/>(当前步新 Token KV)"]
-    COMM --> MERGE["主流：fused_dcp_lse_combine<br/>(一次性合并 History + Current)"]
-    C_ATTN --> MERGE
-      </div>
-    </div>
-
-    <div class="template-grid-3">
-      <div class="surface-card" style="padding:1.1rem 1.4rem;">
-        <h4>1. 为什么要拆分？</h4>
-        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">历史 KV 已按 DCP 分片，当前步新 KV 本地完整持有。</p>
-      </div>
-      <div class="surface-card" style="padding:1.1rem 1.4rem;">
-        <h4>2. 双流隐藏 All2All</h4>
-        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">通信流异步执行 History All2All，与主流 Current 并行。</p>
-      </div>
-      <div class="surface-card" style="padding:1.1rem 1.4rem;">
-        <h4>3. 单次 LSE 归一化</h4>
-        <p style="font-size:1.25rem; margin:0; white-space:nowrap;"><code>fused_dcp_lse_combine</code> 一次性归约 History 与 Current。</p>
       </div>
     </div>
   </div>
@@ -804,7 +761,7 @@ flowchart LR
         <p class="slide-subtitle">45 层主干（34 层 KDA + 11 层 NoPE SFA/KPool + mHC + MoE）与 5 组 Cache 存储契约</p>
       </div>
       <div class="slide-actions">
-        <button class="btn-slide-jump" data-go-slide="14" type="button">
+        <button class="btn-slide-jump" data-go-slide="13" type="button">
           算子级 Tensor 数据流 &#10132;
         </button>
       </div>
