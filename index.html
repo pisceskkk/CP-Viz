@@ -786,13 +786,13 @@ flowchart LR
   </div>
 </section>
 
-<!-- Slide 11: PCP + DCP 叠加原理 -->
+<!-- Slide 11 (#slide=13): PCP + DCP 叠加原理 -->
 <section data-stage="04 PCP+DCP &amp; GLM-5.3">
   <div class="wrap">
     <div class="slide-header">
       <div>
         <h3><strong>PCP + DCP 叠加：算力与显存双重切分</strong></h3>
-        <p class="slide-subtitle">在 <code>TP &times; PCP</code> 网格上复用进程组建 DCP（<code>DCP = PCP</code> 或 <code>DCP = TP &times; PCP</code>）</p>
+        <p class="slide-subtitle">在 <code>TP &times; PCP</code> 网格上复用进程组建 DCP（<code>DCP = PCP</code> 或 <code>DCP = TP &times; PCP</code>），同时切分 Prefill 算力与 KV Cache 显存</p>
       </div>
       <div class="slide-actions">
         <button class="btn-branch" data-branch="branch-comm-topology" type="button">
@@ -804,74 +804,71 @@ flowchart LR
       </div>
     </div>
 
-    <div class="stepper-box">
-      <div class="stepper-tabs">
-        <button class="stepper-tab active" data-step-target="stacked-step-1" type="button">
-          1 &middot; 拓扑与 KV 落盘
+    <div class="arch-flow" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom:1.5rem;">
+      <div class="arch-node" style="border-top:4px solid #0284c7; padding:1.5rem 1.8rem;">
+        <button class="hotspot-pin" data-code="code-parallel-state" type="button">
+          <span class="pin-label">&lt;/&gt; parallel_state.py</span>
         </button>
-        <button class="stepper-tab" data-step-target="stacked-step-2" type="button">
-          2 &middot; Stacked Prefill
-        </button>
-        <button class="stepper-tab" data-step-target="stacked-step-3" type="button">
-          3 &middot; Stacked Decode
-        </button>
+        <span class="arch-node-step">01 &middot; TOPOLOGY &amp; KV OWNERSHIP</span>
+        <h4 class="arch-node-title" style="font-size:1.55rem;">1. 通信拓扑与 KV 落盘规则</h4>
+        <ul style="margin:0.4rem 0 0 1.5rem; font-size:1.25rem; color:var(--ink-body); line-height:1.6;">
+          <li><strong>PCP-first 转置建组：</strong>逻辑 DCP 按 <code>flat_idx = tp_rank * PCP + pcp_rank</code> 组建（先跨 PCP，再跨 TP）。</li>
+          <li><strong>HCCL 排序映射：</strong>通过 <code>dcp_collective_rank_order</code> 对齐物理 ProcessGroup 顺序。</li>
+          <li><strong>单次掩码落盘：</strong>仅满足 <code>(pos // I) % DCP == dcp_rank</code> 的 Token 写物理 Slot，其余置 <code>-1</code>。</li>
+        </ul>
       </div>
 
-      <div class="stepper-pane active" id="stacked-step-1">
-        <div class="template-grid-2">
-          <div>
-            <h4>PCP 切计算，只有 DCP 切 KV Cache</h4>
-            <p style="font-size:1.4rem; line-height:1.6;">
-              &bull; 逻辑 DCP 组按 <code>flat_idx = tp_rank * PCP + pcp_rank</code> 组建（先跨 PCP，再跨 TP）。<br>
-              &bull; Prefill 阶段仅满足 <code>(pos // 128) % DCP == dcp_local_rank</code> 的 Token 写入物理 Slot，其余写 <code>-1</code>。
-            </p>
-          </div>
-          <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:1.4rem; font-family:ui-monospace, monospace; font-size:1.3rem;">
-            <strong>[示例：TP=2, PCP=2, DCP=4]</strong><br><br>
-            TP Groups &nbsp;: [0, 1], [2, 3]<br>
-            PCP Groups : [0, 2], [1, 3]<br>
-            Logical DCP: [0, 2, 1, 3] (PCP-first)<br>
-            HCCL Sorted: [0, 1, 2, 3] (dcp_collective_rank_order)
-          </div>
-        </div>
+      <div class="arch-node" style="border-top:4px solid #16a34a; padding:1.5rem 1.8rem;">
+        <button class="hotspot-pin" data-code="code-pcp-dcp-stacked" type="button">
+          <span class="pin-label">&lt;/&gt; sfa_cp.py 叠加元数据</span>
+        </button>
+        <span class="arch-node-step">02 &middot; STACKED PREFILL</span>
+        <h4 class="arch-node-title" style="font-size:1.55rem;">2. Stacked Prefill 协同</h4>
+        <ul style="margin:0.4rem 0 0 1.5rem; font-size:1.25rem; color:var(--ink-body); line-height:1.6;">
+          <li><strong>当前步新 KV：</strong><code>build_pcp_ordered_slot_mapping</code> 按 <code>padded_gather_idx</code> 重排全局 Slot 并过滤 Padding。</li>
+          <li><strong>历史 Cached KV：</strong>基于 <code>global_batch</code> 生成统一的跨 DCP AllGather 发送上界，接收后按本地 Segment 区间消费。</li>
+          <li><strong>本地 Query 计算：</strong>各卡仅计算 <code>1 / PCP</code> 本地 Query Token。</li>
+        </ul>
       </div>
 
-      <div class="stepper-pane" id="stacked-step-2">
-        <div class="template-grid-2">
-          <div>
-            <h4>Stacked Prefill：统一发送计划 + 掩码落盘</h4>
-            <p style="font-size:1.4rem; line-height:1.6;">
-              &bull; <strong>当前步新 KV</strong>：<code>build_pcp_ordered_slot_mapping</code> 按 <code>padded_gather_idx</code> 重排全局 Slot，过滤 Padding。<br>
-              &bull; <strong>历史 Cached KV</strong>：基于 <code>global_batch</code> 生成统一的 DCP AllGather 发送上界，接收后按本分片区间切片消费。
-            </p>
-          </div>
-          <div style="display:flex; flex-direction:column; justify-content:center; gap:1rem;">
-            <button class="btn-code" data-code="code-pcp-dcp-stacked" type="button">
-              &lt;/&gt; AscendSFAPCPDCPMetadataBuilder
-            </button>
-            <button class="btn-code" data-code="code-pcp-restore-map" type="button">
-              &lt;/&gt; padded_gather_idx &amp; write_mask
-            </button>
-          </div>
-        </div>
+      <div class="arch-node" style="border-top:4px solid #7c3aed; padding:1.5rem 1.8rem;">
+        <button class="hotspot-pin" data-code="code-dcp-impl-mixin" type="button">
+          <span class="pin-label">&lt;/&gt; _merge_dcp_attention_output</span>
+        </button>
+        <span class="arch-node-step">03 &middot; STACKED DECODE</span>
+        <h4 class="arch-node-title" style="font-size:1.55rem;">3. Stacked Decode 两级归并</h4>
+        <ul style="margin:0.4rem 0 0 1.5rem; font-size:1.25rem; color:var(--ink-body); line-height:1.6;">
+          <li><strong><code>DCP == PCP</code>：</strong>同组各卡 Q Heads 已完全一致，<strong>免除 AllGather Q</strong>，算完直接跨 PCP 归并 <code>(O, LSE)</code>。</li>
+          <li><strong><code>DCP == TP &times; PCP</code>：</strong>仅在 <code>tp_group</code> 内 AllGather Q Heads；输出经 <code>dcp_a2a_fused(..., tp_group, pcp_group)</code> 一步完成跨 TP Scatter 与跨 PCP LSE 归并。</li>
+        </ul>
       </div>
+    </div>
 
-      <div class="stepper-pane" id="stacked-step-3">
-        <div class="template-grid-2">
-          <div>
-            <h4>Stacked Decode：两级融合归并 <code>dcp_a2a_fused(tp, pcp)</code></h4>
-            <p style="font-size:1.4rem; line-height:1.6;">
-              &bull; 若 <code>DCP == PCP</code>：同组 Q Heads 已一致，免 Gather Q，直接跨 PCP 归并 <code>(O, LSE)</code>。<br>
-              &bull; 若 <code>DCP == TP &times; PCP</code>：仅在 <code>tp_group</code> 内 Gather Q Heads，算完后由 <code>dcp_a2a_fused(..., tp_group, pcp_group)</code> 一步完成跨 TP Scatter 与跨 PCP LSE 归并！
-            </p>
-          </div>
-          <div style="display:flex; flex-direction:column; justify-content:center; gap:1rem;">
-            <button class="btn-code" data-code="code-dcp-impl-mixin" type="button">
-              &lt;/&gt; DCPImplMixin._merge_dcp_attention_output
-            </button>
-          </div>
-        </div>
-      </div>
+    <div class="surface-card" style="padding:1.1rem 1.8rem;">
+      <table class="progress-table" style="margin-top:0; font-size:1.25rem;">
+        <thead>
+          <tr>
+            <th style="width:20%;">叠加配置</th>
+            <th style="width:26%;">通信组划分 (以 4 卡为例)</th>
+            <th style="width:27%;">Decode Query Gather 范围</th>
+            <th style="width:27%;">Decode 输出 LSE 归并路径</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="code">DCP = PCP<br>(如 TP=2, PCP=2, DCP=2)</td>
+            <td class="code">TP: [0,1], [2,3]<br>PCP / DCP: [0,2], [1,3]</td>
+            <td><strong>无需 AllGather Q</strong>（同 PCP 组持有相同 TP Head 分片）</td>
+            <td><code>dcp_a2a_fused</code> 仅在 <code>pcp_group</code> 内交换并归并 LSE</td>
+          </tr>
+          <tr>
+            <td class="code">DCP = TP &times; PCP<br>(如 TP=2, PCP=2, DCP=4)</td>
+            <td class="code">Logical DCP: [0, 2, 1, 3]<br>HCCL Sorted: [0, 1, 2, 3]</td>
+            <td><strong>仅在 <code>tp_group</code> 内 AllGather Q</strong>（通信量降为 <code>1/PCP</code>）</td>
+            <td><code>dcp_a2a_fused(tp_group, pcp_group)</code> 两级融合归并</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
