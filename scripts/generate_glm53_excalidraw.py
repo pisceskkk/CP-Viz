@@ -1248,6 +1248,20 @@ def diag_4b_chunked_prefill_schemes() -> tuple[list[dict], int, int]:
     return els, 1400, 595
 
 
+def diag_4c_scheme_b_only() -> tuple[list[dict], int, int]:
+    """Standalone diagram of Scheme B (AllGather KV) from the 4-scheme comparison."""
+    full_els, _, _ = diag_4b_chunked_prefill_schemes()
+    els: list[dict] = []
+    ox, oy = -700, 0
+    for el in full_els:
+        if el["id"].startswith("q2_"):
+            c = dict(el)
+            c["x"] = el["x"] + ox
+            c["y"] = el["y"] + oy
+            els.append(c)
+    return els, 700, 305
+
+
 def render_external_excalidraw(
     excalidraw_path: Path,
     out_ex_path: Path,
@@ -1641,6 +1655,7 @@ def main() -> None:
         "glm53-dcp-decode": diag_3_dcp_decode,
         "glm53-dcp-chunked-prefill": diag_4a_dcp_chunked_prefill,
         "glm53-dcp-chunked-schemes": diag_4b_chunked_prefill_schemes,
+        "glm53-pcp-dcp-scheme-b": diag_4c_scheme_b_only,
         "glm53-pcp-dualchunk": diag_5_pcp_dualchunk,
         "glm53-pcp-prefill": diag_6_pcp_prefill_general,
         "glm53-pcp-decode-weights": diag_7_pcp_decode_weights,
