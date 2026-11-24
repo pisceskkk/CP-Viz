@@ -18,17 +18,20 @@
 
     <div class="surface-card" style="padding:1.2rem; margin-bottom:1.4rem;">
       <div class="img-zoom-wrap">
-        <img src="static/images/CP/glm53-dcp-slot-mapping.svg" alt="DCP Virtual Block & Slot Mapping" style="width:100%; max-height:48vh; object-fit:contain;">
+        <img src="static/images/CP/glm53-dcp-slot-mapping.svg" alt="DCP Virtual Block & Slot Mapping" style="max-height:48vh;">
 
-        <button class="hotspot-pin" style="left: 18%; top: 38%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-blocktable" type="button">
+        <!-- 放置于左区 Virtual Block 虚线框右上角空白处 -->
+        <button class="hotspot-pin" style="left: 31.2%; top: 8.5%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-blocktable" type="button">
           <span class="pin-label">Virtual Block 跨卡映射 &#10132;</span>
         </button>
 
-        <button class="hotspot-pin" style="left: 46%; top: 48%;" data-code="code-slot-mapping-kernel" type="button">
+        <!-- 放置于中间 compute_slot_mappings 文本框右上角 -->
+        <button class="hotspot-pin" style="left: 55.4%; top: 32.5%;" data-code="code-slot-mapping-kernel" type="button">
           <span class="pin-label">&lt;/&gt; Triton Slot Mapping 源码</span>
         </button>
 
-        <button class="hotspot-pin" style="left: 78%; top: 30%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
+        <!-- 放置于右区 DCP Rank 0 物理 Block 文本框右上角 -->
+        <button class="hotspot-pin pin-left" style="right: 4.5%; left: auto; top: 17.5%;" data-branch="branch-dcp-detail" data-anchor="branch-dcp-tokens" type="button">
           <span class="pin-label">Token 分布与 -1 掩码 &#10132;</span>
         </button>
 

@@ -964,16 +964,48 @@ section:not(.aligncenter) {
   color: var(--ink-muted);
 }
 
-/* --- Image Lightbox --- */
+/* --- Image Lightbox & Aspect-Ratio Locked Hotspot Container --- */
 .img-zoom-wrap {
   position: relative;
-  display: inline-block;
-  width: 100%;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  line-height: 0;
 }
 
 .img-zoom-wrap img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 48vh;
+  margin: 0 auto;
   background: #ffffff;
   border-radius: 10px;
+}
+
+/* For hotspots placed near the right edge of a box/diagram, expand leftward */
+.hotspot-pin.pin-left {
+  transform: translate(0.55rem, -50%);
+  flex-direction: row-reverse;
+}
+
+.hotspot-pin.pin-left .pin-label {
+  margin-left: 0;
+  margin-right: 0;
+  transform: translateX(3px);
+}
+
+.hotspot-pin.pin-left:hover .pin-label,
+.hotspot-pin.pin-left:focus-visible .pin-label {
+  margin-left: 0;
+  margin-right: 0.5rem;
+  transform: translateX(0);
+}
+.hotspot-pin.pin-left:hover,
+.hotspot-pin.pin-left:focus-visible {
+  padding: 0 0.75rem 0 0.95rem;
 }
 
 .img-zoom-btn {
