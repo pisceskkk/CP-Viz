@@ -1147,6 +1147,19 @@ section:not(.aligncenter) {
   vertical-align: middle;
 }
 
+.progress-table.compact-matrix-table {
+  font-size: 1.22rem;
+}
+
+.progress-table.compact-matrix-table th,
+.progress-table.compact-matrix-table td {
+  padding: 0.52rem 0.7rem;
+}
+
+.progress-table.compact-matrix-table thead th {
+  font-size: 1.2rem;
+}
+
 .progress-table thead th {
   background: var(--brand-light);
   font-weight: 700;

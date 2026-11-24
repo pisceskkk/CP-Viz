@@ -1008,126 +1008,136 @@ flowchart LR
   </div>
 </section>
 
-<!-- Slide 14: PCP & DCP 适配全景矩阵 -->
+<!-- Slide 14 (#slide=16): PCP & DCP 适配全景矩阵 -->
 <section data-stage="05 适配与演进">
   <div class="wrap">
-    <div class="slide-header">
+    <div class="slide-header" style="margin-bottom:1rem;">
       <div>
         <h3><strong>PCP &amp; DCP 特性适配矩阵</strong></h3>
         <p class="slide-subtitle">基于最新 MRV2 架构（注：GQA 的 DCP 已按 <a href="https://github.com/vllm-project/vllm-ascend/issues/21305" target="_blank">RFC #21305</a> 移除，GQA 仅支持 PCP）</p>
       </div>
+      <div class="slide-actions" style="font-size:1.2rem; color:var(--ink-muted); gap:1.2rem;">
+        <span><span class="dot green"></span> 完全支持</span>
+        <span><span class="dot amber"></span> 部分支持</span>
+        <span><span class="dot red"></span> 不支持</span>
+      </div>
     </div>
 
-    <h4 style="margin:0 0 0.4rem; font-size:1.5rem;">1. Prefill Context Parallel (PCP)</h4>
-    <table class="progress-table" style="margin-top:0; font-size:1.25rem;">
-      <thead>
-        <tr>
-          <th>Attention 后端 / 代表模型</th>
-          <th>Basic PCP</th>
-          <th>APC + Chunked</th>
-          <th>Graph Mode</th>
-          <th>Speculative</th>
-          <th>P/D 分离</th>
-          <th>KV Pool</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="code">MLA (DeepSeek-V3 / R1)</td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
-          <td class="status-partial" title="MTP"></td>
-          <td class="status-yes"></td>
-          <td class="status-partial"></td>
-        </tr>
-        <tr>
-          <td class="code">SFA (GLM-5.2)</td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
-          <td class="status-partial" title="MTP / DSpark"></td>
-          <td class="status-yes"></td>
-          <td class="status-partial"></td>
-        </tr>
-        <tr>
-          <td class="code">KDA + SFA/KPool (GLM-5.3-Flash / K3.1)</td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-partial" title="FULL_DECODE_ONLY"></td>
-          <td class="status-partial" title="MTP / DSpark"></td>
-          <td class="status-yes"></td>
-          <td class="status-partial"></td>
-        </tr>
-        <tr>
-          <td class="code">DSA &amp; DSA V4.1 (DeepSeek-V4)</td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
-          <td class="status-partial" title="MTP / DSpark"></td>
-          <td class="status-yes"></td>
-          <td class="status-partial"></td>
-        </tr>
-        <tr>
-          <td class="code">GQA (Qwen3 系列)</td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
-          <td class="status-partial" title="Eagle3"></td>
-          <td class="status-yes"></td>
-          <td class="status-partial"></td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="surface-card" style="padding:1rem 1.6rem; margin-bottom:1rem;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+        <h4 style="margin:0; font-size:1.42rem;">1. Prefill Context Parallel (PCP)</h4>
+        <span style="font-size:1.18rem; color:var(--ink-muted);">切分 Prefill 计算序列（<code>2P</code> DualChunkSwap）</span>
+      </div>
+      <table class="progress-table compact-matrix-table" style="margin-top:0;">
+        <thead>
+          <tr>
+            <th style="width:28%;">Attention 后端 / 代表模型</th>
+            <th>Basic PCP</th>
+            <th>APC + Chunked</th>
+            <th>Graph Mode</th>
+            <th>Speculative</th>
+            <th>P/D 分离</th>
+            <th>KV Pool</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="code">MLA (DeepSeek-V3 / R1)</td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
+            <td class="status-partial" title="MTP"></td>
+            <td class="status-yes"></td>
+            <td class="status-partial"></td>
+          </tr>
+          <tr>
+            <td class="code">SFA (GLM-5.2)</td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
+            <td class="status-partial" title="MTP / DSpark"></td>
+            <td class="status-yes"></td>
+            <td class="status-partial"></td>
+          </tr>
+          <tr>
+            <td class="code">KDA + SFA/KPool (GLM-5.3-Flash / K3.1)</td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-partial" title="FULL_DECODE_ONLY"></td>
+            <td class="status-partial" title="MTP / DSpark"></td>
+            <td class="status-yes"></td>
+            <td class="status-partial"></td>
+          </tr>
+          <tr>
+            <td class="code">DSA &amp; DSA V4.1 (DeepSeek-V4)</td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
+            <td class="status-partial" title="MTP / DSpark"></td>
+            <td class="status-yes"></td>
+            <td class="status-partial"></td>
+          </tr>
+          <tr>
+            <td class="code">GQA (Qwen3 系列)</td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-partial" title="PIECEWISE / FULL_DECODE_ONLY"></td>
+            <td class="status-partial" title="Eagle3"></td>
+            <td class="status-yes"></td>
+            <td class="status-partial"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-    <h4 style="margin:1.3rem 0 0.4rem; font-size:1.5rem;">2. Decode Context Parallel (DCP)</h4>
-    <table class="progress-table" style="margin-top:0; font-size:1.25rem;">
-      <thead>
-        <tr>
-          <th>Attention 后端</th>
-          <th>拓扑约束 (Standalone / Stacked)</th>
-          <th>Chunked + APC</th>
-          <th>Graph Mode</th>
-          <th>Speculative</th>
-          <th>P/D 分离 &amp; KV Pool</th>
-          <th>PCP + DCP 叠加</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="code">MLA (DeepSeek-V3 / R1)</td>
-          <td><code>TP % DCP == 0</code> 或 <code>DCP &isin; {PCP, TP&times;PCP}</code></td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-        </tr>
-        <tr>
-          <td class="code">SFA (GLM-5.2 / 5.3-Flash / K3.1)</td>
-          <td><code>DCP == TP</code> 或 <code>DCP &isin; {PCP, TP&times;PCP}</code></td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-          <td class="status-yes"></td>
-        </tr>
-        <tr>
-          <td class="code">GQA / MQA (Qwen3 等)</td>
-          <td>必须保持 <code>DCP = 1</code></td>
-          <td class="status-no"></td>
-          <td class="status-no"></td>
-          <td class="status-no"></td>
-          <td class="status-no"></td>
-          <td class="status-no"></td>
-        </tr>
-      </tbody>
-    </table>
-    <p class="legend-line">
-      <span class="dot green"></span> 完全支持 &nbsp;&nbsp;&nbsp;
-      <span class="dot amber"></span> 部分支持（受限于指定 Graph 模式或投机算法） &nbsp;&nbsp;&nbsp;
-      <span class="dot red"></span> 不支持
-    </p>
+    <div class="surface-card" style="padding:1rem 1.6rem;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+        <h4 style="margin:0; font-size:1.42rem;">2. Decode Context Parallel (DCP)</h4>
+        <span style="font-size:1.18rem; color:var(--ink-muted);">跨卡交错切分 KV Cache 容量（<code>1 / DCP</code>）</span>
+      </div>
+      <table class="progress-table compact-matrix-table" style="margin-top:0;">
+        <thead>
+          <tr>
+            <th style="width:28%;">Attention 后端</th>
+            <th style="width:27%;">拓扑约束 (Standalone / Stacked)</th>
+            <th>Chunked + APC</th>
+            <th>Graph Mode</th>
+            <th>Speculative</th>
+            <th>P/D &amp; KV Pool</th>
+            <th>PCP + DCP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="code">MLA (DeepSeek-V3 / R1)</td>
+            <td><code>TP % DCP == 0</code> 或 <code>DCP &isin; {PCP, TP&times;PCP}</code></td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+          </tr>
+          <tr>
+            <td class="code">SFA (GLM-5.2 / 5.3-Flash / K3.1)</td>
+            <td><code>DCP == TP</code> 或 <code>DCP &isin; {PCP, TP&times;PCP}</code></td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+            <td class="status-yes"></td>
+          </tr>
+          <tr>
+            <td class="code">GQA / MQA (Qwen3 等)</td>
+            <td>必须保持 <code>DCP = 1</code></td>
+            <td class="status-no"></td>
+            <td class="status-no"></td>
+            <td class="status-no"></td>
+            <td class="status-no"></td>
+            <td class="status-no"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
@@ -1193,7 +1203,7 @@ flowchart LR
       </div>
     </div>
 
-    <table class="progress-table" style="font-size:1.3rem; margin-top:0;">
+    <table class="progress-table compact-matrix-table" style="font-size:1.25rem; margin-top:0;">
       <thead>
         <tr>
           <th style="width:22%;">功能域</th>
