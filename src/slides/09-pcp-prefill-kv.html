@@ -21,17 +21,17 @@
         <img src="static/images/CP/glm53-pcp-prefill.svg" alt="PCP Prefill & Chunked Prefill Dataflow">
 
         <!-- 放置于上支路 save kvcache 算子框右上角 -->
-        <button class="hotspot-pin" style="left: 49.0%; top: 19.0%;" data-code="code-pcp-restore-map" type="button">
+        <button class="hotspot-pin" style="left: 49.0%; top: 16.0%;" data-code="code-pcp-restore-map" type="button">
           <span class="pin-label">&lt;/&gt; AllGather CP &amp; save kvcache</span>
         </button>
 
         <!-- 放置于主干 sparse-flash_attn 算子框右上角 -->
-        <button class="hotspot-pin" style="left: 69.2%; top: 26.9%;" data-code="code-pcp-dcp-stacked" type="button">
+        <button class="hotspot-pin" style="left: 69.2%; top: 22.7%;" data-code="code-pcp-dcp-stacked" type="button">
           <span class="pin-label">&lt;/&gt; sparse_flash_attn 本地 Query 注意力</span>
         </button>
 
         <!-- 放置于下支路 LightningIndexer 算子框右上角 -->
-        <button class="hotspot-pin" style="left: 57.4%; top: 65.8%;" data-code="code-glm53-kpool-pcp" type="button">
+        <button class="hotspot-pin" style="left: 57.4%; top: 55.6%;" data-code="code-glm53-kpool-pcp" type="button">
           <span class="pin-label">&lt;/&gt; Indexer AllGather CP &amp; top-k 检索</span>
         </button>
 
@@ -54,8 +54,8 @@
         <p style="font-size:1.25rem; margin:0; white-space:nowrap;"><code>LightningIndexer</code> 选出 <code>[X/CP, 2048]</code>，从完整 KV <code>select</code> 计算注意力。</p>
       </div>
       <div class="surface-card" style="padding:1rem 1.4rem;">
-        <h4>3. <code>o_proj</code> 两种模式与 SP 衔接</h4>
-        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">支持 <code>AG weights (TP=1)</code> 或 <code>Slice heads + RS(SP)</code> 衔接 <code>LayerNorm / MoE</code>。</p>
+        <h4>3. <code>o_proj</code> 切分与 SP 衔接</h4>
+        <p style="font-size:1.25rem; margin:0; white-space:nowrap;">支持 <code>AG weights (TP=1)</code>、<code>Slice heads + AR/RS</code> 或 <code>A2A + RS(CP*SP)</code>。</p>
       </div>
     </div>
   </div>
