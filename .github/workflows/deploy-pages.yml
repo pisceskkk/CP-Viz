@@ -1,0 +1,168 @@
+name: Deploy Multi-Branch GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - feat/glm53-cp-onboarding
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with all branches
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Export branches into /main/ and /va-onboarding/
+        run: |
+          set -euo pipefail
+          mkdir -p _site/main _site/va-onboarding
+
+          # 1. Export origin/main -> _site/main/
+          if git show-ref --verify --quiet refs/remotes/origin/main; then
+            git archive refs/remotes/origin/main | tar -x -C _site/main
+          fi
+
+          # 2. Export origin/feat/glm53-cp-onboarding -> _site/va-onboarding/
+          if git show-ref --verify --quiet refs/remotes/origin/feat/glm53-cp-onboarding; then
+            git archive refs/remotes/origin/feat/glm53-cp-onboarding | tar -x -C _site/va-onboarding
+          fi
+
+          # Remove non-web metadata from deployed directories
+          rm -rf _site/main/.github _site/va-onboarding/.github
+
+          # 3. Generate clean landing index.html at root /
+          cat << 'EOF' > _site/index.html
+          <!doctype html>
+          <html lang="zh-CN">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>CP-Viz 演示文稿导航</title>
+            <style>
+              :root {
+                --bg: #f8fafc;
+                --card: #ffffff;
+                --ink: #0f172a;
+                --muted: #475569;
+                --brand: #0369a1;
+                --brand-light: #e0f2fe;
+                --border: #cbd5e1;
+              }
+              * { box-sizing: border-box; }
+              body {
+                margin: 0;
+                min-height: 100vh;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+                background: var(--bg);
+                color: var(--ink);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 2rem;
+              }
+              .container {
+                width: min(100%, 52rem);
+              }
+              h1 {
+                margin: 0 0 0.5rem;
+                font-size: 1.85rem;
+              }
+              p.sub {
+                margin: 0 0 1.75rem;
+                color: var(--muted);
+                font-size: 1rem;
+              }
+              .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 1.25rem;
+              }
+              a.card {
+                display: block;
+                text-decoration: none;
+                color: inherit;
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 1.5rem;
+                box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+                transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+              }
+              a.card:hover {
+                transform: translateY(-2px);
+                border-color: var(--brand);
+                box-shadow: 0 12px 28px rgba(3, 105, 161, 0.12);
+              }
+              .badge {
+                display: inline-block;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                font-size: 0.78rem;
+                font-weight: 700;
+                color: var(--brand);
+                background: var(--brand-light);
+                padding: 0.2rem 0.6rem;
+                border-radius: 6px;
+                margin-bottom: 0.75rem;
+              }
+              .card h2 {
+                margin: 0 0 0.5rem;
+                font-size: 1.25rem;
+              }
+              .card p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 0.92rem;
+                line-height: 1.55;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>CP-Viz 在线演示导航</h1>
+              <p class="sub">选择对应的分支路径访问独立演示页面：</p>
+              <div class="grid">
+                <a class="card" href="./va-onboarding/">
+                  <span class="badge">/va-onboarding/</span>
+                  <h2>vLLM-Ascend PCP &amp; DCP 序列并行</h2>
+                  <p>分支：<code>feat/glm53-cp-onboarding</code><br>涵盖 DCP、PCP、PCP+DCP 叠加原理与 GLM-5.3-Flash 实现解析</p>
+                </a>
+                <a class="card" href="./main/">
+                  <span class="badge">/main/</span>
+                  <h2>Main 主分支版本</h2>
+                  <p>分支：<code>main</code><br>原始主分支演示内容</p>
+                </a>
+              </div>
+            </div>
+          </body>
+          </html>
+          EOF
+
+          touch _site/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
