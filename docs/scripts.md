@@ -1,162 +1,25 @@
-# vLLM DCP & PCP 技术分享
-分享人：邱纯硕
-vLLM PCP 特性核心贡献者 @华为昇腾
+# 维护文稿与可交互图
 
----
+`src/deck.json` 是演示内容的唯一构建输入，包含各页标题、核心结论、图块、箭头、讲解要点和备注。`src/source-map.json` 维护图中语义与固定版本源码行区间的映射。
 
-## CP 特性总览
+运行 `python build.py` 后，生成的 `index.html` 可直接静态部署。`docs/speaker-notes.md` 同步生成，便于备课。
 
-tl;dr PCP对prefill的输入序列进行切分，降低TTFT；DCP 对 KVCache 进行序列切分，消除冗余存储，提升最大长度与吞吐。
+## 图的结构
 
-/image static/images/CP/overview.svg
+每张图定义设计宽高、节点和连线。节点保存位置、尺寸、标签、解释、类型以及 source ID；连线保存起终节点、连接边、标签和 source ID。每一个可点击元素都对应一个来源。
 
----
+图块类型有 tensor、op、cache、result、note，分别表达数据、操作、缓存、结果和注解。配色始终与类型对应，文字标签同时说明含义。
 
-## vLLM DCP 特性
-PR https://github.com/vllm-project/vllm/pull/23734
-@youzhedian(Chao Hong from Moonshot)
+`static/js/concept-canvas.js` 处理节点布局、连线、缩放和编辑；`static/css/concept-canvas.css` 处理画布样式。演示导航与整页版式分别由 `concept-deck.js` 和 `concept-deck.css` 管理。
 
----
+## 调整布局
 
-### DCP Prefill 方案
+在页面内启用编辑模式后，拖动图块改变位置，拖动右下角改变尺寸。布局自动保存在当前浏览器，也可导出 JSON 作为备份，在相同图上导入。浏览器布局与仓库默认布局分开保存；要更新默认图，请把确认后的节点坐标与尺寸同步至对应 graph。
 
-/image static/images/CP/DCP-prefill-nochunkedprefill.svg
+图过宽时可缩放或在画布内部平移；通过高度控件调整画布占用空间。修改标签后，应检查长标签是否换行，并在桌面与窄屏实际渲染。
 
--> 支线
+## 更新版本与验证
 
-### BlockTable 变化
+更新参考版本时，先核对 Ascend 与 vLLM 的配对关系，再逐项核对 source map 的文件和行区间，以及图的计算语义。特别检查 query 的归属、KV 的逻辑范围与保存位置、当前分支的计入次数、LSE 合并前提和采样顺序恢复。
 
-引入 virtual block 概念处理跨设备 block 管理，主要影响 block 分配、prefix caching 命中。
-
-/image docs/html/blocktable.html
-
----
-
-### BlockTable 变化
-
-引入 virtual block 概念处理跨设备 block 管理，主要影响 block 分配、prefix caching 命中。
-
-/dynamic token分配情况随DCP size和 interleave size变化而变化
-
----
-
-### Slot mapping 分配变化
-
-/dynamic token长度变化、DCP size 和 interleave size 变化导致 不同 DCP rank上slotmapping取值变化。
-
-<- 返回主线
----
-
-### DCP Decode 方案
-
-/image static/images/CP/DCP-decode.svg
-
----
-
-### DCP ChunkedPrefill 方案
-
-/image static/images/CP/DCP-prefill-MLA.svg
-/image static/images/CP/DCP-prefill-GQA.svg
-
----
-
-## vLLM PCP 特性
-RFC https://github.com/vllm-project/vllm/issues/25749
-@pisceskkk(QiuChunshuo from Huawei)
-
----
-
-### PCP 通信组
-
-/dynamic 
-
----
-
-### PCP 序列切分
-
-/image static/images/CP/PCP-dualchunkswap.svg
-
-该部分切分逻辑在cp_utils.py:PCPManager中处理，包括处理query_lens, kv_lens, positions等，也包括计算q_head_idx, q_tail_idx等。
-
----
-
-### PCP prefill 方案
-
-/image static/images/CP/PCP-prefill-nochunkedprefill.svg
-
----
-### PCP Decode 方案
-
-/image static/images/CP/PCP-decode.svg
-
----
-### PCP Chunked Prefill 方案
-
-/image static/images/CP/PCP-chunkedprefill.svg
-
----
-
-## 部署场景
-
----
-
-### DCP 部署
-
-#### 时延
-通常来说，DCP在短序列情况下会因为额外通信导致劣化;长序列情况下（通常为128k以上）则因为kvcache切分独立计算而降低TOPT。
-
-#### 吞吐
-在资源紧张的情况下通过DCP提升kvcache容量，可以处理更多请求，吞吐会有一定提升。
-
-#### 请求长度
-开启DCP后kvcache可用量大幅提升，常见模型可以在单机 A3 上推理超过 1M 的超长序列。
-
-### PCP 部署
-
-#### 性能
-中长序列（32k～256k）场景下时延优于DP,略逊于TP，吞吐优于TP，略逊于DP。
-
-#### 场景
-适合在请求并发量与系统最优吞吐接近时进一步降低时延。
-
-
-## CP 特性优化与拓展
-
----
-
-### TPA 特性（tensor-parallel-size-attention）
-RFC https://github.com/vllm-project/vllm/issues/34444
-@SungsooHa from NVIDIA
-
-/mermaid 流程图1 hidden_states -> q_proj(slice by TP) -> Q(1, h/tp) -> DCP.all_gather(dim=1) -> attn -> cp_lse_ag_out_rs(DCP) -> output(1, h/tp) -> o_proj(slice by TP) -> out
-/mermaid 流程图2 hidden_states -> q_proj(slice by TPA=tp/dcp) -> Q(1, h*dcp/tp) -> attn -> cp_lse_ag_out_rs(DCP) -> output(1, h/tp) -> o_proj(slice by TP) -> out
-
-### 动态 CP 特性
-RFC https://github.com/vllm-project/vllm/issues/29295
-
-/mermaid
-```
-flowchart LR
-    REQ["请求到达"]
-    REQ --> JUDGE{"CrossDPScheduler<br/>按序列长度判断"}
-
-    JUDGE -->|"短序列"| CP1["CP=1 标准 DP 通路"]
-    JUDGE -->|"长序列"| CPSEL["选择最优 CP size<br/>(预建立通信组)"]
-    JUDGE -->|"长尾请求"| MIG["从 CP=1 迁移到 CP>1"]
-
-    CP1 --> DOMAIN["Domain<br/>聚合多个 DP replica<br/>为统一调度实体"]
-    CPSEL --> DOMAIN
-    MIG --> DOMAIN
-
-    DOMAIN --> SCHED["list SchedulerOutput<br/>跨 DP domain 的异构调度决策"]
-    SCHED --> RUNNER["ModelRunner<br/>CP 请求重排到 batch 最前<br/>2D CUDA Graph"]
-
-    RUNNER --> KVCACHE["CrossDPKVCacheManager<br/>统一管理跨 DP 的 Block Pool"]
-    KVCACHE --> ATTN["Attention Backend<br/>Prefill CP + Decode CP"]
-```
-
-实测中短序列（4k-128k）与变长场景的吞吐和TTFT均优于DP,TPOT也没有明显劣化。
-
----
-
-感谢页
+发布前重新构建，验证翻页、源码链接、布局编辑、导入导出和重置；检查全部页面的文字、箭头和图块在目标屏幕尺寸下清晰可读。
